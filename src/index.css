@@ -1,1 +1,13 @@
 @import "tailwindcss";
+
+@theme {
+	--color-primary: #013a67;
+	--color-background-light: #f8f4f1;
+	--color-background-dark: #1a1614;
+	--color-card-border: #5c2e2e;
+	--color-secondary-link: #e1aa12;
+	--color-text-main: #261d1a;
+	--color-text-main-dark: #000;
+}
+@import "slick-carousel/slick/slick.css";
+@import "slick-carousel/slick/slick-theme.css";
