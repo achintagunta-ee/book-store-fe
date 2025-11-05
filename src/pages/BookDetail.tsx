@@ -1,6 +1,5 @@
 import React from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+
 import {
 	MdStar,
 	MdStarHalf,
@@ -78,7 +77,6 @@ const BookDetailPage: React.FC = () => {
 	return (
 		<div className=" font-body text-text-main">
 			<div className="flex h-auto min-h-screen w-full flex-col">
-				<Header />
 				<main className="flex-grow px-4 py-5 sm:px-8 md:px-20 lg:px-40">
 					{/* Breadcrumbs */}
 					<div className="flex flex-wrap items-center gap-2 p-4">
@@ -186,7 +184,6 @@ const BookDetailPage: React.FC = () => {
 						</div>
 					</div>
 				</main>
-				<Footer />
 			</div>
 		</div>
 	);

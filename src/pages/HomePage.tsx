@@ -1,8 +1,5 @@
 import React from "react";
 
-import Footer from "../components/Footer";
-import Header from "../components/Header";
-
 const bookSections = [
 	{
 		title: "New Arrivals",
@@ -149,7 +146,6 @@ const HomePage: React.FC = () => {
 	return (
 		<div className="group/design-root relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light font-body ">
 			<div className="layout-container flex h-full grow flex-col">
-				<Header />
 				<div className="flex flex-1 justify-center px-4 py-5 md:px-10 lg:px-20 xl:px-40">
 					<div className="layout-content-container flex w-full max-w-screen-xl flex-1 flex-col">
 						<main className="mt-5 flex flex-col gap-10">
@@ -236,7 +232,6 @@ const HomePage: React.FC = () => {
 						</footer> */}
 					</div>
 				</div>
-				<Footer />
 			</div>
 		</div>
 	);

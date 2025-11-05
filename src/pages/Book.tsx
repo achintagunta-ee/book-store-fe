@@ -1,8 +1,4 @@
 import React, { useState, useMemo } from "react";
-// Assuming Header and Footer are in a components folder
-// You might need to adjust the import path based on your file structure
-import Header from "../components/Header";
-// import Footer from "./Footer"; // Assuming you have a Footer component
 
 // --- Icon Imports ---
 import {
@@ -13,8 +9,6 @@ import {
 	ChevronRight,
 	ChevronLeft, // Added ChevronLeft for pagination
 } from "lucide-react";
-// Added icons from Footer
-import Footer from "../components/Footer";
 import { Link } from "react-router-dom";
 
 // --- Types ---
@@ -398,7 +392,6 @@ const BookPage: React.FC = () => {
 
 	return (
 		<div className="flex flex-col min-h-screen bg-gray-50">
-			<Header />
 			<div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex-grow">
 				<main className="py-8">
 					{/* Mobile Filter Button */}
@@ -532,7 +525,6 @@ const BookPage: React.FC = () => {
 					</div>
 				</main>
 			</div>
-			<Footer />
 		</div>
 	);
 };
