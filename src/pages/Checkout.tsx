@@ -302,7 +302,7 @@ const PaymentStep: React.FC<StepProps> = ({ setStep }) => (
 );
 
 // -- Confirmation Step (New Content from your HTML) --
-const ConfirmationStep: React.FC<StepProps> = ({ setStep }) => (
+const ConfirmationStep: React.FC<StepProps> = () => (
 	<div className="lg:col-span-2">
 		<main className="bg-white  rounded-lg shadow-md p-6 sm:p-8">
 			<div className="flex flex-wrap justify-between gap-3 p-4">

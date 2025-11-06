@@ -7,28 +7,32 @@ import {
 	Settings,
 	LogOut,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useMatch } from "react-router-dom";
 
 interface NavItemProps {
 	icon: React.ReactNode;
 	label: string;
-	active?: boolean;
 	to: string;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active, to }) => (
-	<Link
-		to={to}
-		className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
-			active
-				? "bg-[#e1aa12]/20 border border-[#e1aa12]/40"
-				: "hover:bg-white/10"
-		}`}
-	>
-		{icon}
-		<p className="text-white text-base font-bold">{label}</p>
-	</Link>
-);
+const NavItem: React.FC<NavItemProps> = ({ icon, label, to }) => {
+	const match = useMatch(to);
+	const active = !!match;
+
+	return (
+		<Link
+			to={to}
+			className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+				active
+					? "bg-[#e1aa12]/20 border border-[#e1aa12]/40"
+					: "hover:bg-white/10"
+			}`}
+		>
+			{icon}
+			<p className="text-white text-base font-bold">{label}</p>
+		</Link>
+	);
+};
 
 interface SidebarProps {
 	sidebarOpen: boolean;
@@ -41,15 +45,13 @@ const navItems = [
 		label: "Books",
 		to: "/admin/book-management",
 	},
-	{ icon: <CreditCard size={20} />, label: "Payments", to: "#" },
-	{ icon: <ShoppingCart size={20} />, label: "Orders", to: "#" },
-	{ icon: <Package size={20} />, label: "Inventory", to: "#" },
-	{ icon: <Settings size={20} />, label: "Settings", to: "#" },
+	{ icon: <CreditCard size={20} />, label: "Payments", to: "/admin/payment" },
+	{ icon: <ShoppingCart size={20} />, label: "Orders", to: "/admin/orders" },
+	{ icon: <Package size={20} />, label: "Inventory", to: "/admin/inventory" },
+	{ icon: <Settings size={20} />, label: "Settings", to: "/admin/settings" },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen }) => {
-	const location = useLocation();
-
 	return (
 		<div
 			className={`${
@@ -77,7 +79,6 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen }) => {
 							icon={item.icon}
 							label={item.label}
 							to={item.to}
-							active={location.pathname === item.to}
 						/>
 					))}
 				</div>

@@ -1,11 +1,9 @@
 import React, { useState } from "react";
-import Slider, { Settings } from "react-slick";
+import Slider, { type Settings } from "react-slick";
 
-// CSS imports from your prompt.
-// These should typically be imported in your main App.tsx or index.css file.
-// import "tailwindcss";
-// import "slick-carousel/slick/slick.css";
-// import "slick-carousel/slick/slick-theme.css";
+// Import slick-carousel styles
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 // --- Type Definition ---
 interface Book {
@@ -113,7 +111,7 @@ const EmptyWishlist: React.FC = () => {
 
 // --- Main Wishlist Page Component ---
 const WishlistPage: React.FC = () => {
-	const [books, setBooks] = useState<Book[]>(mockWishlistBooks);
+	const [books] = useState<Book[]>(mockWishlistBooks);
 
 	// Settings for the Slick Carousel
 	const sliderSettings: Settings = {

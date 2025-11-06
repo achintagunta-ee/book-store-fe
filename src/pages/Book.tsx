@@ -136,8 +136,6 @@ const allBooksData: Book[] = [
 
 // --- Constants ---
 const BOOKS_PER_PAGE = 8;
-const allAuthors = [...new Set(allBooksData.map((book) => book.author))];
-const allCategories = [...new Set(allBooksData.map((book) => book.category))];
 const MAX_PRICE = Math.ceil(
 	allBooksData.reduce((max, book) => (book.price > max ? book.price : max), 0)
 );
@@ -172,7 +170,7 @@ const BookCard: React.FC<{ book: Book }> = ({ book }) => (
 const Sidebar: React.FC<{
 	onApplyFilters: (filters: Filters) => void;
 	initialFilters: Filters;
-}> = ({ onApplyFilters, initialFilters }) => (
+}> = () => (
 	// We ignore the props for this dummy layout to match the image
 	<div className="space-y-6 font-serif">
 		{/* Category */}

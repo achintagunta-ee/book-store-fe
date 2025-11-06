@@ -11,6 +11,10 @@ import WishlistPage from "./pages/Wishlist";
 import UserProfilePage from "./pages/Profile";
 import DashboardPage from "./admin/Dashboard";
 import BooksManagement from "./admin/BookManagement";
+import PaymentsPage from "./admin/Payment";
+import OrdersPage from "./admin/Order";
+import InventoryDashboard from "./admin/Inventory";
+import AdminSettings from "./admin/Setting";
 
 function App() {
 	return (
@@ -27,6 +31,10 @@ function App() {
 				<Route path="/profile" element={<UserProfilePage />} />
 				<Route path="/admin/dashboard" element={<DashboardPage />} />
 				<Route path="/admin/book-management" element={<BooksManagement />} />
+				<Route path="/admin/payment" element={<PaymentsPage />} />
+				<Route path="/admin/orders" element={<OrdersPage />} />
+				<Route path="/admin/inventory" element={<InventoryDashboard />} />
+				<Route path="/admin/settings" element={<AdminSettings />} />
 			</Routes>
 			<Footer />
 		</BrowserRouter>
