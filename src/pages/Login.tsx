@@ -1,25 +1,72 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
+import { Toaster, toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import type { AppDispatch, RootState } from "../redux/store/store";
-import { loginThunk } from "../redux/slice/authSlice";
+import {
+  loginThunk,
+  registerThunk,
+  clearError,
+} from "../redux/slice/authSlice";
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [isRegistering, setIsRegistering] = useState(false);
+
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    username: "",
+    email: "",
+    password: "",
+    confirm_password: "",
+  });
+
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { status, error } = useSelector((s: RootState) => s.auth);
-  // A simple state for a dark mode toggle could be added here.
+  const { status, error, accessToken } = useSelector((s: RootState) => s.auth);
+
+  useEffect(() => {
+    // Clear errors when switching between login/register or on initial load
+    dispatch(clearError());
+  }, [isRegistering, dispatch]);
+
+  useEffect(() => {
+    if (accessToken) {
+      navigate("/");
+    }
+  }, [accessToken, navigate]);
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await dispatch(loginThunk({ email, password })).unwrap();
-      // On success, authSlice will set isAuthenticated to true.
-      // A listener for auth state change (e.g., in a layout component) can then navigate.
-      navigate("/"); // Or to a protected route
+      if (isRegistering) {
+        if (formData.password !== formData.confirm_password) {
+          toast.error("Passwords do not match.");
+          return;
+        }
+        await dispatch(registerThunk(formData)).unwrap();
+        toast.success("Registration successful!");
+        setIsRegistering(false); // Switch back to login form
+        setFormData({
+          // Reset form fields
+          ...formData,
+          first_name: "",
+          last_name: "",
+          username: "",
+          password: "",
+          confirm_password: "",
+        });
+      } else {
+        await dispatch(
+          loginThunk({ email: formData.email, password: formData.password })
+        ).unwrap();
+        navigate("/");
+      }
     } catch (err) {
       console.log(err);
       // Error is handled by the rejected case in the slice, and displayed via `error` state.
@@ -45,7 +92,7 @@ const LoginPage: React.FC = () => {
         {/* Right Panel: Form */}
         <div className="flex w-full flex-col justify-center rounded-b-xl border-t-4 border-card-border bg-background-light p-8  md:w-1/2 md:rounded-l-none md:rounded-r-xl md:border-l-4 md:border-t-0 lg:p-12">
           <div className="mb-8 text-center">
-            <h2 className="font-display text-4xl font-bold text-text-main dark:text-text-main-dark">
+            <h2 className="font-display text-4xl font-bold text-text-main">
               Hithabodha
             </h2>
             <p className="mt-1 text-secondary-link">
@@ -54,75 +101,165 @@ const LoginPage: React.FC = () => {
           </div>
           <div className="mb-4 flex flex-wrap justify-center gap-3 p-4">
             <div className="flex min-w-72 flex-col gap-2 text-center">
-              <p className="font-display text-3xl font-bold leading-tight tracking-tight text-text-main dark:text-text-main-dark">
-                Welcome Back
+              <p className="font-display text-3xl font-bold leading-tight tracking-tight text-text-main">
+                {isRegistering ? "Create an Account" : "Welcome Back"}
               </p>
               <p className="text-base font-normal leading-normal text-secondary-link">
-                Don't have an account?{" "}
+                {isRegistering
+                  ? "Already have an account? "
+                  : "Don't have an account? "}
                 <a
                   className="font-semibold text-primary hover:underline"
                   href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsRegistering(!isRegistering);
+                  }}
                 >
-                  Sign Up
+                  {isRegistering ? "Login" : "Sign Up"}
                 </a>
               </p>
             </div>
           </div>
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {isRegistering && (
+              <>
+                <div className="flex flex-col">
+                  <label
+                    className="pb-2 text-sm font-semibold text-text-main"
+                    htmlFor="first_name"
+                  >
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className="h-12 rounded-lg border border-black/10 p-4"
+                    id="first_name"
+                    name="first_name"
+                    placeholder="John"
+                    type="text"
+                    value={formData.first_name}
+                    onChange={handleFormChange}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label
+                    className="pb-2 text-sm font-semibold text-text-main"
+                    htmlFor="last_name"
+                  >
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className="h-12 rounded-lg border border-black/10 p-4"
+                    id="last_name"
+                    name="last_name"
+                    placeholder="Doe"
+                    type="text"
+                    value={formData.last_name}
+                    onChange={handleFormChange}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label
+                    className="pb-2 text-sm font-semibold text-text-main"
+                    htmlFor="username"
+                  >
+                    Username <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    className="h-12 rounded-lg border border-black/10 p-4"
+                    id="username"
+                    name="username"
+                    placeholder="johndoe"
+                    type="text"
+                    value={formData.username}
+                    onChange={handleFormChange}
+                    required
+                  />
+                </div>
+              </>
+            )}
             <div className="flex flex-col">
               <label
-                className="pb-2 text-sm font-semibold leading-normal text-text-main dark:text-text-main-dark"
+                className="pb-2 text-sm font-semibold leading-normal text-text-main"
                 htmlFor="email"
               >
-                Email Address
+                Email Address <span className="text-red-500">*</span>
               </label>
               <input
                 className="h-12 min-w-0 flex-1 resize-none overflow-hidden rounded-lg border border-black/10 bg-white p-4 text-base font-normal leading-normal text-text-main placeholder:text-secondary-link/80 focus:outline-none focus:ring-2 focus:ring-primary/50"
                 id="email"
+                name="email"
                 placeholder="you@example.com"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleFormChange}
+                required
               />
             </div>
             <div className="flex flex-col">
               <label
-                className="pb-2 text-sm font-semibold leading-normal text-text-main dark:text-text-main-dark"
+                className="pb-2 text-sm font-semibold leading-normal text-text-main"
                 htmlFor="password"
               >
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
               <input
                 className="h-12 min-w-0 flex-1 resize-none overflow-hidden rounded-lg border border-black/10 bg-white/50 p-4 text-base font-normal leading-normal text-text-main placeholder:text-secondary-link/80 focus:outline-none focus:ring-2 focus:ring-primary/50 "
                 id="password"
+                name="password"
                 placeholder="Enter your password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={formData.password}
+                onChange={handleFormChange}
+                required
               />
             </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                />
+            {isRegistering && (
+              <div className="flex flex-col">
                 <label
-                  className="ml-2 block text-sm text-secondary-link"
-                  htmlFor="remember-me"
+                  className="pb-2 text-sm font-semibold text-text-main"
+                  htmlFor="confirm_password"
                 >
-                  Remember me
+                  Confirm Password <span className="text-red-500">*</span>
                 </label>
+                <input
+                  className="h-12 rounded-lg border border-black/10 p-4"
+                  id="confirm_password"
+                  name="confirm_password"
+                  placeholder="Confirm your password"
+                  type="password"
+                  value={formData.confirm_password}
+                  onChange={handleFormChange}
+                  required
+                />
               </div>
-              <a
-                className="text-sm font-semibold text-secondary-link hover:text-primary"
-                href="#"
-              >
-                Forgot Password?
-              </a>
-            </div>
+            )}
+            {!isRegistering && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                  />
+                  <label
+                    className="ml-2 block text-sm text-secondary-link"
+                    htmlFor="remember-me"
+                  >
+                    Remember me
+                  </label>
+                </div>
+                <a
+                  className="text-sm font-semibold text-secondary-link hover:text-primary"
+                  href="#"
+                >
+                  Forgot Password?
+                </a>
+              </div>
+            )}
             <div>
               <button
                 type="submit"
@@ -130,7 +267,13 @@ const LoginPage: React.FC = () => {
                 className="flex h-12 min-w-[84px] w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-5 text-base font-bold leading-normal tracking-wide text-white shadow-soft transition-all duration-300 hover:scale-105 hover:bg-opacity-90 disabled:cursor-not-allowed disabled:bg-opacity-50"
               >
                 <span className="truncate">
-                  {status === "loading" ? "Logging in..." : "Login"}
+                  {status === "loading"
+                    ? isRegistering
+                      ? "Registering..."
+                      : "Logging in..."
+                    : isRegistering
+                    ? "Register"
+                    : "Login"}
                 </span>
               </button>
             </div>
@@ -148,7 +291,7 @@ const LoginPage: React.FC = () => {
             </div>
             <div className="mt-6 grid grid-cols-2 gap-4">
               <a
-                className="flex w-full items-center justify-center gap-3 rounded-lg border border-black/10 py-2.5 px-4 text-sm font-semibold text-text-main shadow-sm transition-colors hover:bg-black/5 dark:border-white/10 dark:text-text-main-dark dark:hover:bg-white/5"
+                className="flex w-full items-center justify-center gap-3 rounded-lg border border-black/10 py-2.5 px-4 text-sm font-semibold text-text-main shadow-sm transition-colors hover:bg-black/5"
                 href="#"
               >
                 <svg
@@ -166,7 +309,7 @@ const LoginPage: React.FC = () => {
                 <span>Facebook</span>
               </a>
               <a
-                className="flex w-full items-center justify-center gap-3 rounded-lg border border-black/10 py-2.5 px-4 text-sm font-semibold text-text-main shadow-sm transition-colors hover:bg-black/5 dark:border-white/10 dark:text-text-main-dark dark:hover:bg-white/5"
+                className="flex w-full items-center justify-center gap-3 rounded-lg border border-black/10 py-2.5 px-4 text-sm font-semibold text-text-main shadow-sm transition-colors hover:bg-black/5"
                 href="#"
               >
                 <svg
@@ -185,9 +328,12 @@ const LoginPage: React.FC = () => {
       </div>
       {error && (
         <div className="absolute top-5 rounded-md bg-red-100 p-4 text-red-700">
-          <p>Login Failed: {error}</p>
+          <p>
+            {isRegistering ? "Registration Failed" : "Login Failed"}: {error}
+          </p>
         </div>
       )}
+      <Toaster position="top-right" />
     </div>
   );
 };

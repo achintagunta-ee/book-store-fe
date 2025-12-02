@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { loginApi } from "../utilis/authApi";
+import { loginApi, registerApi, type RegisterData } from "../utilis/authApi";
 
 // Define a basic user profile structure.
 interface UserProfile {
@@ -83,6 +83,23 @@ export const loginThunk = createAsyncThunk(
   }
 );
 
+export const registerThunk = createAsyncThunk(
+  "auth/register",
+  async (registerData: RegisterData, { rejectWithValue }) => {
+    try {
+      const data = await registerApi(registerData);
+      // Registration is successful, but we don't log the user in automatically.
+      // The response can be used to show a success message.
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Registration failed");
+      }
+      return rejectWithValue("Registration failed");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -130,6 +147,18 @@ const authSlice = createSlice({
       .addCase(loginThunk.rejected, (state, action) => {
         state.status = "failed";
         state.error = (action.payload as string) || "Login failed";
+      })
+      // Register
+      .addCase(registerThunk.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(registerThunk.fulfilled, (state) => {
+        state.status = "succeeded"; // Or 'idle' if you prefer, as it's just a success message
+      })
+      .addCase(registerThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = (action.payload as string) || "Registration failed";
       });
   },
 });

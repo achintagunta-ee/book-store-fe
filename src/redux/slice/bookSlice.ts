@@ -1,29 +1,103 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { fetchBooks } from "../utilis/bookApi";
+import {
+  fetchBooksApi,
+  createBookApi,
+  updateBookApi,
+  deleteBookApi,
+  fetchCategoriesApi,
+  createCategoryApi,
+  updateCategoryApi,
+  deleteCategoryApi,
+  type Book,
+  type Category,
+  type CreateCategoryData,
+  type UpdateCategoryData,
+} from "../utilis/bookApi";
 
-interface Book {
-  id: number;
-  title: string;
-}
-
-interface BookState {
+export interface BookState {
   books: Book[];
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null | undefined;
+  categories: Category[];
+  categoryStatus: "idle" | "loading" | "succeeded" | "failed";
+  categoryError: string | null | undefined;
 }
 
 const initialState: BookState = {
   books: [],
   status: "idle",
   error: null,
+  categories: [],
+  categoryStatus: "idle",
+  categoryError: null,
 };
 
 // The function below is called a thunk and allows us to perform async logic.
 export const fetchBooksAsync = createAsyncThunk(
   "books/fetchBooks",
   async () => {
-    const response = await fetchBooks();
-    return response.data;
+    const response = await fetchBooksApi();
+    return response;
+  }
+);
+
+export const createBookAsync = createAsyncThunk(
+  "books/createBook",
+  async (bookData: FormData) => {
+    const response = await createBookApi(bookData);
+    return response;
+  }
+);
+
+export const updateBookAsync = createAsyncThunk(
+  "books/updateBook",
+  async ({ id, data }: { id: number; data: FormData }) => {
+    const response = await updateBookApi(id, data);
+    return response;
+  }
+);
+
+export const deleteBookAsync = createAsyncThunk(
+  "books/deleteBook",
+  async (id: number) => {
+    await deleteBookApi(id);
+    return id;
+  }
+);
+
+export const fetchCategoriesAsync = createAsyncThunk(
+  "books/fetchCategories",
+  async () => {
+    const response = await fetchCategoriesApi();
+    return response;
+  }
+);
+
+export const createCategoryAsync = createAsyncThunk(
+  "books/createCategory",
+  async (categoryData: CreateCategoryData) => {
+    const response = await createCategoryApi(categoryData);
+    return response;
+  }
+);
+
+export const updateCategoryAsync = createAsyncThunk(
+  "books/updateCategory",
+  async ({ id, data }: { id: number; data: UpdateCategoryData }) => {
+    const response = await updateCategoryApi(id, data);
+    return response;
+  }
+);
+
+export const deleteCategoryAsync = createAsyncThunk(
+  "books/deleteCategory",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      await deleteCategoryApi(id);
+      return id;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
   }
 );
 
@@ -41,6 +115,54 @@ export const bookSlice = createSlice({
       .addCase(fetchBooksAsync.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.books = action.payload;
+      })
+      .addCase(fetchBooksAsync.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.error.message;
+      })
+      .addCase(createBookAsync.fulfilled, (state, action) => {
+        state.books.push(action.payload);
+      })
+      .addCase(updateBookAsync.fulfilled, (state, action) => {
+        const index = state.books.findIndex(
+          (book) => book.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.books[index] = action.payload;
+        }
+      })
+      .addCase(deleteBookAsync.fulfilled, (state, action) => {
+        state.books = state.books.filter(
+          (book) => book.id !== action.payload
+        );
+      })
+      // Category Thunks
+      .addCase(fetchCategoriesAsync.pending, (state) => {
+        state.categoryStatus = "loading";
+      })
+      .addCase(fetchCategoriesAsync.fulfilled, (state, action) => {
+        state.categoryStatus = "succeeded";
+        state.categories = action.payload;
+      })
+      .addCase(fetchCategoriesAsync.rejected, (state, action) => {
+        state.categoryStatus = "failed";
+        state.categoryError = action.error.message;
+      })
+      .addCase(createCategoryAsync.fulfilled, (state, action) => {
+        state.categories.push(action.payload);
+      })
+      .addCase(updateCategoryAsync.fulfilled, (state, action) => {
+        const index = state.categories.findIndex(
+          (cat) => cat.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.categories[index] = action.payload;
+        }
+      })
+      .addCase(deleteCategoryAsync.fulfilled, (state, action) => {
+        state.categories = state.categories.filter(
+          (cat) => cat.id !== action.payload
+        );
       });
   },
 });

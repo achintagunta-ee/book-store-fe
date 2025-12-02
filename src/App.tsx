@@ -15,29 +15,31 @@ import PaymentsPage from "./admin/Payment";
 import OrdersPage from "./admin/Order";
 import InventoryDashboard from "./admin/Inventory";
 import AdminSettings from "./admin/Setting";
+import CategoryManagement from "./admin/CategoryManagement";
 
 function App() {
-	return (
-		<BrowserRouter>
-			<Header />
-			<Routes>
-				<Route path="/" element={<HomePage />} />
-				<Route path="/login" element={<LoginPage />} />
-				<Route path="/books" element={<BookPage />} />
-				<Route path="/book/detail" element={<BookDetailPage />} />
-				<Route path="/cart" element={<CartPage />} />
-				<Route path="/checkout" element={<CheckoutPage />} />
-				<Route path="/wishlist" element={<WishlistPage />} />
-				<Route path="/profile" element={<UserProfilePage />} />
-				<Route path="/admin/dashboard" element={<DashboardPage />} />
-				<Route path="/admin/book-management" element={<BooksManagement />} />
-				<Route path="/admin/payment" element={<PaymentsPage />} />
-				<Route path="/admin/orders" element={<OrdersPage />} />
-				<Route path="/admin/inventory" element={<InventoryDashboard />} />
-				<Route path="/admin/settings" element={<AdminSettings />} />
-			</Routes>
-			<Footer />
-		</BrowserRouter>
-	);
+  return (
+    <BrowserRouter>
+      <Header />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/books" element={<BookPage />} />
+        <Route path="/book/detail" element={<BookDetailPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
+        <Route path="/profile" element={<UserProfilePage />} />
+        <Route path="/admin/dashboard" element={<DashboardPage />} />
+        <Route path="/admin/book-management" element={<BooksManagement />} />
+        <Route path="/admin/categories" element={<CategoryManagement />} />
+        <Route path="/admin/payment" element={<PaymentsPage />} />
+        <Route path="/admin/orders" element={<OrdersPage />} />
+        <Route path="/admin/inventory" element={<InventoryDashboard />} />
+        <Route path="/admin/settings" element={<AdminSettings />} />
+      </Routes>
+      <Footer />
+    </BrowserRouter>
+  );
 }
 export default App;

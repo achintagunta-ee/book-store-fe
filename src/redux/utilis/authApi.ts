@@ -40,8 +40,34 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
 
 // Auth APIs
 export async function loginApi(email: string, password: string) {
-  return request<{ access_token: string; token_type: string }>("/auth/login/", {
+  return request<{ access_token: string; token_type: string }>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
+  });
+}
+
+// Registration API
+export interface RegisterData {
+  first_name: string;
+  last_name: string;
+  email: string;
+  username: string;
+  password: string;
+  confirm_password: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user_id: number;
+  email: string;
+  client: string;
+  role: string;
+  can_login: boolean;
+}
+
+export async function registerApi(data: RegisterData) {
+  return request<RegisterResponse>("/auth/register", {
+    method: "POST",
+    body: JSON.stringify(data),
   });
 }
