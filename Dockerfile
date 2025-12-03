@@ -13,7 +13,7 @@ RUN npm ci
 COPY . .
 
 # Hardcode API base URL (instead of using ARG from Coolify)
-ENV VITE_API_BASE_URL=https://podcaster-be.efficientemengineering.com
+ENV VITE_API_BASE_URL=https://hbn-be.efficientemengineering.com
 
 # Build - Vite will now have access to VITE_API_BASE_URL
 RUN npm run build
