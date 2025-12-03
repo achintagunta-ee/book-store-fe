@@ -52,6 +52,15 @@ export interface Category {
   created_at: string;
 }
 
+export interface FilterParams {
+  category?: string;
+  author?: string;
+  min_price?: number;
+  max_price?: number;
+  rating?: number;
+  query?: string;
+}
+
 export interface CreateCategoryData {
   name: string;
   description: string;
@@ -72,6 +81,7 @@ export interface Book {
   cover_image: string;
   stock: number;
   category_id: number;
+  rating?: number;
   created_at: string;
 }
 
@@ -132,4 +142,86 @@ export const deleteCategoryApi = async (id: number) => {
   return request<{ message: string }>(`/admin/categories/${id}`, {
     method: "DELETE",
   });
+};
+
+// Public APIs
+
+// Fetch all public books
+export const fetchPublicBooksApi = async () => {
+  return request<Book[]>("/books/");
+};
+
+// Fetch a single book by ID
+export const fetchBookByIdApi = async (id: number) => {
+  return request<Book>(`/books/${id}`);
+};
+
+// Fetch books by category ID
+export const fetchBooksByCategoryIdApi = async (categoryId: number) => {
+  return request<Book[]>(`/categories/${categoryId}/books`);
+};
+
+// Fetch books by category ID (from /books/ endpoint)
+export const fetchBooksByCategoryIdPublicApi = async (categoryId: number) => {
+  return request<Book[]>(`/books/category/${categoryId}`);
+};
+
+// Fetch books by category name
+export const fetchBooksByCategoryNameApi = async (categoryName: string) => {
+  return request<Book[]>(`/books/${categoryName}`);
+};
+
+// Search for a book by name and category
+export const searchBookInCategoryByNameApi = async (
+  categoryName: string,
+  bookName: string
+) => {
+  return request<Book[]>(`/categories/${categoryName}/${bookName}`);
+};
+
+// Fetch all public categories
+export const fetchPublicCategoriesApi = async () => {
+  return request<Category[]>("/categories/");
+};
+
+// Fetch a single category by ID
+export const fetchCategoryByIdApi = async (id: number) => {
+  return request<Category>(`/categories/${id}`);
+};
+
+// Search for a category by name
+export const searchCategoryByNameApi = async (name: string) => {
+  return request<Category[]>(`/categories/${name}`);
+};
+
+// Filter books
+export const filterBooksApi = async (params: FilterParams) => {
+  const query = new URLSearchParams();
+  if (params.category) query.append("category", params.category);
+  if (params.author) query.append("author", params.author);
+  if (params.min_price !== undefined)
+    query.append("min_price", String(params.min_price));
+  if (params.max_price !== undefined)
+    query.append("max_price", String(params.max_price));
+  if (params.rating !== undefined)
+    query.append("rating", String(params.rating));
+
+  return request<Book[]>(`/books/filter?${query.toString()}`);
+};
+
+// Get Featured Books
+export const fetchFeaturedBooksApi = async () => {
+  return request<Book[]>("/books/featured");
+};
+
+// Get Featured Authors' books
+export const fetchFeaturedAuthorsBooksApi = async () => {
+  return request<Book[]>("/books/featured-authors");
+};
+
+// Search books
+export const searchBooksApi = async (query: string) => {
+  return request<Book[]>(
+    `/books/search/query?query=${encodeURIComponent(query)}`
+  );
 };

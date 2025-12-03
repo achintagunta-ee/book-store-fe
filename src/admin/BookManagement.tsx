@@ -182,7 +182,6 @@ const BooksManagement: React.FC = () => {
   const { books, categories, status, error } = useSelector(
     (state: RootState) => state.books
   );
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
