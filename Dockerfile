@@ -25,4 +25,4 @@ FROM nginxinc/nginx-unprivileged:mainline-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Expose the default port (8080) for the unprivileged Nginx image
-EXPOSE 8080
+EXPOSE 3060
