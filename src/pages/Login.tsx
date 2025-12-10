@@ -8,10 +8,16 @@ import {
   loginThunk,
   registerThunk,
   clearError,
+  forgotPasswordThunk,
+  resetPasswordThunk,
 } from "../redux/slice/authSlice";
 
 const LoginPage: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [forgotPasswordStep, setForgotPasswordStep] = useState<"email" | "otp">(
+    "email"
+  );
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -20,6 +26,9 @@ const LoginPage: React.FC = () => {
     email: "",
     password: "",
     confirm_password: "",
+    forgot_email: "",
+    otp: "",
+    new_password: "",
   });
 
   const dispatch = useDispatch<AppDispatch>();
@@ -29,7 +38,11 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     // Clear errors when switching between login/register or on initial load
     dispatch(clearError());
-  }, [isRegistering, dispatch]);
+    if (!isForgotPassword) {
+      // Reset forgot password state when modal is closed
+      setForgotPasswordStep("email");
+    }
+  }, [isRegistering, isForgotPassword, dispatch]);
 
   useEffect(() => {
     if (accessToken) {
@@ -61,15 +74,47 @@ const LoginPage: React.FC = () => {
           password: "",
           confirm_password: "",
         });
+      } else if (isForgotPassword) {
+        // This case is handled by handleForgotPasswordSubmit
+        // but we keep the structure for clarity
+        return;
       } else {
         await dispatch(
           loginThunk({ email: formData.email, password: formData.password })
         ).unwrap();
         navigate("/");
       }
-    } catch (err) {
-      console.log(err);
-      // Error is handled by the rejected case in the slice, and displayed via `error` state.
+    } catch (err: any) {
+      toast.error(err || "An unexpected error occurred.");
+    }
+  };
+
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (forgotPasswordStep === "email") {
+        await dispatch(forgotPasswordThunk(formData.forgot_email)).unwrap();
+        toast.success("An OTP has been sent to your email.");
+        setForgotPasswordStep("otp");
+      } else {
+        if (formData.otp.length !== 6) {
+          toast.error("Please enter a valid 6-digit OTP.");
+          return;
+        }
+        await dispatch(
+          resetPasswordThunk({
+            email: formData.forgot_email,
+            code: formData.otp,
+            new_password: formData.new_password,
+          })
+        ).unwrap();
+        toast.success("Password has been reset successfully!");
+        setIsForgotPassword(false);
+        setForgotPasswordStep("email"); // Reset for next time
+      }
+    } catch (err: any) {
+      // The error from the thunk's rejectWithValue is caught here
+      toast.error(err || "An unexpected error occurred.");
     }
   };
 
@@ -114,6 +159,7 @@ const LoginPage: React.FC = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     setIsRegistering(!isRegistering);
+                    setIsForgotPassword(false);
                   }}
                 >
                   {isRegistering ? "Login" : "Sign Up"}
@@ -255,6 +301,11 @@ const LoginPage: React.FC = () => {
                 <a
                   className="text-sm font-semibold text-secondary-link hover:text-primary"
                   href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsForgotPassword(true);
+                    setForgotPasswordStep("email");
+                  }}
                 >
                   Forgot Password?
                 </a>
@@ -331,6 +382,98 @@ const LoginPage: React.FC = () => {
           <p>
             {isRegistering ? "Registration Failed" : "Login Failed"}: {error}
           </p>
+        </div>
+      )}
+      {isForgotPassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+            <h3 className="mb-4 text-2xl font-bold text-text-main">
+              Forgot Password
+            </h3>
+            <p className="mb-6 text-secondary-link">
+              Enter your email address and we'll send you a link to reset your
+              password.
+            </p>
+            <form onSubmit={handleForgotPasswordSubmit}>
+              {forgotPasswordStep === "email" ? (
+                <div className="flex flex-col">
+                  <label
+                    className="pb-2 text-sm font-semibold leading-normal text-text-main"
+                    htmlFor="forgot_email"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    className="h-12 min-w-0 flex-1 rounded-lg border border-black/10 p-4"
+                    id="forgot_email"
+                    name="forgot_email"
+                    placeholder="you@example.com"
+                    type="email"
+                    value={formData.forgot_email}
+                    onChange={handleFormChange}
+                    required
+                  />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex flex-col">
+                    <label
+                      className="pb-2 text-sm font-semibold text-text-main"
+                      htmlFor="otp"
+                    >
+                      OTP Code
+                    </label>
+                    <input
+                      className="h-12 rounded-lg border border-black/10 p-4"
+                      id="otp"
+                      name="otp"
+                      placeholder="Enter the 6-digit code"
+                      type="text"
+                      maxLength={6}
+                      value={formData.otp}
+                      onChange={handleFormChange}
+                      required
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <label
+                      className="pb-2 text-sm font-semibold text-text-main"
+                      htmlFor="new_password"
+                    >
+                      New Password
+                    </label>
+                    <input
+                      className="h-12 rounded-lg border border-black/10 p-4"
+                      id="new_password"
+                      name="new_password"
+                      placeholder="Enter your new password"
+                      type="password"
+                      value={formData.new_password}
+                      onChange={handleFormChange}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
+              <div className="mt-6 flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPassword(false)}
+                  className="rounded-lg px-4 py-2 text-sm font-semibold text-secondary-link hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90"
+                >
+                  {forgotPasswordStep === "email"
+                    ? "Send OTP"
+                    : "Reset Password"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
       <Toaster position="top-right" />

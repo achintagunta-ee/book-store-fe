@@ -14,18 +14,25 @@ import {
   fetchBooksByCategoryIdApi,
   fetchBooksByCategoryNameApi,
   fetchPublicCategoriesApi,
+  fetchBookBySlugApi,
   fetchCategoryByIdApi,
   searchBookInCategoryByNameApi,
   filterBooksApi,
-  fetchFeaturedBooksApi,
+  fetchFeaturedBooksApi, // This seems unused now with the new search API
   fetchFeaturedAuthorsBooksApi,
-  searchBooksApi,
   searchCategoryByNameApi,
   type Book,
   type Category,
   type CreateCategoryData,
   type UpdateCategoryData,
   type FilterParams,
+  type CreateReviewData,
+  updateReviewApi,
+  type UpdateReviewData,
+  createReviewApi,
+  deleteReviewApi,
+  type BookDetailResponse,
+  advancedSearchBooksApi,
 } from "../utilis/bookApi";
 
 export interface BookState {
@@ -41,6 +48,13 @@ export interface BookState {
   publicCategories: Category[];
   publicCategoriesStatus: "idle" | "loading" | "succeeded" | "failed";
   publicCategoriesError: string | null | undefined;
+  featuredBooks: Book[];
+  featuredBooksStatus: "idle" | "loading" | "succeeded" | "failed";
+  featuredAuthorsBooks: Book[];
+  featuredAuthorsBooksStatus: "idle" | "loading" | "succeeded" | "failed";
+  currentBook: BookDetailResponse | null;
+  currentBookStatus: "idle" | "loading" | "succeeded" | "failed";
+  currentBookError: string | null | undefined;
 }
 
 const initialState: BookState = {
@@ -56,6 +70,13 @@ const initialState: BookState = {
   publicCategories: [],
   publicCategoriesStatus: "idle",
   publicCategoriesError: null,
+  featuredBooks: [],
+  featuredBooksStatus: "idle",
+  featuredAuthorsBooks: [],
+  featuredAuthorsBooksStatus: "idle",
+  currentBook: null,
+  currentBookStatus: "idle",
+  currentBookError: null,
 };
 
 // Admin Thunks
@@ -144,6 +165,14 @@ export const fetchBookByIdAsync = createAsyncThunk(
   }
 );
 
+export const fetchBookBySlugAsync = createAsyncThunk(
+  "books/fetchBookBySlug",
+  async (slug: string) => {
+    const response = await fetchBookBySlugApi(slug);
+    return response;
+  }
+);
+
 export const fetchBooksByCategoryIdAsync = createAsyncThunk(
   "books/fetchBooksByCategoryId",
   async (categoryId: number) => {
@@ -220,25 +249,67 @@ export const filterBooksAsync = createAsyncThunk(
 export const fetchFeaturedBooksAsync = createAsyncThunk(
   "books/fetchFeaturedBooks",
   async () => {
-    const response = await fetchFeaturedBooksApi();
-    return response;
+    const response = (await fetchFeaturedBooksApi()) as any;
+    return response.featured_books;
   }
 );
 
 export const fetchFeaturedAuthorsBooksAsync = createAsyncThunk(
   "books/fetchFeaturedAuthorsBooks",
   async () => {
-    const response = await fetchFeaturedAuthorsBooksApi();
-    return response;
+    const response = (await fetchFeaturedAuthorsBooksApi()) as any;
+    return response.authors;
   }
 );
 
 export const searchBooksAsync = createAsyncThunk(
   "books/searchBooks",
-  async (query: string, { rejectWithValue }) => {
+  async (params: FilterParams, { rejectWithValue }) => {
     try {
-      const response = (await searchBooksApi(query)) as any;
+      const response = await advancedSearchBooksApi(params);
       return response.results; // Extract the 'results' array from the response
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const createReviewAsync = createAsyncThunk(
+  "reviews/createReview",
+  async (
+    { slug, reviewData }: { slug: string; reviewData: CreateReviewData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await createReviewApi(slug, reviewData);
+      return response.review;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const updateReviewAsync = createAsyncThunk(
+  "reviews/updateReview",
+  async (
+    { reviewId, reviewData }: { reviewId: number; reviewData: UpdateReviewData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await updateReviewApi(reviewId, reviewData);
+      return response.review;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const deleteReviewAsync = createAsyncThunk(
+  "reviews/deleteReview",
+  async (reviewId: number, { rejectWithValue }) => {
+    try {
+      await deleteReviewApi(reviewId);
+      return reviewId;
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -343,11 +414,22 @@ export const bookSlice = createSlice({
         state.publicBooksStatus = "succeeded";
         state.publicBooks = action.payload;
       })
+      .addCase(fetchFeaturedBooksAsync.pending, (state) => {
+        state.featuredBooksStatus = "loading";
+      })
       .addCase(fetchFeaturedBooksAsync.fulfilled, (state, action) => {
-        state.publicBooks = action.payload;
+        state.featuredBooksStatus = "succeeded";
+        state.featuredBooks = action.payload;
+      })
+      .addCase(fetchFeaturedBooksAsync.rejected, (state) => {
+        state.featuredBooksStatus = "failed";
+      })
+      .addCase(fetchFeaturedAuthorsBooksAsync.pending, (state) => {
+        state.featuredAuthorsBooksStatus = "loading";
       })
       .addCase(fetchFeaturedAuthorsBooksAsync.fulfilled, (state, action) => {
-        state.publicBooks = action.payload;
+        state.featuredAuthorsBooksStatus = "succeeded";
+        state.featuredAuthorsBooks = action.payload;
       })
       .addCase(searchBooksAsync.pending, (state) => {
         state.publicBooksStatus = "loading";
@@ -360,14 +442,52 @@ export const bookSlice = createSlice({
         state.publicBooksStatus = "failed";
         state.publicBooksError = action.error.message;
       })
+      .addCase(fetchBookBySlugAsync.pending, (state) => {
+        state.currentBookStatus = "loading";
+        state.currentBook = null;
+      })
+      .addCase(fetchBookBySlugAsync.fulfilled, (state, action) => {
+        state.currentBookStatus = "succeeded";
+        state.currentBook = action.payload;
+      })
+      .addCase(fetchBookBySlugAsync.rejected, (state, action) => {
+        state.currentBookStatus = "failed";
+        state.currentBookError = action.error.message;
+      })
       .addCase(fetchBookByIdAsync.fulfilled, (state, action) => {
-        // Not sure what to do here, maybe a new state for single book?
-        // For now, let's just push it to the publicBooks array
-        const index = state.publicBooks.findIndex(
-          (book) => book.id === action.payload.id
-        );
-        if (index === -1) {
-          state.publicBooks.push(action.payload);
+        state.currentBookStatus = "succeeded";
+        // This needs to be adapted if its response is different
+        // For now, assuming it returns a partial structure
+        state.currentBook = { book: action.payload } as BookDetailResponse;
+      })
+      // Review reducers
+      .addCase(createReviewAsync.fulfilled, (state, action) => {
+        if (state.currentBook) {
+          state.currentBook.reviews.unshift(action.payload);
+          state.currentBook.total_reviews += 1;
+        }
+      })
+      .addCase(deleteReviewAsync.fulfilled, (state, action) => {
+        if (state.currentBook) {
+          const reviewId = action.payload;
+          const initialCount = state.currentBook.reviews.length;
+          state.currentBook.reviews = state.currentBook.reviews.filter(
+            (review) => review.id !== reviewId
+          );
+          if (state.currentBook.reviews.length < initialCount) {
+            state.currentBook.total_reviews -= 1;
+          }
+        }
+      })
+      .addCase(updateReviewAsync.fulfilled, (state, action) => {
+        if (state.currentBook) {
+          const updatedReview = action.payload;
+          const index = state.currentBook.reviews.findIndex(
+            (review) => review.id === updatedReview.id
+          );
+          if (index !== -1) {
+            state.currentBook.reviews[index] = updatedReview;
+          }
         }
       });
   },

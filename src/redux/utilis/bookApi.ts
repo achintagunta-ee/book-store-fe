@@ -53,12 +53,20 @@ export interface Category {
 }
 
 export interface FilterParams {
-  category?: string;
+  q?: string;
+  title?: string;
   author?: string;
-  min_price?: number;
-  max_price?: number;
-  rating?: number;
-  query?: string;
+  excerpt?: string;
+  description?: string;
+  tags?: string;
+  category?: string;
+  price_min?: number;
+  price_max?: number;
+  rating_min?: number;
+  rating_max?: number;
+  publisher?: string;
+  is_featured?: boolean;
+  "is_featured-authors"?: boolean;
 }
 
 export interface CreateCategoryData {
@@ -75,6 +83,7 @@ export interface UpdateCategoryData {
 export interface Book {
   id: number;
   title: string;
+  slug: string;
   author: string;
   price: number;
   description: string;
@@ -83,6 +92,83 @@ export interface Book {
   category_id: number;
   rating?: number;
   created_at: string;
+  updated_at: string;
+  isbn: string | null;
+  publisher: string | null;
+  published_date: string | null;
+}
+
+export interface Review {
+  id: number;
+  user_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  book_id?: number;
+  updated_at?: string | null;
+}
+
+export interface BookDetailResponse {
+  book: Book;
+  category: string;
+  related_books: Book[];
+  average_rating: number | null;
+  total_reviews: number;
+  reviews: Review[];
+}
+
+export interface CreateReviewData {
+  user_name: string;
+  rating: number;
+  comment: string;
+}
+
+export interface UpdateReviewData {
+  rating?: number;
+  comment?: string;
+}
+
+export interface ListReviewsResponse {
+  book_slug: string;
+  average_rating: number;
+  total_reviews: number;
+  reviews: Review[];
+}
+
+// Cart API Types
+export interface CartItem {
+  created_at: string;
+  book_id: number;
+  quantity: number;
+  id: number;
+  user_id: number;
+}
+
+export interface CartViewItem {
+  item_id: number;
+  book_id: number;
+  book_name: string;
+  slug: string;
+  cover_image: string;
+  price: number;
+  discount_price: number | null;
+  offer_price: number | null;
+  effective_price: number;
+  quantity: number;
+  stock: number;
+  in_stock: boolean;
+  total: number;
+}
+
+export interface CartSummary {
+  subtotal: number;
+  shipping: number;
+  final_total: number;
+}
+
+export interface ViewCartResponse {
+  items: CartViewItem[];
+  summary: CartSummary;
 }
 
 // Fetch all books
@@ -137,6 +223,46 @@ export const deleteBookApi = async (id: number) => {
   });
 };
 
+// Cart APIs
+
+// Add an item to the cart
+export const addToCartApi = async (book_id: number, quantity: number) => {
+  return request<{ message: string; item: CartItem }>("/cart/add", {
+    method: "POST",
+    body: JSON.stringify({ book_id, quantity }),
+  });
+};
+
+// View the cart
+export const viewCartApi = async () => {
+  return request<ViewCartResponse>("/cart/");
+};
+
+// Update a cart item's quantity
+export const updateCartItemApi = async (item_id: number, quantity: number) => {
+  return request<{ message: string; item: CartItem }>(
+    `/cart/update/${item_id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ quantity }),
+    }
+  );
+};
+
+// Remove an item from the cart
+export const removeCartItemApi = async (item_id: number) => {
+  return request<{ message: string }>(`/cart/remove/${item_id}`, {
+    method: "DELETE",
+  });
+};
+
+// Clear the entire cart
+export const clearCartApi = async () => {
+  return request<{ message: string }>("/cart/clear", {
+    method: "DELETE",
+  });
+};
+
 // Delete a category
 export const deleteCategoryApi = async (id: number) => {
   return request<{ message: string }>(`/admin/categories/${id}`, {
@@ -154,6 +280,11 @@ export const fetchPublicBooksApi = async () => {
 // Fetch a single book by ID
 export const fetchBookByIdApi = async (id: number) => {
   return request<Book>(`/books/${id}`);
+};
+
+// Fetch a single book by slug
+export const fetchBookBySlugApi = async (slug: string) => {
+  return request<BookDetailResponse>(`/book/detail/${slug}`);
 };
 
 // Fetch books by category ID
@@ -199,12 +330,12 @@ export const filterBooksApi = async (params: FilterParams) => {
   const query = new URLSearchParams();
   if (params.category) query.append("category", params.category);
   if (params.author) query.append("author", params.author);
-  if (params.min_price !== undefined)
-    query.append("min_price", String(params.min_price));
-  if (params.max_price !== undefined)
-    query.append("max_price", String(params.max_price));
-  if (params.rating !== undefined)
-    query.append("rating", String(params.rating));
+  if (params.price_min !== undefined)
+    query.append("min_price", String(params.price_min));
+  if (params.price_max !== undefined)
+    query.append("max_price", String(params.price_max));
+  if (params.rating_min !== undefined)
+    query.append("rating", String(params.rating_min));
 
   return request<Book[]>(`/books/filter?${query.toString()}`);
 };
@@ -220,8 +351,66 @@ export const fetchFeaturedAuthorsBooksApi = async () => {
 };
 
 // Search books
+export const advancedSearchBooksApi = async (params: FilterParams) => {
+  const query = new URLSearchParams();
+
+  // A helper to append parameters if they exist
+  const append = (key: keyof FilterParams, value: any) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.append(key, String(value));
+    }
+  };
+
+  // Append all possible search parameters
+  for (const key in params) {
+    append(key as keyof FilterParams, params[key as keyof FilterParams]);
+  }
+
+  return request<{ results: Book[] }>(`/books/search?${query.toString()}`);
+};
+
+// This function seems to be for a simpler search.
+// We will replace its usage with the advanced search.
+// For now, we can have it call the new advanced search.
 export const searchBooksApi = async (query: string) => {
-  return request<Book[]>(
-    `/books/search/query?query=${encodeURIComponent(query)}`
+  return advancedSearchBooksApi({ q: query });
+};
+
+// Review APIs
+
+// List reviews for a book
+export const listReviewsForBookApi = async (slug: string) => {
+  return request<ListReviewsResponse>(`/reviews/books/${slug}/reviews`);
+};
+
+// Create a review for a book
+export const createReviewApi = async (
+  slug: string,
+  reviewData: CreateReviewData
+) => {
+  return request<{ message: string; review: Review }>(
+    `/reviews/books/${slug}/reviews`,
+    {
+      method: "POST",
+      body: JSON.stringify(reviewData),
+    }
   );
+};
+
+// Update a review
+export const updateReviewApi = async (
+  reviewId: number,
+  reviewData: UpdateReviewData
+) => {
+  return request<{ message: string; review: Review }>(
+    `/reviews/review/${reviewId}`,
+    { method: "PUT", body: JSON.stringify(reviewData) }
+  );
+};
+
+// Delete a review
+export const deleteReviewApi = async (reviewId: number) => {
+  return request<{ message: string }>(`/reviews/review/${reviewId}`, {
+    method: "DELETE",
+  });
 };

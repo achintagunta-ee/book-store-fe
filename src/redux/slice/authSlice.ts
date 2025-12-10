@@ -1,13 +1,15 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { loginApi, registerApi, type RegisterData } from "../utilis/authApi";
-
-// Define a basic user profile structure.
-interface UserProfile {
-  id: string;
-  email: string;
-  name: string;
-  // Add other user properties as needed
-}
+import {
+  loginApi,
+  registerApi,
+  logoutApi,
+  getCurrentUserApi,
+  updateUserProfileApi,
+  forgotPasswordApi,
+  resetPasswordApi,
+  type RegisterData,
+  type UserProfile,
+} from "../utilis/authApi";
 
 const PROFILE_KEY = "user_profile";
 
@@ -18,6 +20,14 @@ function saveTokens(access: string, refresh: string) {
   } catch {
     // no-op: storage might be unavailable
   }
+}
+
+function clearTokensAndProfile() {
+  try {
+    localStorage.removeItem(TOKEN_KEYS.access);
+    localStorage.removeItem(TOKEN_KEYS.refresh);
+    localStorage.removeItem(PROFILE_KEY);
+  } catch {}
 }
 
 function loadTokens(): { access: string | null; refresh: string | null } {
@@ -38,6 +48,12 @@ function loadUserProfile(): UserProfile | null {
   } catch {
     return null;
   }
+}
+
+function saveUserProfile(profile: UserProfile) {
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch {}
 }
 
 const TOKEN_KEYS = {
@@ -100,6 +116,93 @@ export const registerThunk = createAsyncThunk(
   }
 );
 
+export const getCurrentUserThunk = createAsyncThunk(
+  "auth/getCurrentUser",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await getCurrentUserApi();
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch user");
+      }
+      return rejectWithValue("Failed to fetch user");
+    }
+  }
+);
+
+export const updateUserProfileThunk = createAsyncThunk(
+  "auth/updateProfile",
+  async (profileData: FormData, { rejectWithValue }) => {
+    try {
+      const data = await updateUserProfileApi(profileData);
+      return data.user;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to update profile");
+      }
+      return rejectWithValue("Failed to update profile");
+    }
+  }
+);
+
+export const logoutThunk = createAsyncThunk(
+  "auth/logout",
+  async () => {
+    try {
+      // We can call the backend logout, but the main logic is clearing client-side data.
+      await logoutApi();
+    } catch (error: unknown) {
+      // Even if the API call fails, we should still log the user out on the client.
+      console.error(
+        "Logout API call failed, but logging out client-side.",
+        error
+      );
+    }
+  }
+);
+
+export const forgotPasswordThunk = createAsyncThunk(
+  "auth/forgotPassword",
+  async (email: string, { rejectWithValue }) => {
+    try {
+      const data = await forgotPasswordApi(email);
+      return data; // Return the full response { message, reset_code, expires_in }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to send reset link");
+      }
+      return rejectWithValue("Failed to send reset link");
+    }
+  }
+);
+
+export const resetPasswordThunk = createAsyncThunk(
+  "auth/resetPassword",
+  async (
+    {
+      email,
+      code,
+      new_password,
+    }: {
+      email: string;
+      code: string;
+      new_password: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const data = await resetPasswordApi(email, code, new_password);
+      return data.message;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to reset password");
+      }
+      return rejectWithValue("Failed to reset password");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -124,6 +227,14 @@ const authSlice = createSlice({
         state.profileStatus = "idle";
       }
     },
+    logout(state) {
+      clearTokensAndProfile();
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.userProfile = null;
+      state.status = "idle";
+      state.profileStatus = "idle";
+    },
     clearError(state) {
       state.error = null;
     },
@@ -142,6 +253,7 @@ const authSlice = createSlice({
         state.status = "succeeded";
         state.accessToken = action.payload.access_token;
         state.refreshToken = null; // API does not provide a refresh token
+        state.profileStatus = "idle"; // Set to idle to trigger profile fetch
         saveTokens(action.payload.access_token, ""); // Storing empty string for refresh token
       })
       .addCase(loginThunk.rejected, (state, action) => {
@@ -159,9 +271,49 @@ const authSlice = createSlice({
       .addCase(registerThunk.rejected, (state, action) => {
         state.status = "failed";
         state.error = (action.payload as string) || "Registration failed";
+      })
+      // Get Current User
+      .addCase(getCurrentUserThunk.pending, (state) => {
+        state.profileStatus = "loading";
+        state.profileError = null;
+      })
+      .addCase(getCurrentUserThunk.fulfilled, (state, action) => {
+        state.profileStatus = "succeeded";
+        state.userProfile = action.payload;
+        saveUserProfile(action.payload);
+      })
+      .addCase(getCurrentUserThunk.rejected, (state, action) => {
+        state.profileStatus = "failed";
+        state.profileError =
+          (action.payload as string) || "Failed to fetch profile";
+        // If fetching profile fails, we should log the user out as the token is likely invalid.
+        clearTokensAndProfile();
+        state.accessToken = null;
+        state.refreshToken = null;
+      })
+      // Update User Profile
+      .addCase(updateUserProfileThunk.fulfilled, (state, action) => {
+        state.userProfile = action.payload;
+        saveUserProfile(action.payload);
+      })
+      // We don't need to handle pending/fulfilled/rejected for forgot/reset password
+      // in the main slice state, as this is typically handled with local component
+      // state and toasts for user feedback. Adding them here could cause
+      // unintended side effects on the global 'status' and 'error' fields.
+      // .addCase(forgotPasswordThunk.fulfilled, (state, action) => { ... })
+      // .addCase(resetPasswordThunk.fulfilled, (state, action) => { ... })
+
+      // Logout
+      .addCase(logoutThunk.fulfilled, (state) => {
+        clearTokensAndProfile();
+        state.accessToken = null;
+        state.refreshToken = null;
+        state.userProfile = null;
+        state.status = "idle";
+        state.profileStatus = "idle";
       });
   },
 });
-export const { hydrateFromStorage, clearError, clearProfileError } =
+export const { hydrateFromStorage, clearError, clearProfileError, logout } =
   authSlice.actions;
 export default authSlice.reducer;

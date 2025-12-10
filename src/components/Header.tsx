@@ -1,21 +1,58 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 // Using lucide-react icons as in your provided code
-import { Heart, Search, ShoppingCart, User, Menu, X } from "lucide-react";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { type AppDispatch } from "../redux/store/store";
+import {
+  Heart,
+  Search,
+  ShoppingCart,
+  User,
+  Menu,
+  X,
+  LogOut,
+} from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate, Link } from "react-router-dom";
+import { type AppDispatch, type RootState } from "../redux/store/store";
 import { searchBooksAsync } from "../redux/slice/bookSlice";
+import {
+  getCurrentUserThunk,
+  logout,
+  logoutThunk,
+} from "../redux/slice/authSlice";
+import { fetchCartAsync } from "../redux/slice/cartSlice";
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
+  const profileMenuRef = useRef<HTMLDivElement>(null);
+
+  const { accessToken, userProfile, profileStatus } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const { items: cartItems } = useSelector((state: RootState) => state.cart);
+
+  const cartItemCount = useMemo(() => {
+    return cartItems.reduce((total, item) => total + item.quantity, 0);
+  }, [cartItems]);
+
+  useEffect(() => {
+    // If we have a token but no user profile, try to fetch it
+    if (accessToken && !userProfile && profileStatus === "idle") {
+      dispatch(getCurrentUserThunk());
+    }
+
+    // If we have a token, fetch the user's cart
+    if (accessToken) {
+      dispatch(fetchCartAsync());
+    }
+  }, [accessToken, userProfile, profileStatus, dispatch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      dispatch(searchBooksAsync(searchQuery.trim()));
+      dispatch(searchBooksAsync({ q: searchQuery.trim() }));
       // Navigate to the book list page to show results
       navigate("/books");
       // Close mobile menu if it's open after searching
@@ -24,6 +61,27 @@ const Header: React.FC = () => {
       }
     }
   };
+
+  const handleLogout = () => {
+    dispatch(logoutThunk()); // Dispatch the thunk to call the API
+    dispatch(logout()); // Also dispatch the local reducer for immediate UI update
+    setIsProfileMenuOpen(false);
+    navigate("/"); // Redirect to home page after logout
+  };
+
+  // Close profile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target as Node)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   return (
     <>
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/20 px-4 py-3 sm:px-6 lg:px-10">
@@ -46,24 +104,24 @@ const Header: React.FC = () => {
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-6 lg:gap-8">
-          <a
-            href="#"
+          <Link
+            to="/"
             className="text-base font-medium text-text-light/90 /90 hover:text-primary dark:hover:text-primary transition-colors"
           >
             Home
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            to="/categories"
             className="text-base font-medium text-text-light/90 /90 hover:text-primary dark:hover:text-primary transition-colors"
           >
             Categories
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            to="/about"
             className="text-base font-medium text-text-light/90 /90 hover:text-primary dark:hover:text-primary transition-colors"
           >
             About Us
-          </a>
+          </Link>
         </nav>
 
         {/* Desktop Search Bar and Icons */}
@@ -94,18 +152,71 @@ const Header: React.FC = () => {
                 strokeWidth={1.5}
               />
             </button>
-            <button className="group flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
-              <ShoppingCart
-                className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
-                strokeWidth={1.5}
-              />
-            </button>
-            <button className="group flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
-              <User
-                className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
-                strokeWidth={1.5}
-              />
-            </button>
+            <Link to="/cart" className="relative">
+              <button className="group flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40">
+                <ShoppingCart
+                  className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
+                  strokeWidth={1.5}
+                />
+              </button>
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  {cartItemCount}
+                </span>
+              )}
+            </Link>
+            {userProfile ? (
+              <div className="relative" ref={profileMenuRef}>
+                <button
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  className="group flex h-auto cursor-pointer items-center overflow-hidden rounded-lg bg-primary/20 px-3 py-1.5 text-sm font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40"
+                >
+                  <User className="mr-2.5 h-6 w-6" strokeWidth={1.5} />
+                  <div className="flex flex-col items-start text-left">
+                    <span className="truncate text-sm font-semibold leading-tight">{`${userProfile.first_name} ${userProfile.last_name}`}</span>
+                    <span className="text-xs font-normal capitalize text-text-light/80">
+                      {userProfile.role}
+                    </span>
+                  </div>
+                </button>
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-black/5 focus:outline-none z-50">
+                    <div className="p-1">
+                      <div className="px-3 py-2.5 border-b border-gray-200 mb-1">
+                        <p className="font-semibold text-gray-800 truncate">{`${userProfile.first_name} ${userProfile.last_name}`}</p>
+                        <p className="text-sm text-gray-500 truncate">
+                          @{userProfile.username}
+                        </p>
+                      </div>
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsProfileMenuOpen(false)}
+                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100"
+                        role="menuitem"
+                      >
+                        <User className="mr-3 h-5 w-5 text-gray-500" />
+                        My Profile
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-red-50 hover:text-red-600"
+                        role="menuitem"
+                      >
+                        <LogOut className="mr-3 h-5 w-5" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login">
+                <button className="group flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-4 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40">
+                  <User className="mr-2 h-5 w-5" strokeWidth={1.5} />
+                  <span>Login</span>
+                </button>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -176,42 +287,82 @@ const Header: React.FC = () => {
 
             {/* Mobile Navigation */}
             <nav className="flex flex-col gap-4">
-              <a
-                href="#"
+              <Link
+                to="/"
+                onClick={() => setIsMenuOpen(false)}
                 className="text-lg font-medium hover:text-primary transition-colors"
               >
                 Home
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="/categories"
+                onClick={() => setIsMenuOpen(false)}
                 className="text-lg font-medium hover:text-primary transition-colors"
               >
                 Categories
-              </a>
-              <a
-                href="#"
+              </Link>
+              <Link
+                to="/about"
+                onClick={() => setIsMenuOpen(false)}
                 className="text-lg font-medium hover:text-primary transition-colors"
               >
                 About Us
-              </a>
+              </Link>
             </nav>
 
             <hr className="border-primary/20" />
 
             {/* Mobile Icon Buttons */}
             <div className="flex flex-col gap-4">
-              <button className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
-                <Heart className="h-6 w-6" strokeWidth={1.5} />
-                <span>Wishlist</span>
-              </button>
-              <button className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
-                <ShoppingCart className="h-6 w-6" strokeWidth={1.5} />
-                <span>Cart</span>
-              </button>
-              <button className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
-                <User className="h-6 w-6" strokeWidth={1.5} />
-                <span>Profile</span>
-              </button>
+              <Link to="/wishlist" onClick={() => setIsMenuOpen(false)}>
+                <button className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
+                  <Heart className="h-6 w-6" strokeWidth={1.5} />
+                  <span>Wishlist</span>
+                </button>
+              </Link>
+              <Link
+                to="/cart"
+                onClick={() => setIsMenuOpen(false)}
+                className="relative"
+              >
+                <button className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
+                  <ShoppingCart className="h-6 w-6" strokeWidth={1.5} />
+                  <span>Cart</span>
+                </button>
+                {cartItemCount > 0 && (
+                  <span className="absolute top-1 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                    {cartItemCount}
+                  </span>
+                )}
+              </Link>
+              {userProfile ? (
+                <>
+                  <Link
+                    to="/profile"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40"
+                  >
+                    <User className="h-6 w-6" strokeWidth={1.5} />
+                    <span>Profile</span>
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-red-500/20 px-4 text-base font-bold text-red-500 transition-all duration-300 hover:bg-red-500/30"
+                  >
+                    <X className="h-6 w-6" strokeWidth={1.5} />
+                    <span>Logout</span>
+                  </button>
+                </>
+              ) : (
+                <Link
+                  to="/login"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40"
+                >
+                  <User className="h-6 w-6" strokeWidth={1.5} />
+                  <span>Login</span>
+                </Link>
+              )}
             </div>
           </div>
         </div>

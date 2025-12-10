@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
+import { useEffect } from "react";
+import { useDispatch } from "react-redux";
 import LoginPage from "./pages/Login";
 import BookPage from "./pages/Book";
 import BookDetailPage from "./pages/BookDetail";
@@ -16,8 +18,16 @@ import OrdersPage from "./admin/Order";
 import InventoryDashboard from "./admin/Inventory";
 import AdminSettings from "./admin/Setting";
 import CategoryManagement from "./admin/CategoryManagement";
+import { hydrateFromStorage } from "./redux/slice/authSlice";
+import { type AppDispatch } from "./redux/store/store";
 
 function App() {
+  const dispatch: AppDispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(hydrateFromStorage());
+  }, [dispatch]);
+
   return (
     <BrowserRouter>
       <Header />
@@ -25,7 +35,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/books" element={<BookPage />} />
-        <Route path="/book/detail/:id" element={<BookDetailPage />} />
+        <Route path="/book/detail/:slug" element={<BookDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />

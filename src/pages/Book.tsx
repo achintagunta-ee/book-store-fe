@@ -21,6 +21,7 @@ import { type Book as ApiBook, type Category } from "../redux/utilis/bookApi";
 // --- Types ---
 type Book = {
   id: number;
+  slug: string;
   title: string;
   author: string;
   price: number;
@@ -53,7 +54,7 @@ const BookCard: React.FC<{ book: Book }> = ({ book }) => (
     <div className="mt-4 flex justify-between">
       <div>
         <h3 className="text-md font-medium text-gray-900">
-          <Link to={`/book/${book.id}`}>
+          <Link to={`/book/detail/${book.slug}`}>
             <span aria-hidden="true" className="absolute inset-0" />
             {book.title}
           </Link>
@@ -269,6 +270,7 @@ const BookPage: React.FC = () => {
 
     return publicBooks.map((book: ApiBook) => ({
       id: book.id,
+      slug: book.slug,
       title: book.title,
       author: book.author,
       price: book.price,
