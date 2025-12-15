@@ -56,10 +56,19 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
           data-alt={`Book cover of ${item.book_name}`}
           style={{ backgroundImage: `url("${imageUrl}")` }}
         ></div>
+        <Link to={`/book/detail/${item.slug}`}>
+          <div
+            className="bg-center bg-no-repeat aspect-[2/3] bg-cover rounded-lg h-28 w-20"
+            data-alt={`Book cover of ${item.book_name}`}
+            style={{ backgroundImage: `url("${imageUrl}")` }}
+          ></div>
+        </Link>
         <div className="flex flex-col justify-center">
-          <p className="text-lg font-medium leading-normal line-clamp-1">
-            {item.book_name}
-          </p>
+          <Link to={`/book/detail/${item.slug}`}>
+            <p className="text-lg font-medium leading-normal line-clamp-1 hover:text-primary transition-colors">
+              {item.book_name}
+            </p>
+          </Link>
           <p className="text-sm font-normal leading-normal line-clamp-2 text-text-light/70 dark:text-text-dark/70">
             {/* Author is not in the cart response, can be added if needed */}
           </p>
@@ -140,9 +149,11 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ summary }) => {
           </p>
         </div>
       </div>
-      <button className="w-full mt-6 bg-primary text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-primary/90 transition-colors duration-300">
-        Checkout
-      </button>
+      <Link to="/checkout">
+        <button className="w-full mt-6 bg-primary text-white font-bold py-3 px-4 rounded-lg shadow-md hover:bg-primary/90 transition-colors duration-300">
+          Checkout
+        </button>
+      </Link>
     </div>
   );
 };
@@ -183,7 +194,7 @@ const CartPage: React.FC = () => {
         {cartItems.length > 0 && (
           <button
             onClick={() => dispatch(clearCartAsync())}
-            className="text-sm text-red-500 hover:text-red-700 font-medium"
+            className="flex h-10 cursor-pointer items-center justify-center rounded-lg bg-red-50 px-4 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
           >
             Clear Cart
           </button>
@@ -218,7 +229,7 @@ const CartPage: React.FC = () => {
                 to="/books"
                 className="text-primary font-medium text-sm flex items-center gap-2"
               >
-                <span className="material-symbols-outlined">arrow_back</span>
+                <span className="material-symbols-outlined"></span>
                 Continue Shopping
               </Link>
             </div>

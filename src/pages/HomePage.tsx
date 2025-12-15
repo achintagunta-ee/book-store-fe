@@ -6,39 +6,57 @@ import {
 } from "../redux/slice/bookSlice";
 import { type RootState, type AppDispatch } from "../redux/store/store";
 import { type Book as ApiBook } from "../redux/utilis/bookApi";
+import { Link } from "react-router-dom";
+import { addToCartAsync } from "../redux/slice/cartSlice";
+import { Toaster, toast } from "react-hot-toast";
 
 interface Book {
+  id: number;
   title: string;
   author: string;
   imageUrl: string;
+  slug: string;
 }
 
-const BookCard: React.FC<{ book: Book }> = ({ book }) => (
-  <div className="flex h-full min-w-60 flex-1 flex-col gap-4 rounded-lg bg-background-light shadow-[0_4px_12px_rgba(0,0,0,0.05)] ">
-    <div
-      className="aspect-[3/4] w-full rounded-lg bg-cover bg-center bg-no-repeat"
-      style={{
-        backgroundImage: `url("${
-          book.imageUrl ||
-          "https://via.placeholder.com/400x600.png?text=No+Image"
-        }")`,
-      }}
-    ></div>
-    <div className="flex flex-1 flex-col justify-between gap-4 p-4 pt-0">
-      <div>
-        <p className="font-display text-lg font-medium   text-secondary-link">
-          {book.title}
-        </p>
-        <p className="font-body text-sm font-normal leading-normal text-text-light/70 dark:text-text-main-dark/70">
-          By {book.author}
-        </p>
+const BookCard: React.FC<{ book: Book }> = ({ book }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  return (
+    <div className="flex h-full min-w-60 flex-1 flex-col gap-4 rounded-lg bg-background-light shadow-[0_4px_12px_rgba(0,0,0,0.05)] ">
+      <Link to={`/book/detail/${book.slug}`}>
+        <div
+          className="aspect-[3/4] w-full rounded-lg bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: `url("${
+              book.imageUrl ||
+              "https://via.placeholder.com/400x600.png?text=No+Image"
+            }")`,
+          }}
+        ></div>
+      </Link>
+      <div className="flex flex-1 flex-col justify-between gap-4 p-4 pt-0">
+        <div>
+          <Link to={`/book/detail/${book.slug}`}>
+            <p className="font-display text-lg font-medium   text-secondary-link">
+              {book.title}
+            </p>
+          </Link>
+          <p className="font-body text-sm font-normal leading-normal text-text-light/70 dark:text-text-main-dark/70">
+            By {book.author}
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            dispatch(addToCartAsync({ bookId: book.id, quantity: 1 }));
+            toast.success("Added to cart");
+          }}
+          className="flex h-10 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-4 font-body text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-colors hover:bg-primary/30 "
+        >
+          <span className="truncate">Add to Cart</span>
+        </button>
       </div>
-      <button className="flex h-10 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-4 font-body text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-colors hover:bg-primary/30 ">
-        <span className="truncate">Add to Cart</span>
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 const BookSection: React.FC<{ title: string; books: Book[] }> = ({
   title,
@@ -81,21 +99,25 @@ const HomePage: React.FC = () => {
       {
         title: "Featured Books",
         books: (featuredBooks || []).map((book: ApiBook) => ({
+          id: book.id,
           title: book.title,
           author: book.author,
           imageUrl: book.cover_image
             ? `${import.meta.env.VITE_API_BASE_URL}/${book.cover_image}`
             : "",
+          slug: book.slug,
         })),
       },
       {
         title: "Featured Authors",
         books: (featuredAuthorsBooks || []).map((book: ApiBook) => ({
+          id: book.id,
           title: book.title,
           author: book.author,
           imageUrl: book.cover_image
             ? `${import.meta.env.VITE_API_BASE_URL}/${book.cover_image}`
             : "",
+          slug: book.slug,
         })),
       },
     ],
@@ -110,7 +132,8 @@ const HomePage: React.FC = () => {
             <main className="mt-5 flex flex-col gap-10">
               <div className="@container">
                 <div className="@[480px]:p-4">
-                  <div
+                  <Link
+                    to="/books"
                     className="@[480px]:gap-8 @[480px]:rounded-xl flex min-h-[480px] flex-col items-center justify-center gap-6 bg-cover bg-center bg-no-repeat p-4"
                     style={{
                       backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuA8BqqkIZl_dq3xAsgE4Sh42f0Hqyxg0fEacrUYmJN5rKAUCLj_uuRqITMuuuzATnIArBn9FLh-IvLOqlL7TPN8H4VESZ7vXyI7b3gIv1WQIWyCzm9xvtyFwgkDp1mW_8Zh47mlf34UwEA1KNt5Enub7_j4FHviX_cyElKgwPnWVlWaG5k0wZ9LxeCBTHke0giBnHifhZYmWWA9WacY0fDzg8fZPhYfK_6akxJhzpHzSlBuZBeMdkSgFxmTgFPH2340MqqBeG9fQcY")`,
@@ -128,7 +151,7 @@ const HomePage: React.FC = () => {
                     <button className="@[480px]:h-14 @[480px]:px-8 @[480px]:text-lg @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] flex h-12 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-6 font-body text-base font-bold leading-normal tracking-[0.015em] text-white transition-colors hover:bg-primary/90">
                       <span className="truncate">Shop Now</span>
                     </button>
-                  </div>
+                  </Link>
                 </div>
               </div>
               {bookSections.map((section) => (
@@ -192,6 +215,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </div>
+      <Toaster position="top-right" />
     </div>
   );
 };

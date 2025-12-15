@@ -9,6 +9,12 @@ import {
   fetchBookBySlugAsync,
 } from "../redux/slice/bookSlice";
 import { addToCartAsync } from "../redux/slice/cartSlice";
+import {
+  getWishlistThunk,
+  addToWishlistThunk,
+  removeFromWishlistThunk,
+  checkWishlistStatusThunk,
+} from "../redux/slice/authSlice";
 
 import {
   type Book,
@@ -21,6 +27,7 @@ import {
   MdStarHalf,
   MdStarBorder,
   MdFavoriteBorder,
+  MdFavorite,
 } from "react-icons/md";
 import { Toaster, toast } from "react-hot-toast";
 
@@ -166,6 +173,7 @@ const BookDetailPage: React.FC = () => {
   const [isReviewFormVisible, setIsReviewFormVisible] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const { userProfile } = useSelector((state: RootState) => state.auth);
+  const [isInWishlist, setIsInWishlist] = useState(false);
   const currentUserName = userProfile
     ? `${userProfile.first_name} ${userProfile.last_name}`.trim()
     : null;
@@ -195,6 +203,39 @@ const BookDetailPage: React.FC = () => {
       dispatch(fetchBookBySlugAsync(slug));
     }
   }, [slug, dispatch]);
+
+  useEffect(() => {
+    if (userProfile) {
+      dispatch(getWishlistThunk());
+    }
+  }, [dispatch, userProfile]);
+
+  useEffect(() => {
+    if (userProfile && bookData) {
+      dispatch(checkWishlistStatusThunk(bookData.id))
+        .unwrap()
+        .then((res) => setIsInWishlist(res.in_wishlist))
+        .catch(() => setIsInWishlist(false));
+    }
+  }, [dispatch, userProfile, bookData]);
+
+  const handleWishlistToggle = async () => {
+    if (!userProfile) {
+      toast.error("Please login to manage wishlist");
+      return;
+    }
+    if (!bookData) return;
+
+    if (isInWishlist) {
+      await dispatch(removeFromWishlistThunk(bookData.id));
+      setIsInWishlist(false);
+      toast.success("Removed from wishlist");
+    } else {
+      await dispatch(addToWishlistThunk(bookData.id));
+      setIsInWishlist(true);
+      toast.success("Added to wishlist");
+    }
+  };
 
   const handleDeleteReview = (reviewId: number) => {
     dispatch(deleteReviewAsync(reviewId));
@@ -300,8 +341,15 @@ const BookDetailPage: React.FC = () => {
                 <button className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg">
                   <span className="truncate">Buy Now</span>
                 </button>
-                <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-4 py-3 text-base font-bold leading-normal tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg">
-                  <MdFavoriteBorder className="h-6 w-6" />
+                <button
+                  onClick={handleWishlistToggle}
+                  className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-4 py-3 text-base font-bold leading-normal tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg"
+                >
+                  {isInWishlist ? (
+                    <MdFavorite className="h-6 w-6 text-red-500" />
+                  ) : (
+                    <MdFavoriteBorder className="h-6 w-6" />
+                  )}
                 </button>
               </div>
               <div className="mt-8 border-t border-primary/20 pt-4 text-sm text-text-main/70 dark:text-text-light/70">

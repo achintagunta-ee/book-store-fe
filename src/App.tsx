@@ -20,6 +20,8 @@ import AdminSettings from "./admin/Setting";
 import CategoryManagement from "./admin/CategoryManagement";
 import { hydrateFromStorage } from "./redux/slice/authSlice";
 import { type AppDispatch } from "./redux/store/store";
+import TrackOrderPage from "./pages/TrackOrder";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 function App() {
   const dispatch: AppDispatch = useDispatch();
@@ -34,10 +36,12 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/track-order" element={<TrackOrderPage />} />
         <Route path="/books" element={<BookPage />} />
         <Route path="/book/detail/:slug" element={<BookDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/profile" element={<UserProfilePage />} />
         <Route path="/admin/dashboard" element={<DashboardPage />} />

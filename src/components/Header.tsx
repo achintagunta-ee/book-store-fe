@@ -17,6 +17,7 @@ import {
   getCurrentUserThunk,
   logout,
   logoutThunk,
+  getWishlistCountThunk,
 } from "../redux/slice/authSlice";
 import { fetchCartAsync } from "../redux/slice/cartSlice";
 
@@ -28,9 +29,8 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  const { accessToken, userProfile, profileStatus } = useSelector(
-    (state: RootState) => state.auth
-  );
+  const { accessToken, userProfile, profileStatus, wishlistCount } =
+    useSelector((state: RootState) => state.auth);
   const { items: cartItems } = useSelector((state: RootState) => state.cart);
 
   const cartItemCount = useMemo(() => {
@@ -46,6 +46,7 @@ const Header: React.FC = () => {
     // If we have a token, fetch the user's cart
     if (accessToken) {
       dispatch(fetchCartAsync());
+      dispatch(getWishlistCountThunk());
     }
   }, [accessToken, userProfile, profileStatus, dispatch]);
 
@@ -111,10 +112,10 @@ const Header: React.FC = () => {
             Home
           </Link>
           <Link
-            to="/categories"
+            to="/track-order"
             className="text-base font-medium text-text-light/90 /90 hover:text-primary dark:hover:text-primary transition-colors"
           >
-            Categories
+            Track order
           </Link>
           <Link
             to="/about"
@@ -146,12 +147,19 @@ const Header: React.FC = () => {
             </div>
           </form>
           <div className="flex gap-2">
-            <button className="group flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
-              <Heart
-                className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
-                strokeWidth={1.5}
-              />
-            </button>
+            <Link to="/wishlist" className="relative">
+              <button className="group flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
+                <Heart
+                  className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
+                  strokeWidth={1.5}
+                />
+              </button>
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
             <Link to="/cart" className="relative">
               <button className="group flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40">
                 <ShoppingCart
@@ -295,11 +303,11 @@ const Header: React.FC = () => {
                 Home
               </Link>
               <Link
-                to="/categories"
+                to="/track-order"
                 onClick={() => setIsMenuOpen(false)}
                 className="text-lg font-medium hover:text-primary transition-colors"
               >
-                Categories
+                Track Order
               </Link>
               <Link
                 to="/about"
@@ -314,11 +322,20 @@ const Header: React.FC = () => {
 
             {/* Mobile Icon Buttons */}
             <div className="flex flex-col gap-4">
-              <Link to="/wishlist" onClick={() => setIsMenuOpen(false)}>
+              <Link
+                to="/wishlist"
+                onClick={() => setIsMenuOpen(false)}
+                className="relative"
+              >
                 <button className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
                   <Heart className="h-6 w-6" strokeWidth={1.5} />
                   <span>Wishlist</span>
                 </button>
+                {wishlistCount > 0 && (
+                  <span className="absolute top-1 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                    {wishlistCount}
+                  </span>
+                )}
               </Link>
               <Link
                 to="/cart"

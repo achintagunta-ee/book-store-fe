@@ -9,6 +9,32 @@ import {
   resetPasswordApi,
   type RegisterData,
   type UserProfile,
+  type AddressData,
+  saveAddressApi,
+  getAddressSummaryApi,
+  listAddressesApi,
+  confirmOrderApi,
+  placeOrderApi,
+  getOrderConfirmationApi,
+  completePaymentApi,
+  trackOrderApi,
+  getAddressesApi,
+  addAddressApi,
+  updateAddressApi,
+  deleteAddressApi,
+  type AddressItem,
+  getWishlistApi,
+  addToWishlistApi,
+  removeFromWishlistApi,
+  checkWishlistStatusApi,
+  getWishlistCountApi,
+  type WishlistItem,
+  getOrderHistoryApi,
+  getOrderDetailsApi,
+  type OrderHistoryItem,
+  type OrderDetailResponse,
+  type AddressSummaryResponse,
+  type ConfirmOrderResponse,
 } from "../utilis/authApi";
 
 const PROFILE_KEY = "user_profile";
@@ -69,6 +95,26 @@ interface AuthState {
   error: string | null;
   profileStatus: "idle" | "loading" | "succeeded" | "failed";
   profileError: string | null;
+  addresses: AddressItem[];
+  addressStatus: "idle" | "loading" | "succeeded" | "failed";
+  addressError: string | null;
+  wishlist: WishlistItem[];
+  wishlistStatus: "idle" | "loading" | "succeeded" | "failed";
+  wishlistError: string | null;
+  wishlistCount: number;
+  orderHistory: OrderHistoryItem[];
+  orderHistoryStatus: "idle" | "loading" | "succeeded" | "failed";
+  orderHistoryError: string | null;
+  currentOrder: OrderDetailResponse | null;
+  currentOrderStatus: "idle" | "loading" | "succeeded" | "failed";
+  currentOrderError: string | null;
+  checkoutOrder: OrderDetailResponse | null;
+  checkoutOrderStatus: "idle" | "loading" | "succeeded" | "failed";
+  checkoutOrderError: string | null;
+  addressSummary: AddressSummaryResponse | null;
+  addressSummaryStatus: "idle" | "loading" | "succeeded" | "failed";
+  confirmOrderData: ConfirmOrderResponse | null;
+  confirmOrderStatus: "idle" | "loading" | "succeeded" | "failed";
 }
 
 const initialState: AuthState = {
@@ -79,6 +125,26 @@ const initialState: AuthState = {
   error: null,
   profileStatus: "idle",
   profileError: null,
+  addresses: [],
+  addressStatus: "idle",
+  addressError: null,
+  wishlist: [],
+  wishlistStatus: "idle",
+  wishlistError: null,
+  wishlistCount: 0,
+  orderHistory: [],
+  orderHistoryStatus: "idle",
+  orderHistoryError: null,
+  currentOrder: null,
+  currentOrderStatus: "idle",
+  currentOrderError: null,
+  checkoutOrder: null,
+  checkoutOrderStatus: "idle",
+  checkoutOrderError: null,
+  addressSummary: null,
+  addressSummaryStatus: "idle",
+  confirmOrderData: null,
+  confirmOrderStatus: "idle",
 };
 
 export const loginThunk = createAsyncThunk(
@@ -146,21 +212,18 @@ export const updateUserProfileThunk = createAsyncThunk(
   }
 );
 
-export const logoutThunk = createAsyncThunk(
-  "auth/logout",
-  async () => {
-    try {
-      // We can call the backend logout, but the main logic is clearing client-side data.
-      await logoutApi();
-    } catch (error: unknown) {
-      // Even if the API call fails, we should still log the user out on the client.
-      console.error(
-        "Logout API call failed, but logging out client-side.",
-        error
-      );
-    }
+export const logoutThunk = createAsyncThunk("auth/logout", async () => {
+  try {
+    // We can call the backend logout, but the main logic is clearing client-side data.
+    await logoutApi();
+  } catch (error: unknown) {
+    // Even if the API call fails, we should still log the user out on the client.
+    console.error(
+      "Logout API call failed, but logging out client-side.",
+      error
+    );
   }
-);
+});
 
 export const forgotPasswordThunk = createAsyncThunk(
   "auth/forgotPassword",
@@ -202,6 +265,303 @@ export const resetPasswordThunk = createAsyncThunk(
     }
   }
 );
+
+export const saveAddressThunk = createAsyncThunk(
+  "checkout/saveAddress",
+  async (addressData: AddressData, { rejectWithValue }) => {
+    try {
+      const data = await saveAddressApi(addressData);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to save address");
+      }
+      return rejectWithValue("Failed to save address");
+    }
+  }
+);
+
+export const getAddressSummaryThunk = createAsyncThunk(
+  "checkout/getAddressSummary",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await getAddressSummaryApi();
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to get address summary"
+        );
+      }
+      return rejectWithValue("Failed to get address summary");
+    }
+  }
+);
+
+export const listAddressesThunk = createAsyncThunk(
+  "checkout/listAddresses",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await listAddressesApi();
+      return data;
+    } catch (error: unknown) {
+      return rejectWithValue("Failed to list addresses");
+    }
+  }
+);
+
+export const confirmOrderThunk = createAsyncThunk(
+  "checkout/confirmOrder",
+  async (addressId: number, { rejectWithValue }) => {
+    try {
+      const data = await confirmOrderApi(addressId);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to confirm order");
+      }
+      return rejectWithValue("Failed to confirm order");
+    }
+  }
+);
+
+export const placeOrderThunk = createAsyncThunk(
+  "checkout/placeOrder",
+  async (addressId: number, { rejectWithValue }) => {
+    try {
+      const data = await placeOrderApi(addressId);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to place order");
+      }
+      return rejectWithValue("Failed to place order");
+    }
+  }
+);
+
+export const completePaymentThunk = createAsyncThunk(
+  "checkout/completePayment",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      const data = await completePaymentApi(orderId);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to complete payment");
+      }
+      return rejectWithValue("Failed to complete payment");
+    }
+  }
+);
+
+export const getOrderConfirmationThunk = createAsyncThunk(
+  "checkout/getOrderConfirmation",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      const data = await getOrderConfirmationApi(orderId);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to get order confirmation"
+        );
+      }
+      return rejectWithValue("Failed to get order confirmation");
+    }
+  }
+);
+
+export const trackOrderThunk = createAsyncThunk(
+  "checkout/trackOrder",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await trackOrderApi(orderId);
+    } catch (error: unknown) {
+      return rejectWithValue("Failed to track order");
+    }
+  }
+);
+
+export const getAddressesThunk = createAsyncThunk(
+  "auth/getAddresses",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getAddressesApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch addresses");
+      }
+      return rejectWithValue("Failed to fetch addresses");
+    }
+  }
+);
+
+export const addAddressThunk = createAsyncThunk(
+  "auth/addAddress",
+  async (data: AddressData, { rejectWithValue }) => {
+    try {
+      const res = await addAddressApi(data);
+      const id = res.address_id || res.id;
+      if (!id) {
+        throw new Error("Failed to retrieve address ID");
+      }
+      // Construct the address object to add to state immediately
+      return {
+        id,
+        ...data,
+        full_name: `${data.first_name} ${data.last_name}`,
+      } as AddressItem;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to add address");
+      }
+      return rejectWithValue("Failed to add address");
+    }
+  }
+);
+
+export const updateAddressThunk = createAsyncThunk(
+  "auth/updateAddress",
+  async (
+    { id, data }: { id: number; data: AddressData },
+    { rejectWithValue }
+  ) => {
+    try {
+      const res = await updateAddressApi(id, data);
+      return res.address;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to update address");
+      }
+      return rejectWithValue("Failed to update address");
+    }
+  }
+);
+
+export const deleteAddressThunk = createAsyncThunk(
+  "auth/deleteAddress",
+  async (id: number, { rejectWithValue }) => {
+    try {
+      await deleteAddressApi(id);
+      return id;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to delete address");
+      }
+      return rejectWithValue("Failed to delete address");
+    }
+  }
+);
+
+export const getWishlistThunk = createAsyncThunk(
+  "wishlist/get",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getWishlistApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch wishlist");
+      }
+      return rejectWithValue("Failed to fetch wishlist");
+    }
+  }
+);
+
+export const addToWishlistThunk = createAsyncThunk(
+  "wishlist/add",
+  async (bookId: number, { rejectWithValue }) => {
+    try {
+      const res = await addToWishlistApi(bookId);
+      return res;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to add to wishlist");
+      }
+      return rejectWithValue("Failed to add to wishlist");
+    }
+  }
+);
+
+export const removeFromWishlistThunk = createAsyncThunk(
+  "wishlist/remove",
+  async (bookId: number, { rejectWithValue }) => {
+    try {
+      await removeFromWishlistApi(bookId);
+      return bookId;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to remove from wishlist"
+        );
+      }
+      return rejectWithValue("Failed to remove from wishlist");
+    }
+  }
+);
+
+export const checkWishlistStatusThunk = createAsyncThunk(
+  "wishlist/status",
+  async (bookId: number, { rejectWithValue }) => {
+    try {
+      return await checkWishlistStatusApi(bookId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to check wishlist status"
+        );
+      }
+      return rejectWithValue("Failed to check wishlist status");
+    }
+  }
+);
+
+export const getWishlistCountThunk = createAsyncThunk(
+  "wishlist/count",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getWishlistCountApi();
+    } catch (error: unknown) {
+      return rejectWithValue("Failed to get wishlist count");
+    }
+  }
+);
+
+export const getOrderHistoryThunk = createAsyncThunk(
+  "auth/getOrderHistory",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getOrderHistoryApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch order history"
+        );
+      }
+      return rejectWithValue("Failed to fetch order history");
+    }
+  }
+);
+
+export const getOrderDetailsThunk = createAsyncThunk(
+  "auth/getOrderDetails",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await getOrderDetailsApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch order details"
+        );
+      }
+      return rejectWithValue("Failed to fetch order details");
+    }
+  }
+);
+
+// checkWishlistStatusThunk is typically used in components locally,
+// but can be added here if needed for global state tracking.
+// For now, we focus on the list management.
 
 const authSlice = createSlice({
   name: "auth",
@@ -311,6 +671,100 @@ const authSlice = createSlice({
         state.userProfile = null;
         state.status = "idle";
         state.profileStatus = "idle";
+      })
+      // Address CRUD
+      .addCase(getAddressesThunk.pending, (state) => {
+        state.addressStatus = "loading";
+      })
+      .addCase(getAddressesThunk.fulfilled, (state, action) => {
+        state.addressStatus = "succeeded";
+        state.addresses = action.payload;
+      })
+      .addCase(getAddressesThunk.rejected, (state, action) => {
+        state.addressStatus = "failed";
+        state.addressError = action.payload as string;
+      })
+      .addCase(addAddressThunk.fulfilled, (state, action) => {
+        state.addresses.push(action.payload);
+      })
+      .addCase(updateAddressThunk.fulfilled, (state, action) => {
+        const index = state.addresses.findIndex(
+          (a) => a.id === action.payload.id
+        );
+        if (index !== -1) {
+          state.addresses[index] = action.payload;
+        }
+      })
+      .addCase(deleteAddressThunk.fulfilled, (state, action) => {
+        state.addresses = state.addresses.filter(
+          (a) => a.id !== action.payload
+        );
+      })
+      // Wishlist
+      .addCase(getWishlistThunk.pending, (state) => {
+        state.wishlistStatus = "loading";
+      })
+      .addCase(getWishlistThunk.fulfilled, (state, action) => {
+        state.wishlistStatus = "succeeded";
+        state.wishlist = action.payload;
+        state.wishlistCount = action.payload.length;
+      })
+      .addCase(getWishlistThunk.rejected, (state, action) => {
+        state.wishlistStatus = "failed";
+        state.wishlistError = action.payload as string;
+      })
+      .addCase(removeFromWishlistThunk.fulfilled, (state, action) => {
+        state.wishlist = state.wishlist.filter(
+          (item) => item.book_id !== action.payload
+        );
+        state.wishlistCount = Math.max(0, state.wishlistCount - 1);
+      })
+      .addCase(getWishlistCountThunk.fulfilled, (state, action) => {
+        state.wishlistCount = action.payload.count;
+      })
+      // Order History
+      .addCase(getOrderHistoryThunk.pending, (state) => {
+        state.orderHistoryStatus = "loading";
+      })
+      .addCase(getOrderHistoryThunk.fulfilled, (state, action) => {
+        state.orderHistoryStatus = "succeeded";
+        state.orderHistory = action.payload;
+      })
+      .addCase(getOrderHistoryThunk.rejected, (state, action) => {
+        state.orderHistoryStatus = "failed";
+        state.orderHistoryError = action.payload as string;
+      })
+      // Order Details
+      .addCase(getOrderDetailsThunk.pending, (state) => {
+        state.currentOrderStatus = "loading";
+      })
+      .addCase(getOrderDetailsThunk.fulfilled, (state, action) => {
+        state.currentOrderStatus = "succeeded";
+        state.currentOrder = action.payload;
+      })
+      .addCase(getOrderDetailsThunk.rejected, (state, action) => {
+        state.currentOrderStatus = "failed";
+        state.currentOrderError = action.payload as string;
+      })
+
+      // Address Summary
+      .addCase(getAddressSummaryThunk.pending, (state) => {
+        state.addressSummaryStatus = "loading";
+      })
+      .addCase(getAddressSummaryThunk.fulfilled, (state, action) => {
+        state.addressSummaryStatus = "succeeded";
+        state.addressSummary = action.payload;
+      })
+      .addCase(getAddressSummaryThunk.rejected, (state) => {
+        state.addressSummaryStatus = "failed";
+      })
+      // Confirm Order
+      .addCase(confirmOrderThunk.pending, (state) => {
+        state.confirmOrderStatus = "loading";
+      })
+      .addCase(confirmOrderThunk.fulfilled, (state, action) => {
+        state.confirmOrderStatus = "succeeded";
+        state.confirmOrderData = action.payload;
       });
   },
 });

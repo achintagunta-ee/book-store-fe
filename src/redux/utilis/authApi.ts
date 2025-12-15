@@ -147,3 +147,274 @@ export async function resetPasswordApi(
     }),
   });
 }
+
+// --- Checkout APIs ---
+
+// 21. Save Address
+export interface AddressData {
+  first_name: string;
+  last_name: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+}
+
+export async function saveAddressApi(data: AddressData) {
+  return request<{ message: string; address_id: number }>("/checkout/address", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// 22. Order Summary
+export interface OrderSummaryItem {
+  book_title: string;
+  price: number;
+  quantity: number;
+  total: number;
+}
+
+export interface AddressSummaryResponse {
+  has_address: boolean;
+  addresses: AddressItem[];
+  summary: {
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+    items: OrderSummaryItem[];
+  };
+}
+
+export async function getAddressSummaryApi() {
+  return request<AddressSummaryResponse>("/checkout/address-summary", {
+    method: "POST",
+  });
+}
+
+export async function listAddressesApi() {
+  return request<AddressItem[]>("/checkout/list-addresses");
+}
+
+// 23. Place Order
+export interface PlaceOrderResponse {
+  order_id: string;
+  status: string;
+  estimated_delivery: string;
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  address: any;
+}
+
+export interface PlacedOrderItem {
+  book_title: string;
+  price: number;
+  quantity: number;
+  line_total: number;
+}
+
+export async function placeOrderApi(addressId: number) {
+  return request<PlaceOrderResponse>(
+    `/checkout/order/place-order?address_id=${addressId}`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+export interface ConfirmOrderResponse {
+  address: AddressItem;
+  summary: {
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+  };
+  items: {
+    book_title: string;
+    price: number;
+    quantity: number;
+    line_total: number;
+  }[];
+}
+
+export async function confirmOrderApi(addressId: number) {
+  return request<ConfirmOrderResponse>(
+    `/checkout/confirm-order?address_id=${addressId}`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+// (c) Payment Complete
+export interface CompletePaymentResponse {
+  message: string;
+  order_id: number;
+  estimated_delivery: string;
+  items: any[];
+  invoice_url: string;
+  continue_shopping_url: string;
+  track_order_url: string;
+}
+
+export async function completePaymentApi(orderId: number) {
+  return request<CompletePaymentResponse>(
+    `/checkout/orders/${orderId}/payment-complete`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+// 25. Order Confirmation Page
+export interface OrderConfirmationResponse {
+  order_id: string; // e.g., "#12"
+  status: string;
+  estimated_delivery: string;
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  total: number;
+  items: any[]; // Define item structure if known
+}
+
+export async function getOrderConfirmationApi(orderId: number) {
+  return request<OrderConfirmationResponse>(
+    `/checkout/order/confirm/${orderId}`
+  );
+}
+
+// (f) Get Order at thankyou page
+
+// 26. Track Order
+export interface TrackOrderResponse {
+  order_id: string;
+  status: string;
+  created_at: string;
+}
+
+export async function trackOrderApi(orderId: number) {
+  return request<TrackOrderResponse>(`/checkout/orders/${orderId}/track`);
+}
+
+// 27. Download Invoice
+export function getInvoiceDownloadUrl(orderId: number): string {
+  return `${BASE_URL}/checkout/orders/${orderId}/invoice`;
+}
+
+// --- 28. Address CRUD (Profile) ---
+
+export interface AddressItem {
+  id: number;
+  full_name?: string;
+  first_name?: string;
+  last_name?: string;
+  address: string;
+  city: string;
+  state: string;
+  zip_code: string;
+}
+
+export async function getAddressesApi() {
+  return request<AddressItem[]>("/users/profile/addresses");
+}
+
+export async function addAddressApi(data: AddressData) {
+  return request<{ message: string; address_id?: number; id?: number }>(
+    "/users/profile/address",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function updateAddressApi(id: number, data: AddressData) {
+  return request<{ message: string; address: AddressItem }>(
+    `/users/profile/address/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function deleteAddressApi(id: number) {
+  return request<{ message: string }>(`/users/profile/address/${id}`, {
+    method: "DELETE",
+  });
+}
+
+// --- Wishlist APIs ---
+
+export interface WishlistItem {
+  wishlist_id: number;
+  book_id: number;
+  title: string;
+  author: string;
+  price: number;
+  cover_image: string | null;
+  slug: string;
+}
+
+export async function getWishlistApi() {
+  return request<WishlistItem[]>("/wishlist/");
+}
+
+export async function addToWishlistApi(bookId: number) {
+  return request<{ message: string }>(`/wishlist/add/${bookId}`, {
+    method: "POST",
+  });
+}
+
+export async function removeFromWishlistApi(bookId: number) {
+  return request<{ message: string }>(`/wishlist/remove/${bookId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function checkWishlistStatusApi(bookId: number) {
+  return request<{ in_wishlist: boolean }>(`/wishlist/status/${bookId}`);
+}
+
+export async function getWishlistCountApi() {
+  return request<{ count: number }>("/wishlist/count");
+}
+
+// --- Order History & Details ---
+
+export interface OrderHistoryItem {
+  order_id: string;
+  raw_id: number;
+  date: string;
+  total: number;
+  status: string;
+  details_url: string;
+}
+
+export async function getOrderHistoryApi() {
+  return request<OrderHistoryItem[]>("/users/profile/orders/history");
+}
+
+export interface OrderDetailResponse {
+  order: {
+    address_id: number;
+    subtotal: number;
+    shipping: number;
+    total: number;
+    created_at: string;
+    user_id: number;
+    id: number;
+    tax: number;
+    status: string;
+  };
+  items: any[];
+}
+
+export async function getOrderDetailsApi(orderId: number) {
+  return request<OrderDetailResponse>(`/users/profile/orders/${orderId}`);
+}
