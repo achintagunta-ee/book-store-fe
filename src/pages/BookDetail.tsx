@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { type AppDispatch, type RootState } from "../redux/store/store";
 import {
@@ -14,6 +14,7 @@ import {
   addToWishlistThunk,
   removeFromWishlistThunk,
   checkWishlistStatusThunk,
+  getAddressesThunk,
 } from "../redux/slice/authSlice";
 
 import {
@@ -49,9 +50,7 @@ const StarRating: React.FC<{ rating: number; className?: string }> = ({
 );
 
 const RelatedBookCard: React.FC<{ book: Book }> = ({ book }) => {
-  const imageUrl = book.cover_image
-    ? `${import.meta.env.VITE_API_BASE_URL}/${book.cover_image}`
-    : "https://via.placeholder.com/400x600.png?text=No+Image";
+  const imageUrl = book.cover_image_url || "https://via.placeholder.com/400x600.png?text=No+Image";
 
   return (
     <div className="group relative">
@@ -164,6 +163,7 @@ const ReviewForm: React.FC<{
 
 const BookDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
   const {
     currentBook,
@@ -172,7 +172,7 @@ const BookDetailPage: React.FC = () => {
   } = useSelector((state: RootState) => state.books);
   const [isReviewFormVisible, setIsReviewFormVisible] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
-  const { userProfile } = useSelector((state: RootState) => state.auth);
+  const { userProfile, addresses } = useSelector((state: RootState) => state.auth);
   const [isInWishlist, setIsInWishlist] = useState(false);
   const currentUserName = userProfile
     ? `${userProfile.first_name} ${userProfile.last_name}`.trim()
@@ -207,6 +207,7 @@ const BookDetailPage: React.FC = () => {
   useEffect(() => {
     if (userProfile) {
       dispatch(getWishlistThunk());
+      dispatch(getAddressesThunk());
     }
   }, [dispatch, userProfile]);
 
@@ -254,6 +255,49 @@ const BookDetailPage: React.FC = () => {
     ).finally(() => {
       setEditingReview(null);
     });
+  };
+
+  const handleBuyNow = async () => {
+    if (!userProfile) {
+      toast.error("Please login to buy books");
+      return;
+    }
+    if (!bookData) return;
+
+    // Use the first address available or ensure user has one
+    const address = addresses && addresses.length > 0 ? addresses[0] : null;
+    if (!address) {
+      toast.error("Please add a shipping address in your profile first.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("auth_access");
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/book/buy-now`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          book_id: bookData.id,
+          quantity: 1,
+          address_id: address.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail || "Failed to buy book");
+      }
+
+      const data = await response.json();
+      toast.success(data.message || "Order placed using Buy Now");
+      navigate(`/order-confirmation/${data.order_id}`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "Something went wrong processing your order.");
+    }
   };
 
   const handleAddToCart = () => {
@@ -309,8 +353,9 @@ const BookDetailPage: React.FC = () => {
               <div
                 className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-cover bg-center bg-no-repeat shadow-lg"
                 style={{
-                  backgroundImage: `url("${import.meta.env.VITE_API_BASE_URL}/${
-                    bookData.cover_image
+                  backgroundImage: `url("${
+                    bookData.cover_image_url ||
+                    "https://via.placeholder.com/400x600.png?text=No+Image"
                   }")`,
                 }}
                 aria-label={`The cover of the book ${bookData.title}`}
@@ -338,7 +383,9 @@ const BookDetailPage: React.FC = () => {
                 >
                   <span className="truncate">Add to Cart</span>
                 </button>
-                <button className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg">
+                <button 
+                  onClick={handleBuyNow}
+                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg">
                   <span className="truncate">Buy Now</span>
                 </button>
                 <button

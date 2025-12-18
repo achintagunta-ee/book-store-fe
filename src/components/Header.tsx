@@ -12,7 +12,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
 import { type AppDispatch, type RootState } from "../redux/store/store";
-import { searchBooksAsync } from "../redux/slice/bookSlice";
+import { fetchDynamicSearchBooksAsync, fetchSearchSuggestionsAsync } from "../redux/slice/bookSlice";
 import {
   getCurrentUserThunk,
   logout,
@@ -32,6 +32,18 @@ const Header: React.FC = () => {
   const { accessToken, userProfile, profileStatus, wishlistCount } =
     useSelector((state: RootState) => state.auth);
   const { items: cartItems } = useSelector((state: RootState) => state.cart);
+  const { searchSuggestions } = useSelector((state: RootState) => state.books);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim()) {
+         dispatch(fetchSearchSuggestionsAsync(searchQuery.trim()));
+      }
+      // If empty, we could clear suggestions, but keeping previous ones or empty state is fine.
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, dispatch]);
 
   const cartItemCount = useMemo(() => {
     return cartItems.reduce((total, item) => total + item.quantity, 0);
@@ -53,7 +65,7 @@ const Header: React.FC = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      dispatch(searchBooksAsync({ q: searchQuery.trim() }));
+      dispatch(fetchDynamicSearchBooksAsync(searchQuery.trim()));
       // Navigate to the book list page to show results
       navigate("/books");
       // Close mobile menu if it's open after searching
@@ -129,7 +141,7 @@ const Header: React.FC = () => {
         <div className="hidden md:flex items-center justify-end gap-4">
           <form
             onSubmit={handleSearch}
-            className="hidden !h-10 min-w-40 max-w-64 flex-col sm:flex"
+            className="hidden !h-10 min-w-40 max-w-64 flex-col sm:flex relative"
           >
             <div className="relative flex h-full w-full flex-1 items-stretch rounded-lg">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center rounded-l-lg border-r-0 border-none bg-primary/20 pl-4 text-text-light/70 /70">
@@ -140,11 +152,52 @@ const Header: React.FC = () => {
                 name="search"
                 id="search-desktop"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                   setSearchQuery(e.target.value);
+                   // Open suggestion box if not empty
+                   if (e.target.value.trim().length > 0) {
+                     // logic handled in effect
+                   }
+                }}
                 className="form-input h-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border-none bg-primary/20 py-2 pl-12 pr-4 font-body text-base font-normal leading-normal text-text-light placeholder:text-text-light/70 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:placeholder:text-text-main-dark/70"
                 placeholder="Search"
+                autoComplete="off"
               />
             </div>
+            
+            {/* Search Suggestions Dropdown */}
+            {searchQuery.trim().length > 0 && searchSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 overflow-hidden max-h-96 overflow-y-auto border border-gray-100 dark:border-gray-700">
+                <ul>
+                  {searchSuggestions.map((book) => (
+                    <li key={book.id}>
+                      <Link 
+                        to={`/book/detail/${book.slug}`} 
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer border-b border-gray-50 dark:border-gray-700/50 last:border-none"
+                        onClick={() => setSearchQuery("")} // Clear search on click? Or maybe keep it. Clearing for now as we navigate.
+                      >
+                         <div className="w-10 h-10 flex-shrink-0 bg-gray-100 dark:bg-gray-600 rounded overflow-hidden">
+                           <img 
+                             src={book.cover_image_url || "/placeholder.jpg"} 
+                             alt={book.title} 
+                             className="w-full h-full object-cover"
+                           />
+                         </div>
+                         <div className="flex flex-col min-w-0">
+                           <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                             {/* Bolding match could be added here, but simple text for now */}
+                             {book.title}
+                           </span>
+                           <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                             {book.author}
+                           </span>
+                         </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </form>
           <div className="flex gap-2">
             <Link to="/wishlist" className="relative">

@@ -357,8 +357,8 @@ const BooksManagement: React.FC = () => {
                         <div
                           className="bg-center bg-no-repeat bg-cover rounded w-10 aspect-[2/3] bg-gray-200"
                           style={{
-                            backgroundImage: book.cover_image
-                              ? `url(${book.cover_image.replace(/\\/g, "/")})`
+                            backgroundImage: book.cover_image_url
+                              ? `url(${book.cover_image_url})`
                               : "none",
                           }}
                         />

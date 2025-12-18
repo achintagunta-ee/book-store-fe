@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import type { RootState, AppDispatch } from "../redux/store/store";
-import { trackOrderThunk } from "../redux/slice/authSlice";
-import type { TrackOrderResponse } from "../redux/utilis/authApi";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "../redux/store/store";
+import { trackOrderThunk, downloadInvoiceThunk, viewOrderInvoiceThunk } from "../redux/slice/authSlice";
+import {
+  type TrackOrderResponse,
+} from "../redux/utilis/authApi";
 
 const OrderConfirmation: React.FC = () => {
   const navigate = useNavigate();
   const { orderId } = useParams();
   const dispatch = useDispatch<AppDispatch>();
-  const { accessToken } = useSelector((state: RootState) => state.auth);
   const [trackingInfo, setTrackingInfo] = useState<TrackOrderResponse | null>(
     null
   );
@@ -32,19 +33,13 @@ const OrderConfirmation: React.FC = () => {
     e.preventDefault();
     if (!orderId) return;
     try {
-      const response = await fetch(
-        `${
-          import.meta.env.VITE_API_BASE_URL
-        }/checkout/orders/${orderId}/invoice`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-      if (!response.ok) throw new Error("Download failed");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const id = parseInt(orderId, 10);
+      if (isNaN(id)) throw new Error("Invalid Order ID");
+      
+      const blob = await dispatch(downloadInvoiceThunk(id)).unwrap();
+      // Create a new blob with the correct type to ensure it's treated as a PDF
+      const pdfBlob = new Blob([blob], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(pdfBlob);
       const link = document.createElement("a");
       link.href = url;
       link.download = `invoice_${orderId}.pdf`;
@@ -54,6 +49,23 @@ const OrderConfirmation: React.FC = () => {
     } catch (error) {
       console.error("Invoice download error:", error);
       alert("Failed to download invoice.");
+    }
+  };
+
+  const handleViewInvoice = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!orderId) return;
+    try {
+      const id = parseInt(orderId, 10);
+      if (isNaN(id)) throw new Error("Invalid Order ID");
+      
+      const blob = await dispatch(viewOrderInvoiceThunk(id)).unwrap();
+      const pdfBlob = new Blob([blob], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(pdfBlob);
+      window.open(url, "_blank");
+    } catch (error) {
+      console.error("Invoice view error:", error);
+      alert("Failed to view invoice.");
     }
   };
 
@@ -121,14 +133,23 @@ const OrderConfirmation: React.FC = () => {
                 <p className="text-[#333333]/80 dark:text-[#F8F4F1]/80 text-sm font-normal leading-normal">
                   A confirmation email has been sent to your email address.
                 </p>
-                <a
-                  className="text-secondary-link  hover:underline text-sm font-medium leading-normal mt-2 inline-block cursor-pointer"
-                  // (e) Download Invoice
-                  href="#"
-                  onClick={handleDownloadInvoice}
-                >
-                  Download Invoice
-                </a>
+                <div className="flex justify-center items-center gap-4 mt-2">
+                  <a
+                    className="text-secondary-link hover:underline text-sm font-medium leading-normal cursor-pointer"
+                    href="#"
+                    onClick={handleViewInvoice}
+                  >
+                    View Invoice
+                  </a>
+                  <span className="text-gray-300">|</span>
+                  <a
+                    className="text-secondary-link hover:underline text-sm font-medium leading-normal cursor-pointer"
+                    href="#"
+                    onClick={handleDownloadInvoice}
+                  >
+                    Download Invoice
+                  </a>
+                </div>
               </div>
             </div>
           </div>

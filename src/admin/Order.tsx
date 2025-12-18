@@ -1,92 +1,107 @@
-import React, { useState } from "react";
-import { ChevronLeft, ChevronRight, Send, X, Menu } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight, Send, X, Menu, Eye, Calendar, Download } from "lucide-react";
 import Sidebar from "./Sidebar";
-
-interface Order {
-	orderId: string;
-	customer: string;
-	date: string;
-	total: string;
-	status: "Shipped" | "Processing" | "Delivered" | "Pending" | "Canceled";
-}
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../redux/store/store";
+import { getAdminOrdersThunk, getAdminOrderDetailsThunk, notifyCustomerThunk } from "../redux/slice/authSlice";
+import { downloadOrderInvoiceApi, type AdminOrder } from "../redux/utilis/authApi";
 
 const OrdersPage: React.FC = () => {
+	const dispatch = useDispatch<AppDispatch>();
+	const { adminOrders, adminOrderDetail } = useSelector((state: RootState) => state.auth);
+
 	const [searchQuery, setSearchQuery] = useState("");
-	const [showModal, setShowModal] = useState(false);
-	const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-	const [notificationType, setNotificationType] = useState("");
+	const [statusFilter, setStatusFilter] = useState("All");
+	const [startDate, setStartDate] = useState("");
+	const [endDate, setEndDate] = useState("");
+	
+	const [showNotifyModal, setShowNotifyModal] = useState(false);
+	const [showDetailModal, setShowDetailModal] = useState(false);
+	const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+	const [notificationType, setNotificationType] = useState(""); // Kept for UI, but API doesn't use it yet based on spec
 	const [sidebarOpen, setSidebarOpen] = useState(true);
+	const [currentPage, setCurrentPage] = useState(1);
+	
+	// Debounce search
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			fetchOrders();
+		}, 500);
+		return () => clearTimeout(timer);
+	}, [searchQuery, statusFilter, startDate, endDate, currentPage]);
 
-	const orders: Order[] = [
-		{
-			orderId: "#12345",
-			customer: "John Doe",
-			date: "2023-10-27",
-			total: "$125.00",
-			status: "Shipped",
-		},
-		{
-			orderId: "#12346",
-			customer: "Jane Smith",
-			date: "2023-10-27",
-			total: "$89.50",
-			status: "Processing",
-		},
-		{
-			orderId: "#12347",
-			customer: "Peter Jones",
-			date: "2023-10-26",
-			total: "$45.00",
-			status: "Delivered",
-		},
-		{
-			orderId: "#12348",
-			customer: "Mary Williams",
-			date: "2023-10-26",
-			total: "$210.00",
-			status: "Pending",
-		},
-		{
-			orderId: "#12349",
-			customer: "David Brown",
-			date: "2023-10-25",
-			total: "$76.25",
-			status: "Canceled",
-		},
-	];
-
-	const getStatusColor = (status: Order["status"]) => {
-		const colors = {
-			Shipped: "bg-green-100 text-green-800",
-			Processing: "bg-blue-100 text-blue-800",
-			Delivered: "bg-gray-200 text-gray-800",
-			Pending: "bg-yellow-100 text-yellow-800",
-			Canceled: "bg-red-100 text-red-800",
-		};
-		return colors[status];
+	const fetchOrders = () => {
+		dispatch(getAdminOrdersThunk({
+			page: currentPage,
+			limit: 10,
+			search: searchQuery,
+			status: statusFilter === "All" ? "" : statusFilter,
+			start_date: startDate,
+			end_date: endDate
+		}));
 	};
 
-	const handleNotify = (order: Order) => {
+	const orders = adminOrders?.results || [];
+
+	const getStatusColor = (status: string) => {
+		switch (status.toLowerCase()) {
+			case "shipped":
+				return "bg-green-100 text-green-800";
+			case "processing":
+				return "bg-blue-100 text-blue-800";
+			case "delivered":
+				return "bg-gray-200 text-gray-800";
+			case "pending":
+				return "bg-yellow-100 text-yellow-800";
+			case "canceled":
+			case "cancelled":
+				return "bg-red-100 text-red-800";
+			case "paid":
+				return "bg-green-100 text-green-800";
+			default:
+				return "bg-gray-100 text-gray-800";
+		}
+	};
+
+	const handleNotify = (order: AdminOrder) => {
 		setSelectedOrder(order);
-		setShowModal(true);
+		setShowNotifyModal(true);
 	};
 
-	const handleSendNotification = () => {
-		console.log(
-			"Sending notification:",
-			notificationType,
-			"for order:",
-			selectedOrder?.orderId
-		);
-		setShowModal(false);
-		setNotificationType("");
+	const handleSendNotification = async () => {
+		if (selectedOrder) {
+			await dispatch(notifyCustomerThunk(selectedOrder.order_id));
+			setShowNotifyModal(false);
+			setNotificationType("");
+			alert("Customer notified successfully!");
+		}
 	};
 
-	const filteredOrders = orders.filter(
-		(order) =>
-			order.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-			order.orderId.toLowerCase().includes(searchQuery.toLowerCase())
-	);
+	const handleViewDetails = async (orderId: number) => {
+		await dispatch(getAdminOrderDetailsThunk(orderId));
+		setShowDetailModal(true);
+	};
+	
+	const handleDownloadInvoice = async (orderId: number) => {
+		try {
+			const text = await downloadOrderInvoiceApi(orderId);
+			// Create a blob and download it
+			const blob = new Blob([text], { type: "text/plain" });
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement("a");
+			a.href = url;
+			a.download = `invoice_${orderId}.txt`;
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			window.URL.revokeObjectURL(url);
+		} catch (error) {
+			console.error("Failed to download invoice", error);
+			alert("Failed to download invoice");
+		}
+	};
+
+	const totalPages = adminOrders?.total_pages || 1;
 
 	return (
 		<div className="flex h-screen w-full bg-background-light overflow-hidden">
@@ -109,7 +124,7 @@ const OrdersPage: React.FC = () => {
 
 					{/* Search and Filters */}
 					<div className="px-4 py-3 flex items-center justify-between flex-wrap gap-4">
-						<div className="flex-1 max-w-lg">
+						<div className="flex-1 max-w-lg min-w-[300px]">
 							<div className="flex items-stretch h-12 rounded-lg border border-[#E2D8D4] bg-white overflow-hidden">
 								<div className="flex items-center justify-center pl-4 text-[#B35E3F]">
 									<svg
@@ -136,43 +151,48 @@ const OrdersPage: React.FC = () => {
 							</div>
 						</div>
 
-						<div className="flex gap-3">
-							<button className="flex h-8 items-center gap-2 rounded-lg bg-white border border-[#E2D8D4] px-4 hover:bg-primary/10 transition-colors">
-								<p className="text-text-main text-sm font-medium">
-									Filter by Status
-								</p>
-								<svg
-									className="w-4 h-4 text-text-main"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<polyline
-										points="6 9 12 15 18 9"
-										strokeWidth="2"
-										strokeLinecap="round"
-										strokeLinejoin="round"
+						<div className="flex gap-3 flex-wrap">
+							<select
+								value={statusFilter}
+								onChange={(e) => setStatusFilter(e.target.value)}
+								className="h-12 bg-white border border-[#E2D8D4] text-text-main text-sm rounded-lg focus:ring-[#B35E3F] focus:border-[#B35E3F] block p-2.5"
+							>
+								<option value="All">All Status</option>
+								<option value="pending">Pending</option>
+								<option value="processing">Processing</option>
+								<option value="shipped">Shipped</option>
+								<option value="delivered">Delivered</option>
+								<option value="paid">Paid</option>
+								<option value="cancelled">Cancelled</option>
+							</select>
+
+							<div className="flex items-center gap-2">
+								<div className="relative">
+									<div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+										<Calendar className="w-4 h-4 text-gray-500" />
+									</div>
+									<input
+										type="date"
+										className="bg-white border border-[#E2D8D4] text-text-main text-sm rounded-lg focus:ring-[#B35E3F] focus:border-[#B35E3F] block w-full ps-10 p-2.5 h-12"
+										placeholder="Start Date"
+										value={startDate}
+										onChange={(e) => setStartDate(e.target.value)}
 									/>
-								</svg>
-							</button>
-							<button className="flex h-8 items-center gap-2 rounded-lg bg-white border border-[#E2D8D4] px-4 hover:bg-primary/10 transition-colors">
-								<p className="text-text-main text-sm font-medium">
-									Filter by Date
-								</p>
-								<svg
-									className="w-4 h-4 text-text-main"
-									fill="none"
-									stroke="currentColor"
-									viewBox="0 0 24 24"
-								>
-									<polyline
-										points="6 9 12 15 18 9"
-										strokeWidth="2"
-										strokeLinecap="round"
-										strokeLinejoin="round"
+								</div>
+								<span className="text-gray-500">to</span>
+								<div className="relative">
+									<div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none">
+										<Calendar className="w-4 h-4 text-gray-500" />
+									</div>
+									<input
+										type="date"
+										className="bg-white border border-[#E2D8D4] text-text-main text-sm rounded-lg focus:ring-[#B35E3F] focus:border-[#B35E3F] block w-full ps-10 p-2.5 h-12"
+										placeholder="End Date"
+										value={endDate}
+										onChange={(e) => setEndDate(e.target.value)}
 									/>
-								</svg>
-							</button>
+								</div>
+							</div>
 						</div>
 					</div>
 
@@ -204,48 +224,59 @@ const OrdersPage: React.FC = () => {
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-[#e2d8d4]">
-										{filteredOrders.map((order) => (
-											<tr
-												key={order.orderId}
-												className="hover:bg-primary/5 transition-colors"
-											>
-												<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-													{order.orderId}
-												</td>
-												<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-													{order.customer}
-												</td>
-												<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-													{order.date}
-												</td>
-												<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-													{order.total}
-												</td>
-												<td className="h-[72px] px-4 py-2">
-													<span
-														className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-															order.status
-														)}`}
-													>
-														{order.status}
-													</span>
-												</td>
-												<td className="h-[72px] px-4 py-2">
-													<div className="flex items-center gap-2">
-														<button className="text-[#B35E3F] hover:text-card-border text-sm font-bold transition-colors">
-															View Details
-														</button>
-														<button
-															onClick={() => handleNotify(order)}
-															className="flex items-center gap-1 text-[#B35E3F] hover:text-card-border text-sm font-bold transition-colors"
+										{orders.length > 0 ? (
+											orders.map((order) => (
+												<tr
+													key={order.order_id}
+													className="hover:bg-primary/5 transition-colors"
+												>
+													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
+														#{order.order_id}
+													</td>
+													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
+														{order.customer_name}
+													</td>
+													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
+														{order.date}
+													</td>
+													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
+														₹{order.total_amount}
+													</td>
+													<td className="h-[72px] px-4 py-2">
+														<span
+															className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+																order.status
+															)}`}
 														>
-															<Send size={16} />
-															<span>Notify</span>
-														</button>
-													</div>
+															{order.status}
+														</span>
+													</td>
+													<td className="h-[72px] px-4 py-2">
+														<div className="flex items-center gap-2">
+															<button 
+																onClick={() => handleViewDetails(order.order_id)}
+																className="text-[#B35E3F] hover:text-card-border text-sm font-bold transition-colors flex items-center gap-1"
+															>
+																<Eye size={16} /> View
+															</button>
+															<button
+																onClick={() => handleNotify(order)}
+																className="flex items-center gap-1 text-[#B35E3F] hover:text-card-border text-sm font-bold transition-colors"
+															>
+																<Send size={16} />
+																<span>Notify</span>
+															</button>
+														</div>
+													</td>
+												</tr>
+											))
+										) : (
+											<tr>
+												<td colSpan={6} className="text-center py-4 text-gray-500">
+													No orders found.
 												</td>
 											</tr>
-										))}
+										)}
 									</tbody>
 								</table>
 							</div>
@@ -253,25 +284,21 @@ const OrdersPage: React.FC = () => {
 							{/* Pagination */}
 							<div className="flex justify-center items-center mt-6 pb-6">
 								<nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
-									<button className="relative inline-flex items-center rounded-l-md px-2 py-2 text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">
+									<button 
+										onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+										disabled={currentPage === 1}
+										className="relative inline-flex items-center rounded-l-md px-2 py-2 text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+									>
 										<ChevronLeft size={20} />
 									</button>
-									<button className="relative z-10 inline-flex items-center bg-card-border/10 px-4 py-2 text-sm font-semibold text-card-border">
-										1
-									</button>
-									<button className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">
-										2
-									</button>
-									<button className="relative hidden items-center px-4 py-2 text-sm font-semibold text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 md:inline-flex transition-colors">
-										3
-									</button>
 									<span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-text-main ring-1 ring-inset ring-gray-300">
-										...
+										Page {currentPage} of {totalPages}
 									</span>
-									<button className="relative hidden items-center px-4 py-2 text-sm font-semibold text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 md:inline-flex transition-colors">
-										8
-									</button>
-									<button className="relative inline-flex items-center rounded-r-md px-2 py-2 text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors">
+									<button 
+										onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+										disabled={currentPage === totalPages}
+										className="relative inline-flex items-center rounded-r-md px-2 py-2 text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
+									>
 										<ChevronRight size={20} />
 									</button>
 								</nav>
@@ -282,7 +309,7 @@ const OrdersPage: React.FC = () => {
 			</main>
 
 			{/* Notification Modal */}
-			{showModal && (
+			{showNotifyModal && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
 					<div className="bg-background-light rounded-lg shadow-xl p-8 w-full max-w-md m-4">
 						<div className="flex justify-between items-center mb-4">
@@ -290,7 +317,7 @@ const OrdersPage: React.FC = () => {
 								Send Notification
 							</h2>
 							<button
-								onClick={() => setShowModal(false)}
+								onClick={() => setShowNotifyModal(false)}
 								className="text-gray-400 hover:text-gray-600 transition-colors"
 							>
 								<X size={24} />
@@ -319,7 +346,7 @@ const OrdersPage: React.FC = () => {
 
 						<div className="flex justify-end gap-4">
 							<button
-								onClick={() => setShowModal(false)}
+								onClick={() => setShowNotifyModal(false)}
 								className="px-6 py-2 rounded-lg text-text-main bg-gray-200 hover:bg-gray-300 transition-colors"
 							>
 								Cancel
@@ -329,6 +356,83 @@ const OrdersPage: React.FC = () => {
 								className="px-6 py-2 rounded-lg text-white bg-card-border hover:bg-card-border/90 transition-colors"
 							>
 								Send
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+			
+			{/* Detail Modal */}
+			{showDetailModal && adminOrderDetail && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto pt-10 pb-10">
+					<div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl m-4 relative">
+						<button
+							onClick={() => setShowDetailModal(false)}
+							className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+						>
+							<X size={24} />
+						</button>
+						
+						<h2 className="text-2xl font-black text-card-border mb-6">Order Details #{adminOrderDetail.order_id}</h2>
+						
+						<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+							<div className="bg-gray-50 p-4 rounded-lg">
+								<h3 className="text-lg font-bold text-[#261d1a] mb-2">Customer Info</h3>
+								<p className="text-text-main"><span className="font-semibold">Name:</span> {adminOrderDetail.customer.name}</p>
+								<p className="text-text-main"><span className="font-semibold">Email:</span> {adminOrderDetail.customer.email}</p>
+							</div>
+							<div className="bg-gray-50 p-4 rounded-lg">
+								<h3 className="text-lg font-bold text-[#261d1a] mb-2">Order Info</h3>
+								<p className="text-text-main"><span className="font-semibold">Status:</span> 
+									<span className={`ml-2 inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(adminOrderDetail.status)}`}>
+										{adminOrderDetail.status}
+									</span>
+								</p>
+								<p className="text-text-main"><span className="font-semibold">Date:</span> {new Date(adminOrderDetail.created_at).toLocaleDateString()}</p>
+							</div>
+						</div>
+
+						<div className="mb-6">
+							<h3 className="text-lg font-bold text-[#261d1a] mb-3">Items</h3>
+							<div className="overflow-x-auto border rounded-lg">
+								<table className="w-full text-sm text-left">
+									<thead className="bg-gray-100 text-[#261d1a] uppercase">
+										<tr>
+											<th className="px-4 py-3">Book</th>
+											<th className="px-4 py-3 text-right">Price</th>
+											<th className="px-4 py-3 text-center">Qty</th>
+											<th className="px-4 py-3 text-right">Total</th>
+										</tr>
+									</thead>
+									<tbody className="divide-y">
+										{adminOrderDetail.items.map((item, idx) => (
+											<tr key={idx} className="bg-white hover:bg-gray-50">
+												<td className="px-4 py-3 font-medium text-gray-900">{item.title}</td>
+												<td className="px-4 py-3 text-right">₹{item.price}</td>
+												<td className="px-4 py-3 text-center">{item.quantity}</td>
+												<td className="px-4 py-3 text-right font-bold">₹{item.total}</td>
+											</tr>
+										))}
+									</tbody>
+									<tfoot className="bg-gray-50 font-bold text-[#261d1a]">
+										<tr>
+											<td colSpan={3} className="px-4 py-3 text-right">Total Amount</td>
+											<td className="px-4 py-3 text-right">
+												₹{adminOrderDetail.items.reduce((acc, item) => acc + item.total, 0)}
+											</td>
+										</tr>
+									</tfoot>
+								</table>
+							</div>
+						</div>
+						
+						<div className="flex justify-end">
+							<button
+								onClick={() => handleDownloadInvoice(adminOrderDetail.order_id)}
+								className="flex items-center gap-2 px-6 py-2 rounded-lg text-white bg-card-border hover:bg-card-border/90 transition-colors"
+							>
+								<Download size={18} />
+								Download Invoice
 							</button>
 						</div>
 					</div>

@@ -33,6 +33,9 @@ import {
   deleteReviewApi,
   type BookDetailResponse,
   advancedSearchBooksApi,
+  fetchHomeDataApi,
+  type HomeBook,
+  fetchDynamicSearchBooksApi,
 } from "../utilis/bookApi";
 
 export interface BookState {
@@ -52,9 +55,15 @@ export interface BookState {
   featuredBooksStatus: "idle" | "loading" | "succeeded" | "failed";
   featuredAuthorsBooks: Book[];
   featuredAuthorsBooksStatus: "idle" | "loading" | "succeeded" | "failed";
+  newArrivals: Book[];
+  popularBooks: Book[];
+  homeDataStatus: "idle" | "loading" | "succeeded" | "failed";
   currentBook: BookDetailResponse | null;
   currentBookStatus: "idle" | "loading" | "succeeded" | "failed";
   currentBookError: string | null | undefined;
+  searchSuggestions: Book[];
+  searchSuggestionsStatus: "idle" | "loading" | "succeeded" | "failed";
+  totalBooks: number;
 }
 
 const initialState: BookState = {
@@ -74,9 +83,15 @@ const initialState: BookState = {
   featuredBooksStatus: "idle",
   featuredAuthorsBooks: [],
   featuredAuthorsBooksStatus: "idle",
+  newArrivals: [],
+  popularBooks: [],
+  homeDataStatus: "idle",
   currentBook: null,
   currentBookStatus: "idle",
   currentBookError: null,
+  searchSuggestions: [],
+  searchSuggestionsStatus: "idle",
+  totalBooks: 0,
 };
 
 // Admin Thunks
@@ -151,9 +166,9 @@ export const deleteCategoryAsync = createAsyncThunk(
 // Public Thunks
 export const fetchPublicBooksAsync = createAsyncThunk(
   "books/fetchPublicBooks",
-  async () => {
-    const response = (await fetchPublicBooksApi()) as any;
-    return response.books;
+  async (params: FilterParams = {}) => {
+    const response = await fetchPublicBooksApi(params);
+    return response;
   }
 );
 
@@ -274,6 +289,65 @@ export const searchBooksAsync = createAsyncThunk(
   }
 );
 
+export const fetchDynamicSearchBooksAsync = createAsyncThunk(
+  "books/fetchDynamicSearchBooks",
+  async (query: string, { rejectWithValue }) => {
+    try {
+      const response = await fetchDynamicSearchBooksApi(query);
+      // Map response to Book interface as the API returns book_id instead of id
+      const mappedBooks: Book[] = (response as any[]).map((b) => ({
+        id: b.book_id || b.id,
+        title: b.title,
+        slug: b.slug || b.title.toLowerCase().replace(/\s+/g, "-"),
+        author: b.author,
+        price: b.price,
+        description: b.description || "",
+        cover_image_url: b.cover_image_url,
+        stock: b.stock || 0,
+        category_id: b.category_id || 0,
+        rating: b.rating,
+        created_at: b.created_at || new Date().toISOString(),
+        updated_at: b.updated_at || new Date().toISOString(),
+        isbn: b.isbn || null,
+        publisher: b.publisher || null,
+        published_date: b.published_date || null,
+      }));
+      return mappedBooks;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchSearchSuggestionsAsync = createAsyncThunk(
+  "books/fetchSearchSuggestions",
+  async (query: string, { rejectWithValue }) => {
+    try {
+      const response = await fetchDynamicSearchBooksApi(query);
+      const mappedBooks: Book[] = (response as any[]).map((b) => ({
+        id: b.book_id || b.id,
+        title: b.title,
+        slug: b.slug || b.title.toLowerCase().replace(/\s+/g, "-"),
+        author: b.author,
+        price: b.price,
+        description: b.description || "",
+        cover_image_url: b.cover_image_url,
+        stock: b.stock || 0,
+        category_id: b.category_id || 0,
+        rating: b.rating,
+        created_at: b.created_at || new Date().toISOString(),
+        updated_at: b.updated_at || new Date().toISOString(),
+        isbn: b.isbn || null,
+        publisher: b.publisher || null,
+        published_date: b.published_date || null,
+      }));
+      return mappedBooks;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 export const createReviewAsync = createAsyncThunk(
   "reviews/createReview",
   async (
@@ -313,6 +387,38 @@ export const deleteReviewAsync = createAsyncThunk(
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
+  }
+);
+
+export const fetchHomeDataAsync = createAsyncThunk(
+  "books/fetchHomeData",
+  async () => {
+    const response = await fetchHomeDataApi();
+    const mapBook = (b: HomeBook): Book => ({
+      id: b.book_id,
+      title: b.title,
+      slug: b.title.toLowerCase().replace(/\s+/g, "-"),
+      author: b.author,
+      price: b.price,
+      description: "",
+      cover_image_url: b.cover_image_url,
+      stock: 0,
+      category_id: 0,
+      rating: b.rating,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      isbn: null,
+      publisher: null,
+      published_date: null,
+    });
+
+    return {
+      featured_books: response.featured_books.map(mapBook),
+      featured_authors_books: response.featured_authors_books.map(mapBook),
+      new_arrivals: response.new_arrivals.map(mapBook),
+      popular_books: response.popular_books.map(mapBook),
+      categories: response.categories,
+    };
   }
 );
 
@@ -381,7 +487,8 @@ export const bookSlice = createSlice({
       })
       .addCase(fetchPublicBooksAsync.fulfilled, (state, action) => {
         state.publicBooksStatus = "succeeded";
-        state.publicBooks = action.payload;
+        state.publicBooks = action.payload.results;
+        state.totalBooks = action.payload.total_items;
       })
       .addCase(fetchPublicBooksAsync.rejected, (state, action) => {
         state.publicBooksStatus = "failed";
@@ -442,6 +549,27 @@ export const bookSlice = createSlice({
         state.publicBooksStatus = "failed";
         state.publicBooksError = action.error.message;
       })
+      .addCase(fetchDynamicSearchBooksAsync.pending, (state) => {
+        state.publicBooksStatus = "loading";
+      })
+      .addCase(fetchDynamicSearchBooksAsync.fulfilled, (state, action) => {
+        state.publicBooksStatus = "succeeded";
+        state.publicBooks = action.payload;
+      })
+      .addCase(fetchDynamicSearchBooksAsync.rejected, (state, action) => {
+        state.publicBooksStatus = "failed";
+        state.publicBooksError = action.error.message;
+      })
+      .addCase(fetchSearchSuggestionsAsync.pending, (state) => {
+        state.searchSuggestionsStatus = "loading";
+      })
+      .addCase(fetchSearchSuggestionsAsync.fulfilled, (state, action) => {
+        state.searchSuggestionsStatus = "succeeded";
+        state.searchSuggestions = action.payload;
+      })
+      .addCase(fetchSearchSuggestionsAsync.rejected, (state) => {
+        state.searchSuggestionsStatus = "failed";
+      })
       .addCase(fetchBookBySlugAsync.pending, (state) => {
         state.currentBookStatus = "loading";
         state.currentBook = null;
@@ -489,8 +617,28 @@ export const bookSlice = createSlice({
             state.currentBook.reviews[index] = updatedReview;
           }
         }
+      })
+      // Home Data reducers
+      .addCase(fetchHomeDataAsync.pending, (state) => {
+        state.homeDataStatus = "loading";
+      })
+      .addCase(fetchHomeDataAsync.fulfilled, (state, action) => {
+        state.homeDataStatus = "succeeded";
+        state.featuredBooks = action.payload.featured_books;
+        state.featuredAuthorsBooks = action.payload.featured_authors_books;
+        state.newArrivals = action.payload.new_arrivals;
+        state.popularBooks = action.payload.popular_books;
+        state.categories = action.payload.categories;
+        // Also update individual statuses if we want to mimic individual fetches being "done"
+        state.featuredBooksStatus = "succeeded";
+        state.featuredAuthorsBooksStatus = "succeeded";
+        state.categoryStatus = "succeeded";
+      })
+      .addCase(fetchHomeDataAsync.rejected, (state) => {
+        state.homeDataStatus = "failed";
       });
   },
 });
+
 
 export default bookSlice.reducer;

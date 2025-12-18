@@ -15,6 +15,8 @@ import {
   fetchPublicBooksAsync,
   fetchPublicCategoriesAsync,
 } from "../redux/slice/bookSlice";
+import { addToCartAsync } from "../redux/slice/cartSlice";
+import { Toaster, toast } from "react-hot-toast";
 import { type RootState, type AppDispatch } from "../redux/store/store";
 import { type Book as ApiBook, type Category } from "../redux/utilis/bookApi";
 
@@ -42,25 +44,36 @@ const BOOKS_PER_PAGE = 8;
 
 // --- Placeholder Components (to be implemented or imported) ---
 
-const BookCard: React.FC<{ book: Book }> = ({ book }) => (
-  <div className="group relative">
-    <div className="aspect-w-2 aspect-h-3 w-full overflow-hidden rounded-lg bg-gray-200">
-      <img
-        src={book.imageUrl}
-        alt={book.title}
-        className="h-full w-full object-cover object-center group-hover:opacity-75"
-      />
-    </div>
-    <div className="mt-4 flex justify-between">
-      <div>
-        <h3 className="text-md font-medium text-gray-900">
-          <Link to={`/book/detail/${book.slug}`}>
-            <span aria-hidden="true" className="absolute inset-0" />
-            {book.title}
-          </Link>
+const BookCard: React.FC<{ book: Book; onAddToCart: (id: number) => void }> = ({
+  book,
+  onAddToCart,
+}) => (
+  <div className="flex flex-col gap-4 rounded-lg bg-background-light shadow-soft hover:shadow-lift transition-shadow duration-300 group ">
+    <Link to={`/book/detail/${book.slug}`}>
+      <div
+        className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-t-lg"
+        role="img"
+        aria-label={`Book cover for ${book.title} by ${book.author}`}
+        style={{ backgroundImage: `url("${book.imageUrl}")` }}
+      ></div>
+    </Link>
+    <div className="p-4 pt-0 flex flex-col flex-grow">
+      <Link to={`/book/detail/${book.slug}`}>
+        <h3 className="font-display text-lg font-bold leading-tight text-text-main dark:text-text-main-dark hover:text-primary transition-colors">
+          {book.title}
         </h3>
-        <p className="mt-1 text-sm text-gray-500">{book.author}</p>
-        <p className="text-sm font-medium text-secondary-link">${book.price}</p>
+      </Link>
+      <p className="font-body text-sm text-secondary-link">{book.author}</p>
+      <p className="font-body text-base font-semibold text-text-main dark:text-text-main-dark mt-2">
+        ${book.price}
+      </p>
+      <div className="mt-4 flex flex-col gap-2">
+        <button
+          onClick={() => onAddToCart(book.id)}
+          className="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-primary text-white font-body text-sm font-semibold tracking-wide hover:bg-primary/90 transition-colors"
+        >
+          Add to Cart
+        </button>
       </div>
     </div>
   </div>
@@ -197,46 +210,82 @@ const Sidebar: React.FC<{
   );
 };
 
-const Pagination: React.FC<{
+interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-}> = () => (
-  // We ignore the props for this dummy layout to match the image
-  <nav
-    className="flex items-center justify-center space-x-4 py-8"
-    aria-label="Pagination"
-  >
-    <button className="text-gray-500 hover:text-gray-700">
-      <span className="sr-only">Previous</span>
-      <ChevronLeft size={20} />
-    </button>
+}
 
-    <button
-      className="flex items-center justify-center h-10 w-10 rounded-md bg-primary/20 text-primary-700 font-medium"
-      aria-current="page"
+const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalPages,
+  onPageChange,
+}) => {
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        pages.push(1, 2, 3, 4, "...", totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+      }
+    }
+    return pages;
+  };
+
+  return (
+    <nav
+      className="flex items-center justify-center space-x-2 py-8"
+      aria-label="Pagination"
     >
-      1
-    </button>
-    <button className="flex items-center justify-center h-10 w-10 rounded-md text-gray-700 hover:bg-gray-100 font-medium">
-      2
-    </button>
-    <button className="flex items-center justify-center h-10 w-10 rounded-md text-gray-700 hover:bg-gray-100 font-medium">
-      3
-    </button>
-    <span className="flex items-end justify-center h-10 w-10 text-gray-500">
-      ...
-    </span>
-    <button className="flex items-center justify-center h-10 w-10 rounded-md text-gray-700 hover:bg-gray-100 font-medium">
-      10
-    </button>
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-500"
+      >
+        <span className="sr-only">Previous</span>
+        <ChevronLeft size={20} />
+      </button>
 
-    <button className="text-gray-500 hover:text-gray-700">
-      <span className="sr-only">Next</span>
-      <ChevronRight size={20} />
-    </button>
-  </nav>
-);
+      {getPageNumbers().map((page, index) => (
+        <React.Fragment key={index}>
+          {page === "..." ? (
+            <span className="px-4 py-2 text-gray-500">...</span>
+          ) : (
+            <button
+              onClick={() => onPageChange(page as number)}
+              className={`min-w-[40px] h-10 px-3 py-2 rounded-md font-medium transition-colors ${
+                currentPage === page
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+              aria-current={currentPage === page ? "page" : undefined}
+            >
+              {page}
+            </button>
+          )}
+        </React.Fragment>
+      ))}
+
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed text-gray-500"
+      >
+        <span className="sr-only">Next</span>
+        <ChevronRight size={20} />
+      </button>
+    </nav>
+  );
+};
 // --- END OF UPDATED DUMMY LAYOUT ---
 
 // --- Main Page Component ---
@@ -249,107 +298,101 @@ const BookPage: React.FC = () => {
     publicBooksError,
     publicCategories,
     publicCategoriesStatus,
+    totalBooks
   } = useSelector((state: RootState) => state.books);
-
-  useEffect(() => {
-    if (publicBooksStatus === "idle") {
-      dispatch(fetchPublicBooksAsync());
-    }
-    if (publicCategoriesStatus === "idle") {
-      dispatch(fetchPublicCategoriesAsync());
-    }
-  }, [publicBooksStatus, publicCategoriesStatus, dispatch]);
-
-  const allBooksData: Book[] = useMemo(() => {
-    const categoryMap = new Map<number, string>();
-    publicCategories.forEach((cat) => {
-      categoryMap.set(cat.id, cat.name);
-    });
-
-    if (!Array.isArray(publicBooks)) return [];
-
-    return publicBooks.map((book: ApiBook) => ({
-      id: book.id,
-      slug: book.slug,
-      title: book.title,
-      author: book.author,
-      price: book.price,
-      category: categoryMap.get(book.category_id) || "Uncategorized",
-      rating: book.rating || 0,
-      imageUrl: book.cover_image
-        ? `${import.meta.env.VITE_API_BASE_URL}/${book.cover_image}`
-        : "https://via.placeholder.com/400x600.png?text=No+Image",
-    }));
-  }, [publicBooks, publicCategories]);
-
-  const MAX_PRICE = useMemo(
-    () =>
-      Math.ceil(
-        allBooksData.reduce(
-          (max, book) => (book.price > max ? book.price : max),
-          0
-        )
-      ),
-    [allBooksData]
-  );
-
-  const allAuthors = useMemo(
-    () => [...new Set(allBooksData.map((book) => book.author))],
-    [allBooksData]
-  );
 
   const [filters, setFilters] = useState<Filters>({
     categories: [],
     authors: [],
-    maxPrice: MAX_PRICE,
+    maxPrice: 2000, // Default max price since we can't calculate from all books
     minRating: 0,
   });
   const [sortOrder, setSortOrder] = useState("Relevance");
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
-  // Memoized filtering and sorting logic
-  const filteredBooks = useMemo(() => {
-    let books = allBooksData.filter((book) => {
-      const categoryMatch =
-        filters.categories.length === 0 ||
-        filters.categories.includes(book.category);
-      const authorMatch =
-        filters.authors.length === 0 || filters.authors.includes(book.author);
-      const priceMatch = book.price <= filters.maxPrice;
-      const ratingMatch = book.rating >= filters.minRating;
-      return categoryMatch && authorMatch && priceMatch && ratingMatch;
-    });
+  // Fetch Categories on mount
+  useEffect(() => {
+    if (publicCategoriesStatus === "idle") {
+      dispatch(fetchPublicCategoriesAsync());
+    }
+  }, [publicCategoriesStatus, dispatch]);
 
-    // Sorting logic
-    books.sort((a, b) => {
-      switch (sortOrder) {
-        case "Price: Low to High":
-          return a.price - b.price;
-        case "Price: High to Low":
-          return b.price - a.price;
-        case "Rating":
-          return b.rating - a.rating;
-        default: // "Relevance" (or default)
-          return a.id - b.id; // Simple sort by ID for relevance
-      }
-    });
+  // Fetch Books whenever filters, sort, or page changes
+  useEffect(() => {
+    const params: any = {
+      page: currentPage,
+      limit: BOOKS_PER_PAGE,
+      sort: getSortParam(sortOrder),
+    };
 
-    return books;
-  }, [filters, sortOrder, allBooksData]);
+    if (filters.categories.length > 0) {
+      params.category = filters.categories.join(",");
+    }
 
-  // Memoized pagination logic
-  const paginatedBooks = useMemo(() => {
-    const startIndex = (currentPage - 1) * BOOKS_PER_PAGE;
-    const endIndex = startIndex + BOOKS_PER_PAGE;
-    return filteredBooks.slice(startIndex, endIndex);
-  }, [filteredBooks, currentPage]);
+    if (filters.authors.length > 0) {
+      params.author = filters.authors.join(",");
+    }
 
-  const totalPages = Math.ceil(filteredBooks.length / BOOKS_PER_PAGE);
+    if (filters.maxPrice < 2000) {
+       params.price_max = filters.maxPrice;
+    }
+
+    if (filters.minRating > 0) {
+      params.rating_min = filters.minRating;
+    }
+
+    dispatch(fetchPublicBooksAsync(params));
+  }, [dispatch, filters, sortOrder, currentPage]);
+
+  const getSortParam = (order: string) => {
+    switch (order) {
+      case "Price: Low to High":
+        return "price_asc";
+      case "Price: High to Low":
+        return "price_desc";
+      case "Rating":
+        return "rating";
+      default:
+        return undefined;
+    }
+  };
+
+  const allBooksData: Book[] = useMemo(() => {
+     const categoryMap = new Map<number, string>();
+     publicCategories.forEach((cat) => {
+       categoryMap.set(cat.id, cat.name);
+     });
+ 
+     if (!Array.isArray(publicBooks)) return [];
+ 
+     return publicBooks.map((book: ApiBook) => ({
+       id: book.id,
+       slug: book.slug,
+       title: book.title,
+       author: book.author,
+       price: book.price,
+       category: categoryMap.get(book.category_id) || "Uncategorized",
+       rating: book.rating || 0,
+       imageUrl: book.cover_image_url || "https://via.placeholder.com/400x600.png?text=No+Image",
+     }));
+   }, [publicBooks, publicCategories]);
+
+  // Derive authors from current page (limitation of server-side pagination without facet API)
+  const availableAuthors = useMemo(
+    () => [...new Set(allBooksData.map((book) => book.author))],
+    [allBooksData]
+  );
+  
+  // Combine current page authors with selected authors to ensure selected ones don't disappear from sidebar
+  const sidebarAuthors = useMemo(() => {
+      return [...new Set([...availableAuthors, ...filters.authors])];
+  }, [availableAuthors, filters.authors]);
+
+  const totalPages = Math.ceil(totalBooks / BOOKS_PER_PAGE);
 
   const handleApplyFilters = (newFilters: Filters) => {
     setFilters(newFilters);
-    if (newFilters.maxPrice !== filters.maxPrice) setFilters(newFilters);
     setCurrentPage(1); // Reset to first page on filter change
     setIsMobileFilterOpen(false); // Close mobile drawer
   };
@@ -359,17 +402,27 @@ const BookPage: React.FC = () => {
     setCurrentPage(1);
   };
 
-  useEffect(() => {
-    setFilters((prev) => ({ ...prev, maxPrice: MAX_PRICE }));
-  }, [MAX_PRICE]);
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
-  if (publicBooksStatus === "loading" || publicCategoriesStatus === "loading") {
+  const handleAddToCart = (id: number) => {
+    dispatch(addToCartAsync({ bookId: id, quantity: 1 }));
+    toast.success("Added to cart");
+  };
+
+  if (publicBooksStatus === "loading" && currentPage === 1 && publicBooks.length === 0) {
+     // Only show full loader on initial load or if we have no data
     return <div className="text-center py-20">Loading books...</div>;
   }
+  // Note: We might want a loading overlay for subsequent page loads, but for now we just show existing data + maybe a spinner implies update? 
+  // The UI doesn't have a loading state for the grid specifically in the design, so we leave as is or use status.
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen ">
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex-grow">
+        <Toaster position="top-right" />
         <main className="py-8">
           {/* Mobile Filter Button */}
           <div className="flex justify-between items-center mb-6">
@@ -383,15 +436,15 @@ const BookPage: React.FC = () => {
           </div>
 
           <div className="flex">
-            {/* --- Desktop Sidebar --- */}
-            <aside className="hidden lg:block w-1/4 xl:w-1/5 pr-8">
+             {/* --- Desktop Sidebar --- */}
+             <aside className="hidden lg:block w-1/4 xl:w-1/5 pr-8">
               <h2 className="text-2xl font-semibold mb-4">Filters</h2>
               <Sidebar
                 onApplyFilters={handleApplyFilters}
                 initialFilters={filters}
                 categories={publicCategories}
-                authors={allAuthors}
-                maxPrice={MAX_PRICE}
+                authors={sidebarAuthors}
+                maxPrice={2000}
               />
             </aside>
 
@@ -421,8 +474,8 @@ const BookPage: React.FC = () => {
                   onApplyFilters={handleApplyFilters}
                   initialFilters={filters}
                   categories={publicCategories}
-                  authors={allAuthors}
-                  maxPrice={MAX_PRICE}
+                  authors={sidebarAuthors}
+                  maxPrice={2000}
                 />
               </div>
             </div>
@@ -468,10 +521,10 @@ const BookPage: React.FC = () => {
                     onChange={handleSortChange}
                     className="w-full appearance-none rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                   >
-                    <option>Sort by: Relevance</option>
-                    <option>Sort by: Price: Low to High</option>
-                    <option>Sort by: Price: High to Low</option>
-                    <option>Sort by: Rating</option>
+                    <option>Relevance</option>
+                    <option>Price: Low to High</option>
+                    <option>Price: High to Low</option>
+                    <option>Rating</option>
                   </select>
                   <ChevronDown
                     size={16}
@@ -480,18 +533,22 @@ const BookPage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Book Grid */}
-              {publicBooksError ? (
+               {/* Book Grid */}
+               {publicBooksError ? (
                 <div className="text-center py-20 text-red-500">
                   <h3 className="text-2xl font-semibold">
                     Failed to load books
                   </h3>
                   <p className="mt-2">{publicBooksError}</p>
                 </div>
-              ) : paginatedBooks.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-10">
-                  {paginatedBooks.map((book) => (
-                    <BookCard key={book.id} book={book} />
+              ) : allBooksData.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-3 gap-x-6 gap-y-10">
+                  {allBooksData.map((book) => (
+                    <BookCard
+                      key={book.id}
+                      book={book}
+                      onAddToCart={handleAddToCart}
+                    />
                   ))}
                 </div>
               ) : (
@@ -510,7 +567,7 @@ const BookPage: React.FC = () => {
                 <Pagination
                   currentPage={currentPage}
                   totalPages={totalPages}
-                  onPageChange={setCurrentPage}
+                  onPageChange={handlePageChange}
                 />
               )}
             </div>

@@ -60,6 +60,7 @@ export interface FilterParams {
   description?: string;
   tags?: string;
   category?: string;
+  category_id?: number;
   price_min?: number;
   price_max?: number;
   rating_min?: number;
@@ -67,6 +68,9 @@ export interface FilterParams {
   publisher?: string;
   is_featured?: boolean;
   "is_featured-authors"?: boolean;
+  page?: number;
+  limit?: number;
+  sort?: string;
 }
 
 export interface CreateCategoryData {
@@ -87,7 +91,7 @@ export interface Book {
   author: string;
   price: number;
   description: string;
-  cover_image: string;
+  cover_image_url: string;
   stock: number;
   category_id: number;
   rating?: number;
@@ -96,6 +100,13 @@ export interface Book {
   isbn: string | null;
   publisher: string | null;
   published_date: string | null;
+}
+
+export interface PaginatedBookResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  results: Book[];
 }
 
 export interface Review {
@@ -149,7 +160,7 @@ export interface CartViewItem {
   book_id: number;
   book_name: string;
   slug: string;
-  cover_image: string;
+  cover_image_url: string;
   price: number;
   discount_price: number | null;
   offer_price: number | null;
@@ -272,9 +283,23 @@ export const deleteCategoryApi = async (id: number) => {
 
 // Public APIs
 
-// Fetch all public books
-export const fetchPublicBooksApi = async () => {
-  return request<Book[]>("/books/");
+// Fetch all public books with pagination and filtering
+export const fetchPublicBooksApi = async (params: FilterParams = {}) => {
+  const query = new URLSearchParams();
+  if (params.page) query.append("page", String(params.page));
+  if (params.limit) query.append("limit", String(params.limit));
+  if (params.sort) query.append("sort", params.sort);
+  if (params.category_id) query.append("category_id", String(params.category_id));
+  if (params.category) query.append("category", params.category);
+  if (params.author) query.append("author", params.author);
+  if (params.price_min !== undefined) query.append("min_price", String(params.price_min));
+  if (params.price_max !== undefined) query.append("max_price", String(params.price_max));
+  if (params.rating_min !== undefined) query.append("rating", String(params.rating_min));
+
+  // Append other filter params as needed if the backend supports them on /books/
+  // Based on user request, the endpoint is /books
+  
+  return request<PaginatedBookResponse>(`/books?${query.toString()}`);
 };
 
 // Fetch a single book by ID
@@ -376,6 +401,11 @@ export const searchBooksApi = async (query: string) => {
   return advancedSearchBooksApi({ q: query });
 };
 
+// Dynamic Search API
+export const fetchDynamicSearchBooksApi = async (query: string) => {
+  return request<Book[]>(`/books/dynamic-search?query=${query}`);
+};
+
 // Review APIs
 
 // List reviews for a book
@@ -414,3 +444,29 @@ export const deleteReviewApi = async (reviewId: number) => {
     method: "DELETE",
   });
 };
+
+// Home Page API
+export interface HomeBook {
+  book_id: number;
+  title: string;
+  author: string;
+  price: number;
+  discount_price: number | null;
+  offer_price: number | null;
+  cover_image: string;
+  rating: number;
+  cover_image_url: string;
+}
+
+export interface HomePageResponse {
+  featured_books: HomeBook[];
+  featured_authors_books: HomeBook[];
+  new_arrivals: HomeBook[];
+  popular_books: HomeBook[];
+  categories: Category[];
+}
+
+export const fetchHomeDataApi = async () => {
+  return request<HomePageResponse>("/users/home");
+};
+

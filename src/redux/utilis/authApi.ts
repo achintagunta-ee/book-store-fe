@@ -303,7 +303,140 @@ export async function trackOrderApi(orderId: number) {
 
 // 27. Download Invoice
 export function getInvoiceDownloadUrl(orderId: number): string {
-  return `${BASE_URL}/checkout/orders/${orderId}/invoice`;
+  return `${BASE_URL}/checkout/orders/${orderId}/invoice/download`;
+}
+
+export async function downloadInvoiceApi(orderId: number) {
+  const token = localStorage.getItem("auth_access");
+  const headers: Record<string, string> = {
+    "Accept": "application/pdf"
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${BASE_URL}/checkout/orders/${orderId}/invoice/download`, {
+    headers,
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Failed to download invoice");
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  
+  // Check for PDF magic bytes: %PDF (hex: 25 50 44 46)
+  const headerBytes = new Uint8Array(arrayBuffer.slice(0, 4));
+  const isPdfBinary = headerBytes[0] === 0x25 && 
+                      headerBytes[1] === 0x50 && 
+                      headerBytes[2] === 0x44 && 
+                      headerBytes[3] === 0x46;
+
+  if (isPdfBinary) {
+    return new Blob([arrayBuffer], { type: "application/pdf" });
+  }
+
+  // Try to decode as text to check for Base64 or JSON
+  const textDecoder = new TextDecoder();
+  const text = textDecoder.decode(arrayBuffer).trim();
+
+  // Check if it's Base64 encoded PDF (starts with JVBERi)
+  // Handle potential quotes context if server returns "JVBERi..."
+  const cleanText = text.replace(/^["']|["']$/g, '');
+  if (cleanText.startsWith("JVBERi")) {
+    try {
+      const binaryString = atob(cleanText);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return new Blob([bytes], { type: "application/pdf" });
+    } catch (e) {
+      console.error("Failed to decode Base64 string", e);
+    }
+  }
+
+  // Check for JSON error
+  try {
+    if (text.startsWith("{") || text.startsWith("[")) {
+      const json = JSON.parse(text);
+      if (json && (json.message || json.error)) {
+        throw new Error(json.message || json.error);
+      }
+    }
+  } catch (e) {
+    // Ignore JSON parse error, it might be just garbage text
+  }
+
+  // Fallback: Return original buffer as PDF blob
+  return new Blob([arrayBuffer], { type: "application/pdf" });
+}
+
+export async function viewOrderInvoiceApi(orderId: number) {
+  const token = localStorage.getItem("auth_access");
+  const headers: Record<string, string> = {
+    "Accept": "application/pdf"
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${BASE_URL}/checkout/orders/${orderId}/invoice`, {
+    headers,
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Failed to view invoice");
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  
+  // Check for PDF magic bytes: %PDF (hex: 25 50 44 46)
+  const headerBytes = new Uint8Array(arrayBuffer.slice(0, 4));
+  const isPdfBinary = headerBytes[0] === 0x25 && 
+                      headerBytes[1] === 0x50 && 
+                      headerBytes[2] === 0x44 && 
+                      headerBytes[3] === 0x46;
+
+  if (isPdfBinary) {
+    return new Blob([arrayBuffer], { type: "application/pdf" });
+  }
+
+  // Try to decode as text to check for Base64 or JSON
+  const textDecoder = new TextDecoder();
+  const text = textDecoder.decode(arrayBuffer).trim();
+
+  // Check if it's Base64 encoded PDF (starts with JVBERi)
+  const cleanText = text.replace(/^["']|["']$/g, '');
+  if (cleanText.startsWith("JVBERi")) {
+    try {
+      const binaryString = atob(cleanText);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return new Blob([bytes], { type: "application/pdf" });
+    } catch (e) {
+      console.error("Failed to decode Base64 string", e);
+    }
+  }
+
+  // Check for JSON error
+  try {
+    if (text.startsWith("{") || text.startsWith("[")) {
+      const json = JSON.parse(text);
+      if (json && (json.message || json.error)) {
+        throw new Error(json.message || json.error);
+      }
+    }
+  } catch (e) {
+    // Ignore JSON parse error, it might be just garbage text
+  }
+
+  // Fallback: Return original buffer as PDF blob
+  return new Blob([arrayBuffer], { type: "application/pdf" });
 }
 
 // --- 28. Address CRUD (Profile) ---
@@ -357,7 +490,7 @@ export interface WishlistItem {
   title: string;
   author: string;
   price: number;
-  cover_image: string | null;
+  cover_image_url: string | null;
   slug: string;
 }
 
@@ -418,3 +551,193 @@ export interface OrderDetailResponse {
 export async function getOrderDetailsApi(orderId: number) {
   return request<OrderDetailResponse>(`/users/profile/orders/${orderId}`);
 }
+
+// --- Admin Payments API ---
+
+export interface AdminPayment {
+  payment_id: number;
+  txn_id: string;
+  order_id: number;
+  amount: number;
+  status: string;
+  method: string;
+  customer_name: string;
+  created_at: string;
+  date?: string;
+  actions?: {
+    view_invoice: string;
+    download_receipt: string;
+  };
+}
+
+export interface AdminPaymentsResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  results: AdminPayment[];
+}
+
+export interface AdminPaymentsParams {
+  page?: number;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+  first_name?: string;
+  last_name?: string;
+}
+
+export async function getAdminPaymentsApi(params: AdminPaymentsParams = {}) {
+  const query = new URLSearchParams();
+  if (params.page) query.append("page", params.page.toString());
+  if (params.status && params.status !== "All") query.append("status", params.status);
+  if (params.start_date) query.append("start_date", params.start_date);
+  if (params.end_date) query.append("end_date", params.end_date);
+  if (params.first_name) query.append("first_name", params.first_name);
+  if (params.last_name) query.append("last_name", params.last_name);
+
+  return request<AdminPaymentsResponse>(`/admin/payments?${query.toString()}`);
+}
+
+export interface AdminPaymentDetail {
+  payment_id: number;
+  txn_id: string;
+  order_id: number;
+  amount: number;
+  status: string;
+  method: string;
+  customer: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  created_at: string;
+}
+
+export async function getAdminPaymentByIdApi(paymentId: number) {
+  return request<AdminPaymentDetail>(`/admin/payments/${paymentId}`);
+}
+
+// f) View Invoice
+export interface InvoiceItem {
+  title: string;
+  price: number;
+  quantity: number;
+  line_total: number;
+}
+
+export interface ViewInvoiceResponse {
+  invoice_id: string;
+  order_id: number;
+  customer_id: number;
+  status: string;
+  created_at: string;
+  items: InvoiceItem[];
+  subtotal: number;
+  tax: number;
+  total: number;
+}
+
+export async function getInvoiceApi(orderId: number) {
+  return request<ViewInvoiceResponse>(`/admin/invoices/${orderId}`);
+}
+
+// g) Payment Receipt
+export interface PaymentReceiptResponse {
+  receipt_id: string;
+  payment_id: number;
+  txn_id: string;
+  order_id: number;
+  amount: number;
+  method: string;
+  status: string;
+  paid_at: string;
+}
+
+export async function getPaymentReceiptApi(paymentId: number) {
+  return request<PaymentReceiptResponse>(`/admin/payments/${paymentId}/receipt`);
+}
+
+// 39) Admin Orders Management
+export interface AdminOrder {
+  order_id: number;
+  customer_name: string;
+  date: string;
+  total_amount: number;
+  status: string;
+}
+
+export interface AdminOrdersResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  results: AdminOrder[];
+}
+
+export interface AdminOrdersParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+export async function getAdminOrdersApi(params: AdminOrdersParams = {}) {
+  const query = new URLSearchParams();
+  if (params.page) query.append("page", params.page.toString());
+  if (params.limit) query.append("limit", params.limit.toString());
+  if (params.search) query.append("search", params.search);
+  if (params.status && params.status !== "All") query.append("status", params.status);
+  if (params.start_date) query.append("start_date", params.start_date);
+  if (params.end_date) query.append("end_date", params.end_date);
+
+  return request<AdminOrdersResponse>(`/admin/orders?${query.toString()}`);
+}
+
+export interface AdminOrderDetailItem {
+  title: string;
+  price: number;
+  quantity: number;
+  total: number;
+}
+
+export interface AdminOrderDetail {
+  order_id: number;
+  customer: {
+    name: string;
+    email: string;
+  };
+  status: string;
+  created_at: string;
+  items: AdminOrderDetailItem[];
+  invoice_url: string;
+}
+
+export async function getAdminOrderDetailsApi(orderId: number) {
+  return request<AdminOrderDetail>(`/admin/orders/${orderId}`);
+}
+
+export async function notifyCustomerApi(orderId: number) {
+  return request<{ message: string; order_id: number }>(
+    `/admin/orders/${orderId}/notify`,
+    {
+      method: "POST",
+    }
+  );
+}
+
+export async function downloadOrderInvoiceApi(orderId: number): Promise<string> {
+  const token = localStorage.getItem("auth_access");
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  const res = await fetch(`${BASE_URL}/admin/orders/${orderId}/invoice`, {
+    headers,
+  });
+  if (!res.ok) {
+    throw new Error("Failed to download invoice");
+  }
+  return await res.text();
+}
+

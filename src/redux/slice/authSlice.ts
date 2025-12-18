@@ -35,6 +35,23 @@ import {
   type OrderDetailResponse,
   type AddressSummaryResponse,
   type ConfirmOrderResponse,
+  getAdminPaymentsApi,
+  getAdminPaymentByIdApi,
+  type AdminPaymentsParams,
+  type AdminPaymentsResponse,
+  type AdminPaymentDetail,
+  downloadInvoiceApi,
+  viewOrderInvoiceApi,
+  getInvoiceApi,
+  getPaymentReceiptApi,
+  type ViewInvoiceResponse,
+  type PaymentReceiptResponse,
+  getAdminOrdersApi,
+  getAdminOrderDetailsApi,
+  type AdminOrdersResponse,
+  type AdminOrderDetail,
+  type AdminOrdersParams,
+  notifyCustomerApi,
 } from "../utilis/authApi";
 
 const PROFILE_KEY = "user_profile";
@@ -115,6 +132,24 @@ interface AuthState {
   addressSummaryStatus: "idle" | "loading" | "succeeded" | "failed";
   confirmOrderData: ConfirmOrderResponse | null;
   confirmOrderStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminPayments: AdminPaymentsResponse | null;
+  adminPaymentsStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminPaymentsError: string | null;
+  adminPaymentDetail: AdminPaymentDetail | null;
+  adminPaymentDetailStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminPaymentDetailError: string | null;
+  invoice: ViewInvoiceResponse | null;
+  invoiceStatus: "idle" | "loading" | "succeeded" | "failed";
+  invoiceError: string | null;
+  receipt: PaymentReceiptResponse | null;
+  receiptStatus: "idle" | "loading" | "succeeded" | "failed";
+  receiptError: string | null;
+  adminOrders: AdminOrdersResponse | null;
+  adminOrdersStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminOrdersError: string | null;
+  adminOrderDetail: AdminOrderDetail | null;
+  adminOrderDetailStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminOrderDetailError: string | null;
 }
 
 const initialState: AuthState = {
@@ -145,6 +180,24 @@ const initialState: AuthState = {
   addressSummaryStatus: "idle",
   confirmOrderData: null,
   confirmOrderStatus: "idle",
+  adminPayments: null,
+  adminPaymentsStatus: "idle",
+  adminPaymentsError: null,
+  adminPaymentDetail: null,
+  adminPaymentDetailStatus: "idle",
+  adminPaymentDetailError: null,
+  invoice: null,
+  invoiceStatus: "idle",
+  invoiceError: null,
+  receipt: null,
+  receiptStatus: "idle",
+  receiptError: null,
+  adminOrders: null,
+  adminOrdersStatus: "idle",
+  adminOrdersError: null,
+  adminOrderDetail: null,
+  adminOrderDetailStatus: "idle",
+  adminOrderDetailError: null,
 };
 
 export const loginThunk = createAsyncThunk(
@@ -383,6 +436,34 @@ export const trackOrderThunk = createAsyncThunk(
   }
 );
 
+export const downloadInvoiceThunk = createAsyncThunk(
+  "checkout/downloadInvoice",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await downloadInvoiceApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to download invoice");
+      }
+      return rejectWithValue("Failed to download invoice");
+    }
+  }
+);
+
+export const viewOrderInvoiceThunk = createAsyncThunk(
+  "checkout/viewInvoice",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await viewOrderInvoiceApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to view invoice");
+      }
+      return rejectWithValue("Failed to view invoice");
+    }
+  }
+);
+
 export const getAddressesThunk = createAsyncThunk(
   "auth/getAddresses",
   async (_, { rejectWithValue }) => {
@@ -559,6 +640,106 @@ export const getOrderDetailsThunk = createAsyncThunk(
   }
 );
 
+export const getAdminPaymentsThunk = createAsyncThunk(
+  "admin/getPayments",
+  async (params: AdminPaymentsParams, { rejectWithValue }) => {
+    try {
+      return await getAdminPaymentsApi(params);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch payments");
+      }
+      return rejectWithValue("Failed to fetch payments");
+    }
+  }
+);
+
+export const getAdminPaymentByIdThunk = createAsyncThunk(
+  "admin/getPaymentById",
+  async (paymentId: number, { rejectWithValue }) => {
+    try {
+      return await getAdminPaymentByIdApi(paymentId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch payment details"
+        );
+      }
+      return rejectWithValue("Failed to fetch payment details");
+    }
+  }
+);
+
+export const getInvoiceThunk = createAsyncThunk(
+  "admin/getInvoice",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await getInvoiceApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch invoice");
+      }
+      return rejectWithValue("Failed to fetch invoice");
+    }
+  }
+);
+
+export const getPaymentReceiptThunk = createAsyncThunk(
+  "admin/getPaymentReceipt",
+  async (paymentId: number, { rejectWithValue }) => {
+    try {
+      return await getPaymentReceiptApi(paymentId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch receipt");
+      }
+      return rejectWithValue("Failed to fetch receipt");
+    }
+  }
+);
+
+export const getAdminOrdersThunk = createAsyncThunk(
+  "admin/getOrders",
+  async (params: AdminOrdersParams, { rejectWithValue }) => {
+    try {
+      return await getAdminOrdersApi(params);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch orders");
+      }
+      return rejectWithValue("Failed to fetch orders");
+    }
+  }
+);
+
+export const notifyCustomerThunk = createAsyncThunk(
+  "admin/notifyCustomer",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await notifyCustomerApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to notify customer");
+      }
+      return rejectWithValue("Failed to notify customer");
+    }
+  }
+);
+
+export const getAdminOrderDetailsThunk = createAsyncThunk(
+  "admin/getOrderDetails",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await getAdminOrderDetailsApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch order details");
+      }
+      return rejectWithValue("Failed to fetch order details");
+    }
+  }
+);
+
 // checkWishlistStatusThunk is typically used in components locally,
 // but can be added here if needed for global state tracking.
 // For now, we focus on the list management.
@@ -713,6 +894,30 @@ const authSlice = createSlice({
         state.wishlistStatus = "failed";
         state.wishlistError = action.payload as string;
       })
+      // Admin Orders
+      .addCase(getAdminOrdersThunk.pending, (state) => {
+        state.adminOrdersStatus = "loading";
+      })
+      .addCase(getAdminOrdersThunk.fulfilled, (state, action) => {
+        state.adminOrdersStatus = "succeeded";
+        state.adminOrders = action.payload;
+      })
+      .addCase(getAdminOrdersThunk.rejected, (state, action) => {
+        state.adminOrdersStatus = "failed";
+        state.adminOrdersError = action.payload as string;
+      })
+      // Admin Order Details
+      .addCase(getAdminOrderDetailsThunk.pending, (state) => {
+        state.adminOrderDetailStatus = "loading";
+      })
+      .addCase(getAdminOrderDetailsThunk.fulfilled, (state, action) => {
+        state.adminOrderDetailStatus = "succeeded";
+        state.adminOrderDetail = action.payload;
+      })
+      .addCase(getAdminOrderDetailsThunk.rejected, (state, action) => {
+        state.adminOrderDetailStatus = "failed";
+        state.adminOrderDetailError = action.payload as string;
+      })
       .addCase(removeFromWishlistThunk.fulfilled, (state, action) => {
         state.wishlist = state.wishlist.filter(
           (item) => item.book_id !== action.payload
@@ -765,9 +970,66 @@ const authSlice = createSlice({
       .addCase(confirmOrderThunk.fulfilled, (state, action) => {
         state.confirmOrderStatus = "succeeded";
         state.confirmOrderData = action.payload;
+      })
+      // Admin Payments
+      .addCase(getAdminPaymentsThunk.pending, (state) => {
+        state.adminPaymentsStatus = "loading";
+      })
+      .addCase(getAdminPaymentsThunk.fulfilled, (state, action) => {
+        state.adminPaymentsStatus = "succeeded";
+        state.adminPayments = action.payload;
+      })
+      .addCase(getAdminPaymentsThunk.rejected, (state, action) => {
+        state.adminPaymentsStatus = "failed";
+        state.adminPaymentsError = action.payload as string;
+      })
+      .addCase(getAdminPaymentByIdThunk.pending, (state) => {
+        state.adminPaymentDetailStatus = "loading";
+      })
+      .addCase(getAdminPaymentByIdThunk.fulfilled, (state, action) => {
+        state.adminPaymentDetailStatus = "succeeded";
+        state.adminPaymentDetail = action.payload;
+      })
+      .addCase(getAdminPaymentByIdThunk.rejected, (state, action) => {
+        state.adminPaymentDetailStatus = "failed";
+        state.adminPaymentDetailError = action.payload as string;
+      })
+
+      // Invoice
+      .addCase(getInvoiceThunk.pending, (state) => {
+        state.invoiceStatus = "loading";
+        state.invoiceError = null;
+        state.invoice = null;
+      })
+      .addCase(getInvoiceThunk.fulfilled, (state, action) => {
+        state.invoiceStatus = "succeeded";
+        state.invoice = action.payload;
+      })
+      .addCase(getInvoiceThunk.rejected, (state, action) => {
+        state.invoiceStatus = "failed";
+        state.invoiceError = action.payload as string;
+      })
+
+      // Receipt
+      .addCase(getPaymentReceiptThunk.pending, (state) => {
+        state.receiptStatus = "loading";
+        state.receiptError = null;
+        state.receipt = null;
+      })
+      .addCase(getPaymentReceiptThunk.fulfilled, (state, action) => {
+        state.receiptStatus = "succeeded";
+        state.receipt = action.payload;
+      })
+      .addCase(getPaymentReceiptThunk.rejected, (state, action) => {
+        state.receiptStatus = "failed";
+        state.receiptError = action.payload as string;
       });
   },
 });
-export const { hydrateFromStorage, clearError, clearProfileError, logout } =
-  authSlice.actions;
+export const {
+  logout,
+  clearError,
+  clearProfileError,
+  hydrateFromStorage,
+} = authSlice.actions;
 export default authSlice.reducer;

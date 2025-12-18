@@ -114,9 +114,7 @@ const WishlistPage: React.FC = () => {
     title: item.title,
     author: item.author,
     price: item.price,
-    imageUrl: item.cover_image
-      ? `${import.meta.env.VITE_API_BASE_URL}/${item.cover_image}`
-      : "",
+    imageUrl: item.cover_image_url || "",
   }));
 
   // Settings for the Slick Carousel

@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  fetchFeaturedBooksAsync,
-  fetchFeaturedAuthorsBooksAsync,
+  fetchHomeDataAsync,
 } from "../redux/slice/bookSlice";
 import { type RootState, type AppDispatch } from "../redux/store/store";
 import { type Book as ApiBook } from "../redux/utilis/bookApi";
@@ -80,19 +79,18 @@ const HomePage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const {
     featuredBooks,
-    featuredBooksStatus,
     featuredAuthorsBooks,
-    featuredAuthorsBooksStatus,
+    newArrivals,
+    popularBooks,
+    categories,
+    homeDataStatus,
   } = useSelector((state: RootState) => state.books);
 
   useEffect(() => {
-    if (featuredBooksStatus === "idle") {
-      dispatch(fetchFeaturedBooksAsync());
+    if (homeDataStatus === "idle") {
+      dispatch(fetchHomeDataAsync());
     }
-    if (featuredAuthorsBooksStatus === "idle") {
-      dispatch(fetchFeaturedAuthorsBooksAsync());
-    }
-  }, [featuredBooksStatus, featuredAuthorsBooksStatus, dispatch]);
+  }, [homeDataStatus, dispatch]);
 
   const bookSections = useMemo(
     () => [
@@ -102,9 +100,7 @@ const HomePage: React.FC = () => {
           id: book.id,
           title: book.title,
           author: book.author,
-          imageUrl: book.cover_image
-            ? `${import.meta.env.VITE_API_BASE_URL}/${book.cover_image}`
-            : "",
+          imageUrl: book.cover_image_url || "",
           slug: book.slug,
         })),
       },
@@ -114,14 +110,32 @@ const HomePage: React.FC = () => {
           id: book.id,
           title: book.title,
           author: book.author,
-          imageUrl: book.cover_image
-            ? `${import.meta.env.VITE_API_BASE_URL}/${book.cover_image}`
-            : "",
+          imageUrl: book.cover_image_url || "",
+          slug: book.slug,
+        })),
+      },
+      {
+        title: "New Arrivals",
+        books: (newArrivals || []).map((book: ApiBook) => ({
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          imageUrl: book.cover_image_url || "",
+          slug: book.slug,
+        })),
+      },
+      {
+        title: "Popular Books",
+        books: (popularBooks || []).map((book: ApiBook) => ({
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          imageUrl: book.cover_image_url || "",
           slug: book.slug,
         })),
       },
     ],
-    [featuredBooks, featuredAuthorsBooks]
+    [featuredBooks, featuredAuthorsBooks, newArrivals, popularBooks]
   );
 
   return (
@@ -154,6 +168,7 @@ const HomePage: React.FC = () => {
                   </Link>
                 </div>
               </div>
+              
               {bookSections.map((section) => (
                 <BookSection
                   key={section.title}
@@ -161,6 +176,32 @@ const HomePage: React.FC = () => {
                   books={section.books}
                 />
               ))}
+
+               {/* Categories Section */}
+              <section>
+                 <h2 className="font-display px-4 pb-3 pt-5 text-3xl font-bold leading-tight tracking-tight text-secondary-link ">
+                  Categories
+                </h2>
+                <div className="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex items-stretch gap-4 p-4">
+                    {(categories || []).map((category) => (
+                      <Link
+                        key={category.id}
+                        to={`/books?category=${category.name}`}
+                        className="flex min-w-[150px] flex-col items-center justify-center gap-3 rounded-xl bg-background-light p-6 shadow-sm transition-all duration-300 hover:scale-105 hover:bg-primary/5 hover:shadow-md border border-transparent hover:border-primary/20"
+                      >
+                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                            {/* Simple icon placeholder or first letter */}
+                            <span className="text-xl font-bold">{category.name.charAt(0).toUpperCase()}</span>
+                         </div>
+                        <span className="text-center font-display text-base font-semibold text-text-light dark:text-text-main-dark">
+                          {category.name}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </section>
             </main>
             {/* <footer className="mt-20 border-t border-solid border-primary/20 px-4 pb-5 pt-10 font-body text-text-light/80 dark:text-text-main-dark/80 sm:px-6 lg:px-10">
 							<div className="grid grid-cols-1 gap-10 md:grid-cols-3">

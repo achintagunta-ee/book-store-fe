@@ -29,9 +29,7 @@ interface CartItemProps {
 
 const CartItem: React.FC<CartItemProps> = ({ item }) => {
   const dispatch: AppDispatch = useDispatch();
-  const imageUrl = item.cover_image
-    ? `${import.meta.env.VITE_API_BASE_URL}/${item.cover_image}`
-    : "https://via.placeholder.com/200x300.png?text=No+Image";
+  const imageUrl = item.cover_image_url || "https://via.placeholder.com/200x300.png?text=No+Image";
 
   const debouncedUpdate = useDebounce((itemId: number, quantity: number) => {
     dispatch(updateCartItemAsync({ itemId, quantity }));
@@ -51,11 +49,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
   return (
     <div className="flex items-center gap-4 bg-background-light  px-4 py-3 justify-between border-b border-primary/10">
       <div className="flex items-center gap-4">
-        <div
-          className="bg-center bg-no-repeat aspect-[2/3] bg-cover rounded-lg h-28 w-20"
-          data-alt={`Book cover of ${item.book_name}`}
-          style={{ backgroundImage: `url("${imageUrl}")` }}
-        ></div>
+        
         <Link to={`/book/detail/${item.slug}`}>
           <div
             className="bg-center bg-no-repeat aspect-[2/3] bg-cover rounded-lg h-28 w-20"
