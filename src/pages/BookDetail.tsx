@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
+import { useRazorpay } from "react-razorpay";
 import { useDispatch, useSelector } from "react-redux";
 import { type AppDispatch, type RootState } from "../redux/store/store";
 import {
@@ -15,6 +16,8 @@ import {
   removeFromWishlistThunk,
   checkWishlistStatusThunk,
   getAddressesThunk,
+  purchaseEbookThunk,
+  completeEbookPaymentThunk,
 } from "../redux/slice/authSlice";
 
 import {
@@ -82,11 +85,9 @@ const RelatedBookCard: React.FC<{ book: Book }> = ({ book }) => {
 const ReviewForm: React.FC<{
   bookSlug: string;
   onReviewSubmitted: () => void;
-}> = ({ bookSlug, onReviewSubmitted }) => {
+  onCancel: () => void;
+}> = ({ bookSlug, onReviewSubmitted, onCancel }) => {
   const dispatch: AppDispatch = useDispatch();
-  // Assuming you have a user slice in your redux store
-  // const { user } = useSelector((state: RootState) => state.user);
-  // For now, let's simulate getting the user name from localStorage as a stand-in for a profile
   const { userProfile } = useSelector((state: RootState) => state.auth);
   const userName = userProfile
     ? `${userProfile.first_name} ${userProfile.last_name}`.trim()
@@ -95,6 +96,7 @@ const ReviewForm: React.FC<{
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [error, setError] = useState("");
+  const [hoverRating, setHoverRating] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,61 +111,114 @@ const ReviewForm: React.FC<{
     setError("");
 
     const reviewData: CreateReviewData = {
-      user_name: userName, // Pass user name from profile/auth state
+      user_name: userName,
       rating,
       comment,
     };
 
-    await dispatch(createReviewAsync({ slug: bookSlug, reviewData }));
-
-    // Reset form and close it
-    setRating(0);
-    setComment("");
-    onReviewSubmitted();
+    try {
+      await dispatch(createReviewAsync({ slug: bookSlug, reviewData })).unwrap();
+      // On success
+      setRating(0);
+      setComment("");
+      onReviewSubmitted();
+    } catch (err: any) {
+      let errorMessage = err;
+      try {
+        if (typeof err === 'string') {
+             if (err.startsWith('{')) {
+                const parsed = JSON.parse(err);
+                errorMessage = parsed.detail || parsed.message || err;
+             } 
+        }
+      } catch (e) {
+        // ignore parsing error
+      }
+      setError(errorMessage || "Failed to submit review");
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-      {error && <p className="text-red-500">{error}</p>}
-      <div>
-        <label className="block text-sm font-medium">Rating</label>
-        <div className="flex">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <MdStar
-              key={star}
-              className={`cursor-pointer text-2xl ${
-                star <= rating ? "text-secondary-link" : "text-gray-300"
-              }`}
-              onClick={() => setRating(star)}
-            />
-          ))}
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-primary/10 p-6 md:p-8 transition-all duration-300">
+      <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-6">
+        Write a Review
+      </h3>
+      
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {error && (
+          <div className="flex items-center gap-3 rounded-lg bg-red-50 dark:bg-red-900/20 p-4 border border-red-200 dark:border-red-800/30 animate-pulse-once">
+             <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+             </div>
+             <p className="text-sm font-medium text-red-800 dark:text-red-200">
+               {error}
+             </p>
+          </div>
+        )}
+        
+        <div>
+          <label className="block text-sm font-bold text-text-main/80 dark:text-text-light/80 mb-2">
+            Your Rating
+          </label>
+          <div className="flex gap-1" onMouseLeave={() => setHoverRating(0)}>
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                className="focus:outline-none transition-transform hover:scale-110"
+                onClick={() => setRating(star)}
+                onMouseEnter={() => setHoverRating(star)}
+              >
+                 {star <= (hoverRating || rating) ? (
+                    <MdStar className="text-3xl text-yellow-400 drop-shadow-sm" />
+                 ) : (
+                    <MdStarBorder className="text-3xl text-gray-300 dark:text-gray-600" />
+                 )}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-      <div>
-        <label htmlFor="comment" className="block text-sm font-medium">
-          Comment
-        </label>
-        <textarea
-          id="comment"
-          rows={4}
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-        />
-      </div>
-      <button
-        type="submit"
-        className="rounded-lg bg-primary px-4 py-2 text-white hover:bg-primary/90"
-      >
-        Submit Review
-      </button>
-    </form>
+
+        <div>
+          <label htmlFor="comment" className="block text-sm font-bold text-text-main/80 dark:text-text-light/80 mb-2">
+            Your Review
+          </label>
+          <textarea
+            id="comment"
+            rows={4}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="What did you like or dislike?"
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 p-4 text-text-main dark:text-text-light placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none"
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 pt-2">
+          <button
+            type="submit"
+            className="flex-1 rounded-lg bg-primary px-6 py-3.5 text-white font-bold text-sm tracking-wide shadow-md hover:bg-primary/90 hover:shadow-lg transition-all active:scale-[0.98]"
+          >
+            Submit Review
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-6 py-3.5 text-text-main dark:text-text-light font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-all active:scale-[0.98]"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 
 const BookDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { Razorpay } = useRazorpay();
   const dispatch: AppDispatch = useDispatch();
   const {
     currentBook,
@@ -270,9 +325,15 @@ const BookDetailPage: React.FC = () => {
       toast.error("Please add a shipping address in your profile first.");
       return;
     }
+    
+    if (!Razorpay) {
+      toast.error("Payment system is loading. Please try again in a moment.");
+      return;
+    }
 
     try {
       const token = localStorage.getItem("auth_access");
+      // 1. Create Razorpay Order
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/book/buy-now`, {
         method: "POST",
         headers: {
@@ -288,21 +349,93 @@ const BookDetailPage: React.FC = () => {
 
       if (!response.ok) {
         const errData = await response.json();
-        throw new Error(errData.detail || "Failed to buy book");
+        throw new Error(errData.detail || "Failed to initiate Buy Now");
       }
 
       const data = await response.json();
-      toast.success(data.message || "Order placed using Buy Now");
-      navigate(`/order-confirmation/${data.order_id}`);
+      
+      // 2. Open Razorpay
+      const options: any = {
+        key: data.razorpay_key,
+        amount: data.amount * 100, // Convert to paise
+        currency: data.currency || "INR",
+        name: "Book Store",
+        description: "Buy Now Payment",
+        order_id: data.razorpay_order_id,
+        handler: async function (response: any) {
+             try {
+                 // 3. Verify Payment
+                 const verifyRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/book/buy-now/verify-payment`, {
+                    method: "POST",
+                     headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        order_id: data.order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_signature: response.razorpay_signature
+                    })
+                 });
+                 
+                 if (!verifyRes.ok) {
+                     const verifyErr = await verifyRes.json();
+                     throw new Error(verifyErr.detail || "Payment verification failed");
+                 }
+                 
+                 const verifyData = await verifyRes.json();
+                 toast.success(verifyData.message || "Order placed successfully!");
+                 navigate(`/order-confirmation/${data.order_id}`);
+
+            } catch (err: any) {
+                console.error("Verification Error", err);
+                toast.error(err.message || "Payment verification failed");
+            }
+        },
+        prefill: {
+            name: `${userProfile.first_name} ${userProfile.last_name}`,
+            email: userProfile.email,
+        },
+        theme: {
+            color: "#3399cc",
+        },
+      };
+      
+      const rzp1 = new Razorpay(options);
+      rzp1.open();
+
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Something went wrong processing your order.");
     }
   };
 
+  const handleBuyEbook = async () => {
+    if (!userProfile) {
+      toast.error("Please login to buy books");
+      return;
+    }
+    if (!bookData) return;
+
+    try {
+      // 1. Initiate Purchase
+      const purchaseRes = await dispatch(purchaseEbookThunk(bookData.id)).unwrap();
+      
+      if (purchaseRes.status === "pending") {
+         // 2. Complete Payment
+         await dispatch(completeEbookPaymentThunk(purchaseRes.purchase_id)).unwrap();
+         toast.success("E-book purchased successfully! Check your library.");
+         // navigate("/library"); // Optional: redirect to library
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to purchase E-book");
+    }
+  };
+
   const handleAddToCart = () => {
     if (!bookData) return;
-    dispatch(addToCartAsync({ bookId: bookData.id, quantity: 1 }));
+    dispatch(addToCartAsync({ bookId: bookData.id, quantity: 1, book: bookData }));
     toast.success(`${bookData.title} added to cart!`);
   };
 
@@ -349,17 +482,15 @@ const BookDetailPage: React.FC = () => {
 
           {/* Main Product Section */}
           <div className="mt-8 grid grid-cols-1 gap-12 md:grid-cols-5">
-            <div className="md:col-span-2">
-              <div
-                className="aspect-[2/3] w-full overflow-hidden rounded-xl bg-cover bg-center bg-no-repeat shadow-lg"
-                style={{
-                  backgroundImage: `url("${
-                    bookData.cover_image_url ||
-                    "https://via.placeholder.com/400x600.png?text=No+Image"
-                  }")`,
-                }}
-                aria-label={`The cover of the book ${bookData.title}`}
-              ></div>
+            <div className="md:col-span-2 flex justify-center items-start">
+              <img
+                src={
+                  bookData.cover_image_url ||
+                  "https://via.placeholder.com/400x600.png?text=No+Image"
+                }
+                alt={`The cover of the book ${bookData.title}`}
+                className="h-[450px] w-auto max-w-full rounded-xl shadow-lg object-contain bg-gray-50"
+              />
             </div>
             <div className="flex h-full flex-col md:col-span-3">
               <div>
@@ -388,6 +519,13 @@ const BookDetailPage: React.FC = () => {
                   className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg">
                   <span className="truncate">Buy Now</span>
                 </button>
+                {bookData.is_ebook && (
+                  <button 
+                  onClick={handleBuyEbook}
+                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-green-600 px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-green-700 hover:shadow-lg">
+                  <span className="truncate">Buy E-Book (${bookData.ebook_price})</span>
+                </button>
+                )}
                 <button
                   onClick={handleWishlistToggle}
                   className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-4 py-3 text-base font-bold leading-normal tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg"
@@ -552,6 +690,7 @@ const BookDetailPage: React.FC = () => {
               <ReviewForm
                 bookSlug={slug!}
                 onReviewSubmitted={() => setIsReviewFormVisible(false)}
+                onCancel={() => setIsReviewFormVisible(false)}
               />
             </div>
           )}

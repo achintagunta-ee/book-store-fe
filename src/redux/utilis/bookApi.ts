@@ -33,6 +33,14 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
 
   console.log(`API Response: ${res.status} ${res.statusText}`);
 
+  if (res.status === 401) {
+    if (window.location.pathname !== "/login") {
+      localStorage.removeItem("auth_access");
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
+  }
+
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     console.error(`API Error: ${res.status} - ${text}`);
@@ -100,6 +108,8 @@ export interface Book {
   isbn: string | null;
   publisher: string | null;
   published_date: string | null;
+  is_ebook?: boolean;
+  ebook_price?: number;
 }
 
 export interface PaginatedBookResponse {
@@ -174,6 +184,7 @@ export interface CartViewItem {
 export interface CartSummary {
   subtotal: number;
   shipping: number;
+  tax?: number;
   final_total: number;
 }
 
@@ -240,13 +251,45 @@ export const deleteBookApi = async (id: number) => {
 export const addToCartApi = async (book_id: number, quantity: number) => {
   return request<{ message: string; item: CartItem }>("/cart/add", {
     method: "POST",
-    body: JSON.stringify({ book_id, quantity }),
+    body: JSON.stringify({
+      items: [
+        {
+          book_id,
+          quantity,
+        },
+      ],
+    }),
   });
 };
 
+export interface CartDetailsItem {
+  item_id: number;
+  book_id: number;
+  book_name: string;
+  slug: string;
+  price: number;
+  cover_image: string;
+  cover_image_url: string;
+  quantity: number;
+  stock: number;
+  in_stock: boolean;
+  total: number;
+  discount_price: number | null;
+  offer_price: number | null;
+  effective_price: number;
+}
+
+export interface CartDetailsResponse {
+  items: CartDetailsItem[];
+  subtotal: number;
+  shipping: number;
+  tax: number;
+  total: number;
+}
+
 // View the cart
 export const viewCartApi = async () => {
-  return request<ViewCartResponse>("/cart/");
+  return request<CartDetailsResponse>("/cart/details");
 };
 
 // Update a cart item's quantity

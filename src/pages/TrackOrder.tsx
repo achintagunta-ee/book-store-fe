@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { trackOrderThunk } from "../redux/slice/authSlice";
+import { trackOrderThunk, verifyOrderStatusThunk } from "../redux/slice/authSlice";
 import { type AppDispatch } from "../redux/store/store";
 import { type TrackOrderResponse } from "../redux/utilis/authApi";
 import { Search, Package, Calendar, Clock, AlertCircle } from "lucide-react";
@@ -34,6 +34,18 @@ const TrackOrderPage: React.FC = () => {
 
     try {
       const result = await dispatch(trackOrderThunk(numericId)).unwrap();
+      
+      // Verify latest status including cancellations/refunds
+      try {
+        const verifyResult = await dispatch(verifyOrderStatusThunk(numericId)).unwrap();
+        if (verifyResult && verifyResult.status) {
+             result.status = verifyResult.status;
+        }
+      } catch (e) {
+        // Ignore verification error, fall back to track order status
+        console.warn("Status verification failed", e);
+      }
+
       setOrderData(result);
       setStatus("succeeded");
     } catch (err) {

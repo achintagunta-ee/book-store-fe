@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 
 import { useDispatch, useSelector } from "react-redux";
-import { Toaster, toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import type { AppDispatch, RootState } from "../redux/store/store";
 import {
@@ -10,6 +9,7 @@ import {
   clearError,
   forgotPasswordThunk,
   resetPasswordThunk,
+  getCurrentUserThunk,
 } from "../redux/slice/authSlice";
 
 const LoginPage: React.FC = () => {
@@ -33,7 +33,9 @@ const LoginPage: React.FC = () => {
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { status, error, accessToken } = useSelector((s: RootState) => s.auth);
+  const { status, error, accessToken, userProfile, profileStatus } = useSelector(
+    (s: RootState) => s.auth
+  );
 
   useEffect(() => {
     // Clear errors when switching between login/register or on initial load
@@ -46,24 +48,36 @@ const LoginPage: React.FC = () => {
 
   useEffect(() => {
     if (accessToken) {
-      navigate("/");
+      if (userProfile) {
+        if (userProfile.role === "admin") {
+          navigate("/admin/dashboard");
+        } else {
+          navigate("/");
+        }
+      } else if (profileStatus === "idle") {
+        dispatch(getCurrentUserThunk());
+      }
     }
-  }, [accessToken, navigate]);
+  }, [accessToken, userProfile, profileStatus, navigate, dispatch]);
+
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setValidationErrors({ ...validationErrors, [e.target.name]: "" });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
+      setValidationErrors({});
       if (isRegistering) {
         if (formData.password !== formData.confirm_password) {
-          toast.error("Passwords do not match.");
-          return;
+           setValidationErrors({ ...validationErrors, confirm_password: "Passwords do not match." });
+           return;
         }
         await dispatch(registerThunk(formData)).unwrap();
-        toast.success("Registration successful!");
+        // toast.success("Registration successful!");
         setIsRegistering(false); // Switch back to login form
         setFormData({
           // Reset form fields
@@ -82,10 +96,10 @@ const LoginPage: React.FC = () => {
         await dispatch(
           loginThunk({ email: formData.email, password: formData.password })
         ).unwrap();
-        navigate("/");
+        // Navigation is handled by useEffect
       }
     } catch (err: any) {
-      toast.error(err || "An unexpected error occurred.");
+      console.error(err);
     }
   };
 
@@ -94,11 +108,12 @@ const LoginPage: React.FC = () => {
     try {
       if (forgotPasswordStep === "email") {
         await dispatch(forgotPasswordThunk(formData.forgot_email)).unwrap();
-        toast.success("An OTP has been sent to your email.");
+        // toast.success("An OTP has been sent to your email.");
         setForgotPasswordStep("otp");
       } else {
-        if (formData.otp.length !== 6) {
-          toast.error("Please enter a valid 6-digit OTP.");
+      if (formData.otp.length !== 6) {
+          // You might set a validation error here instead of toast
+          //But for now just returning as requested to remove toast
           return;
         }
         await dispatch(
@@ -108,13 +123,12 @@ const LoginPage: React.FC = () => {
             new_password: formData.new_password,
           })
         ).unwrap();
-        toast.success("Password has been reset successfully!");
+        // toast.success("Password has been reset successfully!");
         setIsForgotPassword(false);
         setForgotPasswordStep("email"); // Reset for next time
       }
     } catch (err: any) {
-      // The error from the thunk's rejectWithValue is caught here
-      toast.error(err || "An unexpected error occurred.");
+      console.error(err);
     }
   };
 
@@ -187,6 +201,9 @@ const LoginPage: React.FC = () => {
                     onChange={handleFormChange}
                     required
                   />
+                  {validationErrors.first_name && (
+                    <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.first_name}</p>
+                  )}
                 </div>
                 <div className="flex flex-col">
                   <label
@@ -205,6 +222,9 @@ const LoginPage: React.FC = () => {
                     onChange={handleFormChange}
                     required
                   />
+                  {validationErrors.last_name && (
+                    <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.last_name}</p>
+                  )}
                 </div>
                 <div className="flex flex-col">
                   <label
@@ -223,6 +243,9 @@ const LoginPage: React.FC = () => {
                     onChange={handleFormChange}
                     required
                   />
+                   {validationErrors.username && (
+                    <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.username}</p>
+                  )}
                 </div>
               </>
             )}
@@ -243,6 +266,9 @@ const LoginPage: React.FC = () => {
                 onChange={handleFormChange}
                 required
               />
+              {validationErrors.email && (
+                <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.email}</p>
+              )}
             </div>
             <div className="flex flex-col">
               <label
@@ -261,6 +287,9 @@ const LoginPage: React.FC = () => {
                 onChange={handleFormChange}
                 required
               />
+               {validationErrors.password && (
+                <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.password}</p>
+              )}
             </div>
             {isRegistering && (
               <div className="flex flex-col">
@@ -280,6 +309,31 @@ const LoginPage: React.FC = () => {
                   onChange={handleFormChange}
                   required
                 />
+                 {validationErrors.confirm_password && (
+                    <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.confirm_password}</p>
+                  )}
+              </div>
+            )}
+            {error && (
+              <div className="rounded-md bg-red-50 p-4 border border-red-200 mb-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-red-800">
+                      {(() => {
+                        try {
+                          // Try to parse if it's a JSON string like {"detail": "..."}
+                          if (error.startsWith("{")) {
+                             const parsed = JSON.parse(error);
+                             return parsed.detail || parsed.message || error;
+                          }
+                          return error;
+                        } catch (e) {
+                          return error;
+                        }
+                      })()}
+                    </h3>
+                  </div>
+                </div>
               </div>
             )}
             {!isRegistering && (
@@ -377,13 +431,6 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
-      {error && (
-        <div className="absolute top-5 rounded-md bg-red-100 p-4 text-red-700">
-          <p>
-            {isRegistering ? "Registration Failed" : "Login Failed"}: {error}
-          </p>
-        </div>
-      )}
       {isForgotPassword && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
@@ -434,6 +481,9 @@ const LoginPage: React.FC = () => {
                       onChange={handleFormChange}
                       required
                     />
+                     {validationErrors.otp && (
+                      <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.otp}</p>
+                    )}
                   </div>
                   <div className="flex flex-col">
                     <label
@@ -452,6 +502,9 @@ const LoginPage: React.FC = () => {
                       onChange={handleFormChange}
                       required
                     />
+                     {validationErrors.new_password && (
+                      <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.new_password}</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -476,7 +529,7 @@ const LoginPage: React.FC = () => {
           </div>
         </div>
       )}
-      <Toaster position="top-right" />
+
     </div>
   );
 };

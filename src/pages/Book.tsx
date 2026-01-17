@@ -51,7 +51,7 @@ const BookCard: React.FC<{ book: Book; onAddToCart: (id: number) => void }> = ({
   <div className="flex flex-col gap-4 rounded-lg bg-background-light shadow-soft hover:shadow-lift transition-shadow duration-300 group ">
     <Link to={`/book/detail/${book.slug}`}>
       <div
-        className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-t-lg"
+        className="w-full bg-center bg-no-repeat h-[250px] bg-cover rounded-t-lg"
         role="img"
         aria-label={`Book cover for ${book.title} by ${book.author}`}
         style={{ backgroundImage: `url("${book.imageUrl}")` }}
@@ -119,10 +119,10 @@ const Sidebar: React.FC<{
   };
 
   return (
-    <div className="space-y-6 font-serif">
+    <div className="space-y-6">
       {/* Category */}
       <div>
-        <h3 className="text-xl font-semibold text-gray-800 mb-3">Category</h3>
+        <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-3">Category</h3>
         <div className="space-y-2">
           {categories.map((cat) => (
             <div key={cat.id} className="flex items-center">
@@ -133,7 +133,7 @@ const Sidebar: React.FC<{
                 onChange={() => handleCategoryChange(cat.name)}
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <label htmlFor={`cat-${cat.id}`} className="ml-3 text-gray-700">
+              <label htmlFor={`cat-${cat.id}`} className="ml-3 text-text-main/80 dark:text-text-light/80 font-body">
                 {cat.name}
               </label>
             </div>
@@ -143,7 +143,7 @@ const Sidebar: React.FC<{
 
       {/* Price */}
       <div>
-        <h3 className="text-xl font-semibold text-gray-800 mb-3">Price</h3>
+        <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-3">Price</h3>
         <input
           type="range"
           min="0"
@@ -152,7 +152,7 @@ const Sidebar: React.FC<{
           onChange={handlePriceChange}
           className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:appearance-none"
         />
-        <div className="flex justify-between text-sm text-gray-600 mt-2">
+        <div className="flex justify-between text-sm text-text-main/70 mt-2 font-body">
           <span>$0</span>
           <span>${localFilters.maxPrice}</span>
         </div>
@@ -160,7 +160,7 @@ const Sidebar: React.FC<{
 
       {/* Author */}
       <div>
-        <h3 className="text-xl font-semibold text-gray-800 mb-3">Author</h3>
+        <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-3">Author</h3>
         <div className="space-y-2 max-h-40 overflow-y-auto">
           {authors.map((author) => (
             <div key={author} className="flex items-center">
@@ -171,7 +171,7 @@ const Sidebar: React.FC<{
                 onChange={() => handleAuthorChange(author)}
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
               />
-              <label htmlFor={`auth-${author}`} className="ml-3 text-gray-700">
+              <label htmlFor={`auth-${author}`} className="ml-3 text-text-main/80 dark:text-text-light/80 font-body">
                 {author}
               </label>
             </div>
@@ -181,7 +181,7 @@ const Sidebar: React.FC<{
 
       {/* Rating */}
       <div>
-        <h3 className="text-xl font-semibold text-gray-800 mb-3">Rating</h3>
+        <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-3">Rating</h3>
         <div className="flex items-center space-x-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
@@ -408,7 +408,8 @@ const BookPage: React.FC = () => {
   };
 
   const handleAddToCart = (id: number) => {
-    dispatch(addToCartAsync({ bookId: id, quantity: 1 }));
+    const book = allBooksData.find(b => b.id === id);
+    dispatch(addToCartAsync({ bookId: id, quantity: 1, book }));
     toast.success("Added to cart");
   };
 

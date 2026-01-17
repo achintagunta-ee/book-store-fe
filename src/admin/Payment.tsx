@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import Sidebar from "./Sidebar";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Plus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "../redux/store/store";
 import {
@@ -8,6 +9,7 @@ import {
   getAdminPaymentByIdThunk,
   getInvoiceThunk,
   getPaymentReceiptThunk,
+  createOfflinePaymentThunk,
 } from "../redux/slice/authSlice";
 
 // Payments Page Component
@@ -37,6 +39,16 @@ const PaymentsPage: React.FC = () => {
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
 	const [showDateFilter, setShowDateFilter] = useState(false);
+	
+	// Create Payment State
+	const [showCreateModal, setShowCreateModal] = useState(false);
+	const [createForm, setCreateForm] = useState({
+		order_id: "",
+		amount: "",
+		method: "cash",
+		status: "completed"
+	});
+	const [isCreating, setIsCreating] = useState(false);
 
 	const [sidebarOpen, setSidebarOpen] = useState(true);
 	const [currentPage, setCurrentPage] = useState(1);
@@ -121,6 +133,38 @@ const PaymentsPage: React.FC = () => {
 		}
 	};
 
+	const handleCreatePayment = async () => {
+		if (!createForm.order_id || !createForm.amount) {
+			toast.error("Please fill in Order ID and Amount");
+			return;
+		}
+
+		setIsCreating(true);
+		try {
+			await dispatch(createOfflinePaymentThunk({
+				order_id: parseInt(createForm.order_id),
+				amount: parseFloat(createForm.amount),
+				method: createForm.method,
+				status: createForm.status
+			})).unwrap();
+			
+			toast.success("Payment recorded successfully");
+			setShowCreateModal(false);
+			setCreateForm({
+				order_id: "",
+				amount: "",
+				method: "cash",
+				status: "completed"
+			});
+			// Refresh list
+			dispatch(getAdminPaymentsThunk({ page: 1 }));
+		} catch (error: any) {
+			toast.error(error || "Failed to record payment");
+		} finally {
+			setIsCreating(false);
+		}
+	};
+
 	return (
 		<div className="flex h-screen w-full bg-background-light">
 			<Sidebar sidebarOpen={sidebarOpen} />{" "}
@@ -139,6 +183,12 @@ const PaymentsPage: React.FC = () => {
 							Payments
 						</h1>
 						<div className="flex flex-col items-end gap-2">
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-card-border text-white rounded-lg hover:bg-card-border/90 transition-colors shadow-sm font-semibold text-sm"
+                            >
+                                <Plus size={18} /> Record Payment
+                            </button>
 							<button
 								onClick={() => setShowDateFilter(!showDateFilter)}
 								className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm transition-colors ${
@@ -352,7 +402,7 @@ const PaymentsPage: React.FC = () => {
 														{new Date(payment.created_at).toLocaleDateString()}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														${payment.amount.toFixed(2)}
+														${(payment.amount || 0).toFixed(2)}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-sm">
 														<div className="flex flex-col gap-1 items-start">
@@ -470,23 +520,23 @@ const PaymentsPage: React.FC = () => {
 												<tr key={idx}>
 													<td className="py-3 px-4 text-sm">{item.title}</td>
 													<td className="text-right py-3 px-4 text-sm text-gray-600">{item.quantity}</td>
-													<td className="text-right py-3 px-4 text-sm text-gray-600">${item.price.toFixed(2)}</td>
-													<td className="text-right py-3 px-4 text-sm font-medium">${item.line_total.toFixed(2)}</td>
+													<td className="text-right py-3 px-4 text-sm text-gray-600">${(item.price || 0).toFixed(2)}</td>
+													<td className="text-right py-3 px-4 text-sm font-medium">${(item.line_total || 0).toFixed(2)}</td>
 												</tr>
 											))}
 										</tbody>
 										<tfoot className="bg-gray-50">
 											<tr>
 												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Subtotal:</td>
-												<td className="text-right py-2 px-4 text-sm font-medium">${invoice.subtotal.toFixed(2)}</td>
+												<td className="text-right py-2 px-4 text-sm font-medium">${(invoice.subtotal || 0).toFixed(2)}</td>
 											</tr>
 											<tr>
 												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Tax:</td>
-												<td className="text-right py-2 px-4 text-sm font-medium">${invoice.tax.toFixed(2)}</td>
+												<td className="text-right py-2 px-4 text-sm font-medium">${(invoice.tax || 0).toFixed(2)}</td>
 											</tr>
 											<tr className="border-t border-gray-200">
 												<td colSpan={3} className="text-right py-3 px-4 font-bold text-gray-900">Total:</td>
-												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">${invoice.total.toFixed(2)}</td>
+												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">${(invoice.total || 0).toFixed(2)}</td>
 											</tr>
 										</tfoot>
 									</table>
@@ -517,7 +567,9 @@ const PaymentsPage: React.FC = () => {
 						) : receipt ? (
 							<div className="space-y-6">
 								<div className="p-6 bg-green-50 rounded-xl text-center border border-green-100">
-									<p className="text-4xl font-bold text-green-600 mb-1">${receipt.amount.toFixed(2)}</p>
+									<p className="text-4xl font-bold text-green-600 mb-1">
+                                        ${(receipt.payment?.amount ?? receipt.amount ?? 0).toFixed(2)}
+                                    </p>
 									<div className="inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-0.5 rounded text-sm font-medium">
 										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
 										Paid Successfully
@@ -529,21 +581,33 @@ const PaymentsPage: React.FC = () => {
 										<span className="text-sm text-gray-500">Receipt ID</span>
 										<span className="font-mono text-sm font-medium text-gray-700">{receipt.receipt_id}</span>
 									</div>
+                                    {(receipt.customer?.name) && (
+                                        <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
+                                            <span className="text-sm text-gray-500">Customer</span>
+                                            <span className="font-medium text-sm text-gray-700">{receipt.customer.name}</span>
+                                        </div>
+                                    )}
 									<div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
 										<span className="text-sm text-gray-500">Transaction ID</span>
-										<span className="font-mono text-sm font-medium text-gray-700 text-right truncate max-w-[150px]" title={receipt.txn_id}>{receipt.txn_id}</span>
+										<span className="font-mono text-sm font-medium text-gray-700 text-right truncate max-w-[150px]" title={receipt.payment?.txn_id || receipt.txn_id}>
+                                            {receipt.payment?.txn_id || receipt.txn_id || 'N/A'}
+                                        </span>
 									</div>
 									<div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
 										<span className="text-sm text-gray-500">Order ID</span>
-										<span className="font-medium text-sm text-gray-700">#{receipt.order_id}</span>
+										<span className="font-medium text-sm text-gray-700">#{receipt.payment?.order_id || receipt.order_id}</span>
 									</div>
 									<div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
 										<span className="text-sm text-gray-500">Date Paid</span>
-										<span className="font-medium text-sm text-gray-700">{new Date(receipt.paid_at).toLocaleString()}</span>
+										<span className="font-medium text-sm text-gray-700">
+                                            {new Date(receipt.payment?.paid_at || receipt.paid_at || Date.now()).toLocaleString()}
+                                        </span>
 									</div>
 									<div className="flex justify-between items-center">
 										<span className="text-sm text-gray-500">Payment Method</span>
-										<span className="capitalize font-medium text-sm text-gray-700 bg-gray-100 px-2 py-0.5 rounded">{receipt.method}</span>
+										<span className="capitalize font-medium text-sm text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
+                                            {receipt.payment?.method || receipt.method || 'Unknown'}
+                                        </span>
 									</div>
 								</div>
 							</div>
@@ -553,6 +617,82 @@ const PaymentsPage: React.FC = () => {
 								{receiptError && <p className="text-sm mt-2 text-gray-500">{receiptError}</p>}
 							</div>
 						)}
+					</div>
+				</div>
+			)}
+			
+			{/* Create Payment Modal */}
+			{showCreateModal && (
+				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+					<div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
+						<div className="flex justify-between items-center mb-6">
+							<h2 className="text-xl font-bold text-text-main">Record Offline Payment</h2>
+							<button onClick={() => setShowCreateModal(false)} className="text-gray-500 hover:text-gray-700">
+								<X size={24} />
+							</button>
+						</div>
+						
+						<div className="space-y-4">
+							<div>
+								<label className="block text-sm font-medium text-text-main mb-1">Order ID</label>
+								<input 
+									type="number" 
+									className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-[#B35E3F] focus:border-[#B35E3F]"
+									placeholder="e.g. 123"
+									value={createForm.order_id}
+									onChange={e => setCreateForm({...createForm, order_id: e.target.value})}
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-text-main mb-1">Amount</label>
+								<input 
+									type="number" 
+									className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-[#B35E3F] focus:border-[#B35E3F]"
+									placeholder="0.00"
+									value={createForm.amount}
+									onChange={e => setCreateForm({...createForm, amount: e.target.value})}
+								/>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-text-main mb-1">Method</label>
+								<select 
+									className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-[#B35E3F] focus:border-[#B35E3F]"
+									value={createForm.method}
+									onChange={e => setCreateForm({...createForm, method: e.target.value})}
+								>
+									<option value="cash">Cash</option>
+									<option value="card">Card</option>
+									<option value="upi">UPI</option>
+								</select>
+							</div>
+							<div>
+								<label className="block text-sm font-medium text-text-main mb-1">Status</label>
+								<select 
+									className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-[#B35E3F] focus:border-[#B35E3F]"
+									value={createForm.status}
+									onChange={e => setCreateForm({...createForm, status: e.target.value})}
+								>
+									<option value="completed">Completed</option>
+									<option value="pending">Pending</option>
+								</select>
+							</div>
+						</div>
+						
+						<div className="flex justify-end gap-3 mt-6">
+							<button 
+								onClick={() => setShowCreateModal(false)}
+								className="px-4 py-2 border rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+							>
+								Cancel
+							</button>
+							<button 
+								onClick={handleCreatePayment}
+								disabled={isCreating}
+								className="px-4 py-2 bg-card-border text-white rounded-lg text-sm font-medium hover:bg-card-border/90 disabled:opacity-50"
+							>
+								{isCreating ? "Saving..." : "Record Payment"}
+							</button>
+						</div>
 					</div>
 				</div>
 			)}

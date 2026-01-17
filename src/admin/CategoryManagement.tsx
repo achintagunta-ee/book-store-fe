@@ -19,6 +19,7 @@ const CategoryManagement: React.FC = () => {
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<{
     id: number | null;
     name: string;
@@ -58,29 +59,36 @@ const CategoryManagement: React.FC = () => {
       return;
     }
 
-    if (currentCategory.id) {
-      // Update
-      await dispatch(
-        updateCategoryAsync({
-          id: currentCategory.id,
-          data: {
-            name: currentCategory.name,
-            description: currentCategory.description,
-          },
-        })
-      ).unwrap();
-      toast.success("Category updated successfully!");
-    } else {
-      // Create
-      await dispatch(
-        createCategoryAsync({
-          name: currentCategory.name,
-          description: currentCategory.description,
-        })
-      ).unwrap();
-      toast.success("Category created successfully!");
+    setIsSaving(true);
+    try {
+        if (currentCategory.id) {
+          // Update
+          await dispatch(
+            updateCategoryAsync({
+              id: currentCategory.id,
+              data: {
+                name: currentCategory.name,
+                description: currentCategory.description,
+              },
+            })
+          ).unwrap();
+          toast.success("Category updated successfully!");
+        } else {
+          // Create
+          await dispatch(
+            createCategoryAsync({
+              name: currentCategory.name,
+              description: currentCategory.description,
+            })
+          ).unwrap();
+          toast.success("Category created successfully!");
+        }
+        handleCloseModal();
+    } catch (e) {
+        toast.error("Failed to save category");
+    } finally {
+        setIsSaving(false);
     }
-    handleCloseModal();
   };
 
   const handleDelete = async (id: number) => {
@@ -211,9 +219,10 @@ const CategoryManagement: React.FC = () => {
                     </button>
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90"
+                      disabled={isSaving}
+                      className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-opacity-90 disabled:opacity-50"
                     >
-                      Save
+                      {isSaving ? "Saving..." : "Save"}
                     </button>
                   </div>
                 </div>

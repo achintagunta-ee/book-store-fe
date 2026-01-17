@@ -1,70 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import Sidebar from "./Sidebar";
-import { Menu, X } from "lucide-react";
-
-interface Book {
-	id: number;
-	title: string;
-	author: string;
-	stock: number;
-	status: "In Stock" | "Low Stock" | "Out of Stock";
-}
+import { Menu, X, Edit, Box } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../redux/store/store";
+import {
+  getInventorySummaryThunk,
+  getInventoryListThunk,
+  updateBookStockThunk,
+} from "../redux/slice/authSlice";
+import { type InventoryItem } from "../redux/utilis/authApi";
 
 const InventoryDashboard: React.FC = () => {
+    const dispatch = useDispatch<AppDispatch>();
+	const { inventorySummary, inventoryList } = useSelector((state: RootState) => state.auth);
+    
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [editingBook, setEditingBook] = useState<InventoryItem | null>(null);
+    const [newStock, setNewStock] = useState<number>(0);
+    const [isUpdating, setIsUpdating] = useState(false);
 
-	const books: Book[] = [
-		{
-			id: 1,
-			title: "The Midnight Library",
-			author: "Matt Haig",
-			stock: 15,
-			status: "In Stock",
-		},
-		{
-			id: 2,
-			title: "The Four Winds",
-			author: "Kristin Hannah",
-			stock: 8,
-			status: "Low Stock",
-		},
-		{
-			id: 3,
-			title: "Klara and the Sun",
-			author: "Kazuo Ishiguro",
-			stock: 22,
-			status: "In Stock",
-		},
-		{
-			id: 4,
-			title: "Project Hail Mary",
-			author: "Andy Weir",
-			stock: 0,
-			status: "Out of Stock",
-		},
-		{
-			id: 5,
-			title: "The Push",
-			author: "Ashley Audrain",
-			stock: 3,
-			status: "Low Stock",
-		},
-	];
+    useEffect(() => {
+        dispatch(getInventorySummaryThunk());
+        dispatch(getInventoryListThunk());
+    }, [dispatch]);
 
-	const filteredBooks = books.filter(
+	const filteredBooks = inventoryList.filter(
 		(book) =>
 			book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			book.author.toLowerCase().includes(searchQuery.toLowerCase())
 	);
 
 	const getStatusColor = (status: string) => {
-		switch (status) {
-			case "In Stock":
+        const lower = status.toLowerCase();
+		switch (true) {
+			case lower.includes("in"):
 				return "bg-green-100 text-green-800";
-			case "Low Stock":
+			case lower.includes("low"):
 				return "bg-orange-100 text-orange-700";
-			case "Out of Stock":
+			case lower.includes("out"):
 				return "bg-red-100 text-red-800";
 			default:
 				return "bg-gray-100 text-gray-800";
@@ -72,8 +47,34 @@ const InventoryDashboard: React.FC = () => {
 	};
 
 	const getRowColor = (status: string) => {
-		return status === "Low Stock" ? "bg-orange-50" : "";
+        const lower = status.toLowerCase();
+		return lower.includes("low") ? "bg-orange-50" : "";
 	};
+
+    const handleEditClick = (book: InventoryItem) => {
+        setEditingBook(book);
+        setNewStock(book.stock);
+    };
+
+    const handleUpdateStock = () => {
+        if (editingBook) {
+            setIsUpdating(true);
+            dispatch(updateBookStockThunk({ bookId: editingBook.id, stock: newStock }))
+                .unwrap()
+                .then(() => {
+                    setEditingBook(null);
+                    // Optionally refresh list or summary
+                    dispatch(getInventorySummaryThunk());
+                    toast.success("Stock updated successfully");
+                })
+                .catch((err: any) => {
+                    toast.error(err);
+                })
+                .finally(() => {
+                    setIsUpdating(false);
+                });
+        }
+    };
 
 	return (
 		<div className="flex h-screen w-full bg-background-light overflow-hidden">
@@ -104,19 +105,19 @@ const InventoryDashboard: React.FC = () => {
 							<p className="text-[#261d1a] text-base font-medium mb-2">
 								Total Books
 							</p>
-							<p className="text-[#5c2e2e] text-3xl font-bold">1,234</p>
+							<p className="text-[#5c2e2e] text-3xl font-bold">{inventorySummary?.total_books || 0}</p>
 						</div>
 						<div className="rounded-lg p-6 border border-[#8E5A4F] bg-orange-50">
 							<p className="text-[#261d1a] text-base font-medium mb-2">
 								Low Stock Items
 							</p>
-							<p className="text-[#8E5A4F] text-3xl font-bold">56</p>
+							<p className="text-[#8E5A4F] text-3xl font-bold">{inventorySummary?.low_stock || 0}</p>
 						</div>
 						<div className="rounded-lg p-6 border border-[#e2d8d4] bg-white">
 							<p className="text-[#261d1a] text-base font-medium mb-2">
 								Out of Stock Items
 							</p>
-							<p className="text-[#5c2e2e] text-3xl font-bold">12</p>
+							<p className="text-[#5c2e2e] text-3xl font-bold">{inventorySummary?.out_of_stock || 0}</p>
 						</div>
 					</div>
 
@@ -159,47 +160,101 @@ const InventoryDashboard: React.FC = () => {
 								</tr>
 							</thead>
 							<tbody className="divide-y divide-[#e2d8d4]">
-								{filteredBooks.map((book) => (
-									<tr key={book.id} className={getRowColor(book.status)}>
-										<td className="px-6 py-4 whitespace-nowrap text-[#261d1a]">
-											{book.title}
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap text-[#8E5A4F]">
-											{book.author}
-										</td>
-										<td
-											className={`px-6 py-4 whitespace-nowrap font-semibold ${
-												book.status === "Low Stock"
-													? "text-[#8E5A4F]"
-													: "text-[#261d1a]"
-											}`}
-										>
-											{book.stock}
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap">
-											<span
-												className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-													book.status
-												)}`}
+								{filteredBooks && filteredBooks.length > 0 ? (
+									filteredBooks.map((book) => (
+										<tr key={book.id} className={getRowColor(book.status)}>
+											<td className="px-6 py-4 whitespace-nowrap text-[#261d1a]">
+												{book.title}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-[#8E5A4F]">
+												{book.author}
+											</td>
+											<td
+												className={`px-6 py-4 whitespace-nowrap font-semibold ${
+													book.status.toLowerCase().includes("low")
+														? "text-[#8E5A4F]"
+														: "text-[#261d1a]"
+												}`}
 											>
-												{book.status}
-											</span>
-										</td>
-										<td className="px-6 py-4 whitespace-nowrap text-right">
-											<a
-												href="#"
-												className="text-[#B35E3F] hover:text-[#5c2e2e] text-sm font-medium"
-											>
-												Edit
-											</a>
+												{book.stock}
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap">
+												<span
+													className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+														book.status
+													)}`}
+												>
+													{book.status}
+												</span>
+											</td>
+											<td className="px-6 py-4 whitespace-nowrap text-right">
+												<button
+													onClick={() => handleEditClick(book)}
+													className="text-[#B35E3F] hover:text-[#5c2e2e] text-sm font-medium flex items-center justify-end gap-1 w-full"
+												>
+													<Edit size={16} /> Edit
+												</button>
+											</td>
+										</tr>
+									))
+								) : (
+									<tr>
+										<td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+											<div className="flex flex-col items-center justify-center">
+												<Box size={48} className="text-gray-300 mb-2" />
+												<p>No books found matching your search.</p>
+											</div>
 										</td>
 									</tr>
-								))}
+								)}
 							</tbody>
 						</table>
 					</div>
 				</div>
 			</main>
+
+            {/* Edit Modal */}
+            {editingBook && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
+                         <button
+                            onClick={() => setEditingBook(null)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                            <X size={24} />
+                        </button>
+                        <h2 className="text-2xl font-bold text-[#5c2e2e] mb-2">Update Stock</h2>
+                        <p className="text-gray-600 mb-6">Update the stock quantity for <span className="font-semibold text-[#B35E3F]">{editingBook.title}</span>.</p>
+                        
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Current Stock</label>
+                            <input 
+                                type="number" 
+                                min="0" 
+                                value={newStock} 
+                                onChange={(e) => setNewStock(parseInt(e.target.value) || 0)}
+                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#B35E3F] focus:border-transparent text-lg font-medium"
+                            />
+                        </div>
+                        
+                        <div className="flex justify-end gap-3">
+                            <button 
+                                onClick={() => setEditingBook(null)}
+                                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors font-medium"
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={handleUpdateStock}
+                                disabled={isUpdating}
+                                className="px-6 py-2 bg-[#B35E3F] hover:bg-[#8E5A4F] text-white rounded-lg shadow transition-colors font-medium disabled:opacity-50"
+                            >
+                                {isUpdating ? "Updating..." : "Update Stock"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 		</div>
 	);
 };

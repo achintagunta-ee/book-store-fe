@@ -52,6 +52,81 @@ import {
   type AdminOrderDetail,
   type AdminOrdersParams,
   notifyCustomerApi,
+  getAdminOrderInvoiceApi,
+  type AdminInvoiceResponse,
+  updateOrderStatusApi,
+  fetchNotificationsApi,
+  viewNotificationApi,
+  type NotificationItem,
+  type NotificationDetail,
+  getAdminNotificationsApi,
+  viewAdminNotificationApi,
+  type AdminNotificationItem,
+  type AdminNotificationDetail,
+  resendNotificationApi,
+  getInventorySummaryApi,
+  getInventoryListApi,
+  updateBookStockApi,
+  type InventorySummary,
+  type InventoryItem,
+  getGeneralSettingsApi,
+  updateGeneralSettingsApi,
+  type GeneralSettings,
+  getDashboardStatsApi,
+  type DashboardStats,
+  adminSearchApi,
+  type SearchResult,
+  getPaymentDetailsApi,
+  type PaymentDetails,
+  addOrderTrackingApi,
+  getOrderStatusApi,
+  type OrderStatusResponse,
+  getAdminOrderNotificationsApi,
+  getSocialLinksApi,
+  updateSocialLinksApi,
+  type SocialLinks,
+  createOfflineOrderApi,
+  createOfflinePaymentApi,
+  type OfflineOrderRequest,
+  type OfflinePaymentRequest,
+  getAdminProfileApi,
+  updateAdminProfileApi,
+  changeAdminPasswordApi,
+  type AdminProfileResponse,
+  type ChangePasswordRequest,
+  getUserPaymentsApi,
+  type UserPaymentsResponse,
+  requestCancellationApi,
+  getCancellationStatusApi,
+  getAdminCancellationRequestsApi,
+  processRefundApi,
+  rejectCancellationApi,
+  getCancellationStatsApi,
+  verifyOrderStatusApi,
+  type CancellationRequestPayload,
+  type CancellationStatusResponse,
+  type AdminCancellationRequestsResponse,
+  type AdminCancellationRequestsParams,
+  type ProcessRefundPayload,
+  type RejectCancellationPayload,
+  type CancellationStatsResponse,
+  type OrderStatusResponse as VerifyOrderStatusResponse,
+  completePaymentAfterExpiryApi,
+  uploadEbookApi,
+  purchaseEbookApi,
+  completeEbookPaymentApi,
+  getUserLibraryApi,
+  readEbookApi,
+  type EbookPurchaseResponse,
+  type CompleteEbookPaymentResponse,
+  type LibraryBook,
+  type ReadEbookResponse,
+  type AdminOrderNotificationItem,
+  createRazorpayOrderApi,
+  verifyRazorpayPaymentApi,
+  createGuestRazorpayOrderApi,
+  verifyGuestRazorpayPaymentApi,
+  approveCancellationApi,
 } from "../utilis/authApi";
 
 const PROFILE_KEY = "user_profile";
@@ -150,6 +225,83 @@ interface AuthState {
   adminOrderDetail: AdminOrderDetail | null;
   adminOrderDetailStatus: "idle" | "loading" | "succeeded" | "failed";
   adminOrderDetailError: string | null;
+  adminOrderInvoice: AdminInvoiceResponse | null;
+  adminOrderInvoiceStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminOrderInvoiceError: string | null;
+  notifications: NotificationItem[];
+  notificationsStatus: "idle" | "loading" | "succeeded" | "failed";
+  notificationsError: string | null;
+  currentNotification: NotificationDetail | null;
+  currentNotificationStatus: "idle" | "loading" | "succeeded" | "failed";
+  currentNotificationError: string | null;
+  adminNotifications: AdminNotificationItem[];
+  adminNotificationsStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminNotificationsError: string | null;
+  currentAdminNotification: AdminNotificationDetail | null;
+  currentAdminNotificationStatus: "idle" | "loading" | "succeeded" | "failed";
+  currentAdminNotificationError: string | null;
+  inventorySummary: InventorySummary | null;
+  inventorySummaryStatus: "idle" | "loading" | "succeeded" | "failed";
+  inventorySummaryError: string | null;
+  inventoryList: InventoryItem[];
+  inventoryListStatus: "idle" | "loading" | "succeeded" | "failed";
+  inventoryListError: string | null;
+  generalSettings: GeneralSettings | null;
+  generalSettingsStatus: "idle" | "loading" | "succeeded" | "failed";
+  generalSettingsError: string | null;
+  dashboardStats: DashboardStats | null;
+  dashboardStatsStatus: "idle" | "loading" | "succeeded" | "failed";
+  dashboardStatsError: string | null;
+  searchResults: SearchResult | null;
+  searchResultsStatus: "idle" | "loading" | "succeeded" | "failed";
+  searchResultsError: string | null;
+  paymentDetails: PaymentDetails | null;
+  paymentDetailsStatus: "idle" | "loading" | "succeeded" | "failed";
+  paymentDetailsError: string | null;
+  orderStatusData: OrderStatusResponse | null;
+  orderStatusDataStatus: "idle" | "loading" | "succeeded" | "failed";
+  orderStatusDataError: string | null;
+  adminOrderNotifications: AdminOrderNotificationItem[];
+  adminOrderNotificationsStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminOrderNotificationsError: string | null;
+  socialLinks: SocialLinks | null;
+  socialLinksStatus: "idle" | "loading" | "succeeded" | "failed";
+  socialLinksError: string | null;
+  adminProfile: AdminProfileResponse | null;
+  adminProfileStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminProfileError: string | null;
+  userPayments: UserPaymentsResponse | null;
+  userPaymentsStatus: "idle" | "loading" | "succeeded" | "failed";
+  userPaymentsError: string | null;
+  cancellationRequests: AdminCancellationRequestsResponse | null;
+  cancellationRequestsStatus: "idle" | "loading" | "succeeded" | "failed";
+  cancellationRequestsError: string | null;
+  cancellationStats: CancellationStatsResponse | null;
+  cancellationStatsStatus: "idle" | "loading" | "succeeded" | "failed";
+  cancellationStatsError: string | null;
+  cancellationStatus: CancellationStatusResponse | null;
+  cancellationStatusStatus: "idle" | "loading" | "succeeded" | "failed";
+  cancellationStatusError: string | null;
+  verifyOrderStatusData: VerifyOrderStatusResponse | null;
+  verifyOrderStatusStatus: "idle" | "loading" | "succeeded" | "failed";
+  verifyOrderStatusError: string | null;
+  completePaymentExpiryStatus: "idle" | "loading" | "succeeded" | "failed";
+  completePaymentExpiryError: string | null;
+  completePaymentExpiryDetail: string | null;
+  uploadEbookStatus: "idle" | "loading" | "succeeded" | "failed";
+  uploadEbookError: string | null;
+  ebookPurchaseStatus: "idle" | "loading" | "succeeded" | "failed";
+  ebookPurchaseError: string | null;
+  ebookPurchaseResponse: EbookPurchaseResponse | null;
+  completeEbookPaymentStatus: "idle" | "loading" | "succeeded" | "failed";
+  completeEbookPaymentError: string | null;
+  completeEbookPaymentResponse: CompleteEbookPaymentResponse | null;
+  userLibrary: LibraryBook[];
+  userLibraryStatus: "idle" | "loading" | "succeeded" | "failed";
+  userLibraryError: string | null;
+  currentEbook: ReadEbookResponse | null;
+  currentEbookStatus: "idle" | "loading" | "succeeded" | "failed";
+  currentEbookError: string | null;
 }
 
 const initialState: AuthState = {
@@ -198,6 +350,83 @@ const initialState: AuthState = {
   adminOrderDetail: null,
   adminOrderDetailStatus: "idle",
   adminOrderDetailError: null,
+  adminOrderInvoice: null,
+  adminOrderInvoiceStatus: "idle",
+  adminOrderInvoiceError: null,
+  notifications: [],
+  notificationsStatus: "idle",
+  notificationsError: null,
+  currentNotification: null,
+  currentNotificationStatus: "idle",
+  currentNotificationError: null,
+  adminNotifications: [],
+  adminNotificationsStatus: "idle",
+  adminNotificationsError: null,
+  currentAdminNotification: null,
+  currentAdminNotificationStatus: "idle",
+  currentAdminNotificationError: null,
+  inventorySummary: null,
+  inventorySummaryStatus: "idle",
+  inventorySummaryError: null,
+  inventoryList: [],
+  inventoryListStatus: "idle",
+  inventoryListError: null,
+  generalSettings: null,
+  generalSettingsStatus: "idle",
+  generalSettingsError: null,
+  dashboardStats: null,
+  dashboardStatsStatus: "idle",
+  dashboardStatsError: null,
+  searchResults: null,
+  searchResultsStatus: "idle",
+  searchResultsError: null,
+  paymentDetails: null,
+  paymentDetailsStatus: "idle",
+  paymentDetailsError: null,
+  orderStatusData: null,
+  orderStatusDataStatus: "idle",
+  orderStatusDataError: null,
+  adminOrderNotifications: [],
+  adminOrderNotificationsStatus: "idle",
+  adminOrderNotificationsError: null,
+  socialLinks: null,
+  socialLinksStatus: "idle",
+  socialLinksError: null,
+  adminProfile: null,
+  adminProfileStatus: "idle",
+  adminProfileError: null,
+  userPayments: null,
+  userPaymentsStatus: "idle",
+  userPaymentsError: null,
+  cancellationRequests: null,
+  cancellationRequestsStatus: "idle",
+  cancellationRequestsError: null,
+  cancellationStats: null,
+  cancellationStatsStatus: "idle",
+  cancellationStatsError: null,
+  cancellationStatus: null,
+  cancellationStatusStatus: "idle",
+  cancellationStatusError: null,
+  verifyOrderStatusData: null,
+  verifyOrderStatusStatus: "idle",
+  verifyOrderStatusError: null,
+  completePaymentExpiryStatus: "idle",
+  completePaymentExpiryError: null,
+  completePaymentExpiryDetail: null,
+  uploadEbookStatus: "idle",
+  uploadEbookError: null,
+  ebookPurchaseStatus: "idle",
+  ebookPurchaseError: null,
+  ebookPurchaseResponse: null,
+  completeEbookPaymentStatus: "idle",
+  completeEbookPaymentError: null,
+  completeEbookPaymentResponse: null,
+  userLibrary: [],
+  userLibraryStatus: "idle",
+  userLibraryError: null,
+  currentEbook: null,
+  currentEbookStatus: "idle",
+  currentEbookError: null,
 };
 
 export const loginThunk = createAsyncThunk(
@@ -624,6 +853,99 @@ export const getOrderHistoryThunk = createAsyncThunk(
   }
 );
 
+export const completePaymentAfterExpiryThunk = createAsyncThunk(
+  "checkout/completePaymentAfterExpiry",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      const data = await completePaymentAfterExpiryApi(orderId);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to complete payment");
+      }
+      return rejectWithValue("Failed to complete payment");
+    }
+  }
+);
+
+export const uploadEbookThunk = createAsyncThunk(
+  "admin/uploadEbook",
+  async (
+    { bookId, file, ebookPrice }: { bookId: number; file: File; ebookPrice: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      const data = await uploadEbookApi(bookId, file, ebookPrice);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to upload ebook");
+      }
+      return rejectWithValue("Failed to upload ebook");
+    }
+  }
+);
+
+export const purchaseEbookThunk = createAsyncThunk(
+  "ebooks/purchase",
+  async (bookId: number, { rejectWithValue }) => {
+    try {
+      const data = await purchaseEbookApi(bookId);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to initiate purchase");
+      }
+      return rejectWithValue("Failed to initiate purchase");
+    }
+  }
+);
+
+export const completeEbookPaymentThunk = createAsyncThunk(
+  "ebooks/completePayment",
+  async (purchaseId: number, { rejectWithValue }) => {
+    try {
+      const data = await completeEbookPaymentApi(purchaseId);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to complete ebook payment");
+      }
+      return rejectWithValue("Failed to complete ebook payment");
+    }
+  }
+);
+
+export const getUserLibraryThunk = createAsyncThunk(
+  "users/getLibrary",
+  async (_, { rejectWithValue }) => {
+    try {
+      const data = await getUserLibraryApi();
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch library");
+      }
+      return rejectWithValue("Failed to fetch library");
+    }
+  }
+);
+
+export const readEbookThunk = createAsyncThunk(
+  "users/readEbook",
+  async (bookId: number, { rejectWithValue }) => {
+    try {
+      const data = await readEbookApi(bookId);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to read ebook");
+      }
+      return rejectWithValue("Failed to read ebook");
+    }
+  }
+);
+
 export const getOrderDetailsThunk = createAsyncThunk(
   "auth/getOrderDetails",
   async (orderId: number, { rejectWithValue }) => {
@@ -670,6 +992,20 @@ export const getAdminPaymentByIdThunk = createAsyncThunk(
   }
 );
 
+export const getUserPaymentsThunk = createAsyncThunk(
+  "auth/getUserPayments",
+  async (page: number = 1, { rejectWithValue }) => {
+    try {
+      return await getUserPaymentsApi(page);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch user payments");
+      }
+      return rejectWithValue("Failed to fetch user payments");
+    }
+  }
+);
+
 export const getInvoiceThunk = createAsyncThunk(
   "admin/getInvoice",
   async (orderId: number, { rejectWithValue }) => {
@@ -697,6 +1033,35 @@ export const getPaymentReceiptThunk = createAsyncThunk(
     }
   }
 );
+
+export const getSocialLinksThunk = createAsyncThunk(
+  "settings/getSocialLinks",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getSocialLinksApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch social links");
+      }
+      return rejectWithValue("Failed to fetch social links");
+    }
+  }
+);
+
+export const updateSocialLinksThunk = createAsyncThunk(
+  "settings/updateSocialLinks",
+  async (data: SocialLinks, { rejectWithValue }) => {
+    try {
+      return await updateSocialLinksApi(data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to update social links");
+      }
+      return rejectWithValue("Failed to update social links");
+    }
+  }
+);
+
 
 export const getAdminOrdersThunk = createAsyncThunk(
   "admin/getOrders",
@@ -740,9 +1105,579 @@ export const getAdminOrderDetailsThunk = createAsyncThunk(
   }
 );
 
+export const getAdminOrderInvoiceThunk = createAsyncThunk(
+  "admin/getOrderInvoice",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await getAdminOrderInvoiceApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch invoice");
+      }
+      return rejectWithValue("Failed to fetch invoice");
+    }
+  }
+);
+
+export const updateOrderStatusThunk = createAsyncThunk(
+  "admin/updateOrderStatus",
+  async (
+    { orderId, newStatus }: { orderId: number; newStatus: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await updateOrderStatusApi(orderId, newStatus);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to update order status");
+      }
+      return rejectWithValue("Failed to update order status");
+    }
+  }
+);
+
+export const fetchNotificationsThunk = createAsyncThunk(
+  "auth/fetchNotifications",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await fetchNotificationsApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch notifications");
+      }
+      return rejectWithValue("Failed to fetch notifications");
+    }
+  }
+);
+
+export const viewNotificationThunk = createAsyncThunk(
+  "auth/viewNotification",
+  async (notificationId: number, { rejectWithValue }) => {
+    try {
+      return await viewNotificationApi(notificationId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to view notification");
+      }
+      return rejectWithValue("Failed to view notification");
+    }
+  }
+);
+
+export const getAdminNotificationsThunk = createAsyncThunk(
+  "auth/getAdminNotifications",
+  async (triggerSource: string | undefined, { rejectWithValue }) => {
+    try {
+      return await getAdminNotificationsApi(triggerSource);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch admin notifications");
+      }
+      return rejectWithValue("Failed to fetch admin notifications");
+    }
+  }
+);
+
+export const resendNotificationThunk = createAsyncThunk(
+  "auth/resendNotification",
+  async (notificationId: number, { rejectWithValue }) => {
+    try {
+      return await resendNotificationApi(notificationId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to resend notification");
+      }
+      return rejectWithValue("Failed to resend notification");
+    }
+  }
+);
+
+export const viewAdminNotificationThunk = createAsyncThunk(
+  "auth/viewAdminNotification",
+  async (notificationId: number, { rejectWithValue }) => {
+    try {
+      return await viewAdminNotificationApi(notificationId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to view admin notification");
+      }
+      return rejectWithValue("Failed to view admin notification");
+    }
+  }
+);
+
 // checkWishlistStatusThunk is typically used in components locally,
 // but can be added here if needed for global state tracking.
 // For now, we focus on the list management.
+
+
+export const getInventorySummaryThunk = createAsyncThunk(
+  "admin/getInventorySummary",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getInventorySummaryApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch inventory summary"
+        );
+      }
+      return rejectWithValue("Failed to fetch inventory summary");
+    }
+  }
+);
+
+export const getInventoryListThunk = createAsyncThunk(
+  "admin/getInventoryList",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getInventoryListApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch inventory list"
+        );
+      }
+      return rejectWithValue("Failed to fetch inventory list");
+    }
+  }
+);
+
+export const updateBookStockThunk = createAsyncThunk(
+  "admin/updateBookStock",
+  async (
+    { bookId, stock }: { bookId: number; stock: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await updateBookStockApi(bookId, stock);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to update stock");
+      }
+      return rejectWithValue("Failed to update stock");
+    }
+  }
+);
+
+export const getGeneralSettingsThunk = createAsyncThunk(
+  "admin/getGeneralSettings",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getGeneralSettingsApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch settings");
+      }
+      return rejectWithValue("Failed to fetch settings");
+    }
+  }
+);
+
+export const updateGeneralSettingsThunk = createAsyncThunk(
+  "admin/updateGeneralSettings",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      return await updateGeneralSettingsApi(data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to update settings");
+      }
+      return rejectWithValue("Failed to update settings");
+    }
+  }
+);
+
+export const getDashboardStatsThunk = createAsyncThunk(
+  "admin/getDashboardStats",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getDashboardStatsApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch dashboard stats"
+        );
+      }
+      return rejectWithValue("Failed to fetch dashboard stats");
+    }
+  }
+);
+
+export const adminSearchThunk = createAsyncThunk(
+  "admin/search",
+  async (query: string, { rejectWithValue }) => {
+    try {
+      return await adminSearchApi(query);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to search");
+      }
+      return rejectWithValue("Failed to search");
+    }
+  }
+);
+
+export const createOfflineOrderThunk = createAsyncThunk(
+  "admin/createOfflineOrder",
+  async (data: OfflineOrderRequest, { rejectWithValue }) => {
+    try {
+      return await createOfflineOrderApi(data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to create offline order");
+      }
+      return rejectWithValue("Failed to create offline order");
+    }
+  }
+);
+
+export const createOfflinePaymentThunk = createAsyncThunk(
+  "admin/createOfflinePayment",
+  async (data: OfflinePaymentRequest, { rejectWithValue }) => {
+    try {
+      return await createOfflinePaymentApi(data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to record offline payment");
+      }
+      return rejectWithValue("Failed to record offline payment");
+    }
+  }
+);
+
+export const getPaymentDetailsThunk = createAsyncThunk(
+  "checkout/getPaymentDetails",
+  async (paymentId: number, { rejectWithValue }) => {
+    try {
+      return await getPaymentDetailsApi(paymentId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch payment details"
+        );
+      }
+      return rejectWithValue("Failed to fetch payment details");
+    }
+  }
+);
+
+export const addOrderTrackingThunk = createAsyncThunk(
+  "admin/addOrderTracking",
+  async (
+    {
+      orderId,
+      trackingId,
+      trackingUrl,
+    }: { orderId: number; trackingId: string; trackingUrl: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await addOrderTrackingApi(orderId, trackingId, trackingUrl);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to add tracking");
+      }
+      return rejectWithValue("Failed to add tracking");
+    }
+  }
+);
+
+export const getOrderStatusThunk = createAsyncThunk(
+  "admin/getOrderStatus",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await getOrderStatusApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch order status");
+      }
+      return rejectWithValue("Failed to fetch order status");
+    }
+  }
+);
+
+export const getAdminOrderNotificationsThunk = createAsyncThunk(
+  "admin/getOrderNotifications",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getAdminOrderNotificationsApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch order notifications"
+        );
+      }
+      return rejectWithValue("Failed to fetch order notifications");
+    }
+  }
+);
+
+  export const getAdminProfileThunk = createAsyncThunk(
+  "admin/getProfile",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getAdminProfileApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch admin profile");
+      }
+      return rejectWithValue("Failed to fetch admin profile");
+    }
+  }
+);
+
+export const updateAdminProfileThunk = createAsyncThunk(
+  "admin/updateProfile",
+  async (data: FormData, { rejectWithValue }) => {
+    try {
+      return await updateAdminProfileApi(data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to update admin profile");
+      }
+      return rejectWithValue("Failed to update admin profile");
+    }
+  }
+);
+
+export const changeAdminPasswordThunk = createAsyncThunk(
+  "admin/changePassword",
+  async (data: ChangePasswordRequest, { rejectWithValue }) => {
+    try {
+      return await changeAdminPasswordApi(data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to change password");
+      }
+      return rejectWithValue("Failed to change password");
+    }
+  }
+);
+
+
+export const requestCancellationThunk = createAsyncThunk(
+  "auth/requestCancellation",
+  async (
+    { orderId, data }: { orderId: number; data: CancellationRequestPayload },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await requestCancellationApi(orderId, data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to request cancellation");
+      }
+      return rejectWithValue("Failed to request cancellation");
+    }
+  }
+);
+
+export const getCancellationStatusThunk = createAsyncThunk(
+  "auth/getCancellationStatus",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await getCancellationStatusApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to get cancellation status");
+      }
+      return rejectWithValue("Failed to get cancellation status");
+    }
+  }
+);
+
+export const getAdminCancellationRequestsThunk = createAsyncThunk(
+  "admin/getCancellationRequests",
+  async (params: AdminCancellationRequestsParams, { rejectWithValue }) => {
+    try {
+      return await getAdminCancellationRequestsApi(params);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to get cancellation requests");
+      }
+      return rejectWithValue("Failed to get cancellation requests");
+    }
+  }
+);
+
+export const approveCancellationThunk = createAsyncThunk(
+  "admin/approveCancellation",
+  async (requestId: number, { rejectWithValue }) => {
+    try {
+      return await approveCancellationApi(requestId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to approve cancellation");
+      }
+      return rejectWithValue("Failed to approve cancellation");
+    }
+  }
+);
+
+export const processRefundThunk = createAsyncThunk(
+  "admin/processRefund",
+  async (
+    { requestId, data }: { requestId: number; data: ProcessRefundPayload },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await processRefundApi(requestId, data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to process refund");
+      }
+      return rejectWithValue("Failed to process refund");
+    }
+  }
+);
+
+export const rejectCancellationThunk = createAsyncThunk(
+  "admin/rejectCancellation",
+  async (
+    { requestId, data }: { requestId: number; data: RejectCancellationPayload },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await rejectCancellationApi(requestId, data);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to reject cancellation");
+      }
+      return rejectWithValue("Failed to reject cancellation");
+    }
+  }
+);
+
+export const getCancellationStatsThunk = createAsyncThunk(
+  "admin/getCancellationStats",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getCancellationStatsApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to get cancellation stats");
+      }
+      return rejectWithValue("Failed to get cancellation stats");
+    }
+  }
+);
+
+export const verifyOrderStatusThunk = createAsyncThunk(
+  "auth/verifyOrderStatus",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      return await verifyOrderStatusApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to verify order status");
+      }
+      return rejectWithValue("Failed to verify order status");
+    }
+  }
+);
+
+
+export const createRazorpayOrderThunk = createAsyncThunk(
+  "checkout/createRazorpayOrder",
+  async (addressId: number, { rejectWithValue }) => {
+    try {
+      return await createRazorpayOrderApi(addressId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to create Razorpay order");
+      }
+      return rejectWithValue("Failed to create Razorpay order");
+    }
+  }
+);
+
+export const verifyRazorpayPaymentThunk = createAsyncThunk(
+  "checkout/verifyRazorpayPayment",
+  async (
+    {
+      orderId,
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature,
+    }: {
+      orderId: number;
+      razorpayPaymentId: string;
+      razorpayOrderId: string;
+      razorpaySignature: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await verifyRazorpayPaymentApi(
+        orderId,
+        razorpayPaymentId,
+        razorpayOrderId,
+        razorpaySignature
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to verify Razorpay payment"
+        );
+      }
+      return rejectWithValue("Failed to verify Razorpay payment");
+    }
+  }
+);
+
+export const createGuestRazorpayOrderThunk = createAsyncThunk(
+  "checkout/createGuestRazorpayOrder",
+  async (
+    { guest, items, address }: { guest: { name: string; email: string; phone: string }; items: any[]; address: any },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await createGuestRazorpayOrderApi(guest, items, address);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to create Guest Razorpay order"
+        );
+      }
+      return rejectWithValue("Failed to create Guest Razorpay order");
+    }
+  }
+);
+
+export const verifyGuestRazorpayPaymentThunk = createAsyncThunk(
+  "checkout/verifyGuestRazorpayPayment",
+  async (
+    {
+      orderId,
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature,
+    }: {
+      orderId: number;
+      razorpayPaymentId: string;
+      razorpayOrderId: string;
+      razorpaySignature: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await verifyGuestRazorpayPaymentApi(
+        orderId,
+        razorpayPaymentId,
+        razorpayOrderId,
+        razorpaySignature
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to verify Guest Razorpay payment"
+        );
+      }
+      return rejectWithValue("Failed to verify Guest Razorpay payment");
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: "auth",
@@ -781,6 +1716,15 @@ const authSlice = createSlice({
     },
     clearProfileError(state) {
       state.profileError = null;
+    },
+    clearProfile(state) {
+      state.userProfile = null;
+      state.status = "idle";
+      clearTokensAndProfile();
+    },
+    resetConfirmOrderData(state) {
+      state.confirmOrderData = null;
+      state.confirmOrderStatus = "idle";
     },
   },
   extraReducers: (builder) => {
@@ -1023,7 +1967,376 @@ const authSlice = createSlice({
       .addCase(getPaymentReceiptThunk.rejected, (state, action) => {
         state.receiptStatus = "failed";
         state.receiptError = action.payload as string;
+      })
+      // Admin Order Invoice
+      .addCase(getAdminOrderInvoiceThunk.pending, (state) => {
+        state.adminOrderInvoiceStatus = "loading";
+        state.adminOrderInvoice = null;
+      })
+      .addCase(getAdminOrderInvoiceThunk.fulfilled, (state, action) => {
+        state.adminOrderInvoiceStatus = "succeeded";
+        state.adminOrderInvoice = action.payload;
+      })
+      .addCase(getAdminOrderInvoiceThunk.rejected, (state, action) => {
+        state.adminOrderInvoiceStatus = "failed";
+        state.adminOrderInvoiceError = action.payload as string;
+      })
+      .addCase(updateOrderStatusThunk.fulfilled, (state, action) => {
+        if (state.adminOrders) {
+          const index = state.adminOrders.results.findIndex(
+            (o) => o.order_id === action.payload.order_id
+          );
+          if (index !== -1) {
+            state.adminOrders.results[index].status = action.payload.new_status;
+          }
+        }
+        if (
+          state.adminOrderDetail &&
+          state.adminOrderDetail.order_id === action.payload.order_id
+        ) {
+          state.adminOrderDetail.status = action.payload.new_status;
+        }
+      })
+      // Notifications
+      .addCase(fetchNotificationsThunk.pending, (state) => {
+        state.notificationsStatus = "loading";
+      })
+      .addCase(fetchNotificationsThunk.fulfilled, (state, action) => {
+        state.notificationsStatus = "succeeded";
+        state.notifications = action.payload;
+      })
+      .addCase(fetchNotificationsThunk.rejected, (state, action) => {
+        state.notificationsStatus = "failed";
+        state.notificationsError = action.payload as string;
+      })
+      .addCase(viewNotificationThunk.pending, (state) => {
+        state.currentNotificationStatus = "loading";
+      })
+      .addCase(viewNotificationThunk.fulfilled, (state, action) => {
+        state.currentNotificationStatus = "succeeded";
+        state.currentNotification = action.payload;
+      })
+      .addCase(viewNotificationThunk.rejected, (state, action) => {
+        state.currentNotificationStatus = "failed";
+        state.currentNotificationError = action.payload as string;
+      })
+      // Admin Notifications
+      .addCase(getAdminNotificationsThunk.pending, (state) => {
+        state.adminNotificationsStatus = "loading";
+      })
+      .addCase(getAdminNotificationsThunk.fulfilled, (state, action) => {
+        state.adminNotificationsStatus = "succeeded";
+        state.adminNotifications = action.payload;
+      })
+      .addCase(getAdminNotificationsThunk.rejected, (state, action) => {
+        state.adminNotificationsStatus = "failed";
+        state.adminNotificationsError = action.payload as string;
+      })
+      .addCase(viewAdminNotificationThunk.pending, (state) => {
+        state.currentAdminNotificationStatus = "loading";
+      })
+      .addCase(viewAdminNotificationThunk.fulfilled, (state, action) => {
+        state.currentAdminNotificationStatus = "succeeded";
+        state.currentAdminNotification = action.payload;
+      })
+      .addCase(viewAdminNotificationThunk.rejected, (state, action) => {
+        state.currentAdminNotificationStatus = "failed";
+        state.currentAdminNotificationError = action.payload as string;
+      })
+      // Inventory
+      .addCase(getInventorySummaryThunk.pending, (state) => {
+        state.inventorySummaryStatus = "loading";
+      })
+      .addCase(getInventorySummaryThunk.fulfilled, (state, action) => {
+        state.inventorySummaryStatus = "succeeded";
+        state.inventorySummary = action.payload;
+      })
+      .addCase(getInventorySummaryThunk.rejected, (state, action) => {
+        state.inventorySummaryStatus = "failed";
+        state.inventorySummaryError = action.payload as string;
+      })
+      .addCase(getInventoryListThunk.pending, (state) => {
+        state.inventoryListStatus = "loading";
+      })
+      .addCase(getInventoryListThunk.fulfilled, (state, action) => {
+        state.inventoryListStatus = "succeeded";
+        state.inventoryList = action.payload;
+      })
+      .addCase(getInventoryListThunk.rejected, (state, action) => {
+        state.inventoryListStatus = "failed";
+        state.inventoryListError = action.payload as string;
+      })
+      .addCase(updateBookStockThunk.fulfilled, (state, action) => {
+        if (state.inventoryList) {
+          const index = state.inventoryList.findIndex(
+            (b) => b.id === action.payload.book.id
+          );
+          if (index !== -1) {
+            state.inventoryList[index] = {
+              ...state.inventoryList[index],
+              stock: action.payload.book.current_stock,
+              status: action.payload.book.status,
+            };
+          }
+        }
       });
+
+    // Admin Settings
+    builder
+      .addCase(getGeneralSettingsThunk.pending, (state) => {
+        state.generalSettingsStatus = "loading";
+      })
+      .addCase(getGeneralSettingsThunk.fulfilled, (state, action) => {
+        state.generalSettingsStatus = "succeeded";
+        state.generalSettings = action.payload;
+      })
+      .addCase(getGeneralSettingsThunk.rejected, (state, action) => {
+        state.generalSettingsStatus = "failed";
+        state.generalSettingsError = action.payload as string;
+      })
+      .addCase(updateGeneralSettingsThunk.fulfilled, (state, action) => {
+        state.generalSettings = action.payload.data;
+      })
+
+      // Dashboard
+      .addCase(getDashboardStatsThunk.pending, (state) => {
+        state.dashboardStatsStatus = "loading";
+      })
+      .addCase(getDashboardStatsThunk.fulfilled, (state, action) => {
+        state.dashboardStatsStatus = "succeeded";
+        state.dashboardStats = action.payload;
+      })
+      .addCase(getDashboardStatsThunk.rejected, (state, action) => {
+        state.dashboardStatsStatus = "failed";
+        state.dashboardStatsError = action.payload as string;
+      })
+
+      // Search
+      .addCase(adminSearchThunk.pending, (state) => {
+        state.searchResultsStatus = "loading";
+      })
+      .addCase(adminSearchThunk.fulfilled, (state, action) => {
+        state.searchResultsStatus = "succeeded";
+        state.searchResults = action.payload;
+      })
+      .addCase(adminSearchThunk.rejected, (state, action) => {
+        state.searchResultsStatus = "failed";
+        state.searchResultsError = action.payload as string;
+      })
+
+      // Payment Details
+      .addCase(getPaymentDetailsThunk.pending, (state) => {
+        state.paymentDetailsStatus = "loading";
+      })
+      .addCase(getPaymentDetailsThunk.fulfilled, (state, action) => {
+        state.paymentDetailsStatus = "succeeded";
+        state.paymentDetails = action.payload;
+      })
+      .addCase(getPaymentDetailsThunk.rejected, (state, action) => {
+        state.paymentDetailsStatus = "failed";
+        state.paymentDetailsError = action.payload as string;
+      })
+
+      // Order Status
+      .addCase(getOrderStatusThunk.pending, (state) => {
+        state.orderStatusDataStatus = "loading";
+      })
+      .addCase(getOrderStatusThunk.fulfilled, (state, action) => {
+        state.orderStatusDataStatus = "succeeded";
+        state.orderStatusData = action.payload;
+      })
+      .addCase(getOrderStatusThunk.rejected, (state, action) => {
+        state.orderStatusDataStatus = "failed";
+        state.orderStatusDataError = action.payload as string;
+      })
+
+      // Admin Order Notifications
+      .addCase(getAdminOrderNotificationsThunk.pending, (state) => {
+        state.adminOrderNotificationsStatus = "loading";
+      })
+      .addCase(getAdminOrderNotificationsThunk.fulfilled, (state, action) => {
+        state.adminOrderNotificationsStatus = "succeeded";
+        state.adminOrderNotifications = action.payload;
+      })
+      .addCase(getAdminOrderNotificationsThunk.rejected, (state, action) => {
+        state.adminOrderNotificationsStatus = "failed";
+        state.adminOrderNotificationsError = action.payload as string;
+      })
+
+      // Social Links
+      .addCase(getSocialLinksThunk.pending, (state) => {
+        state.socialLinksStatus = "loading";
+      })
+      .addCase(getSocialLinksThunk.fulfilled, (state, action) => {
+        state.socialLinksStatus = "succeeded";
+        state.socialLinks = action.payload;
+      })
+      .addCase(getSocialLinksThunk.rejected, (state, action) => {
+        state.socialLinksStatus = "failed";
+        state.socialLinksError = action.payload as string;
+      })
+      .addCase(updateSocialLinksThunk.fulfilled, (state, action) => {
+        state.socialLinks = action.payload;
+      })
+      // Admin Profile
+      .addCase(getAdminProfileThunk.pending, (state) => {
+        state.adminProfileStatus = "loading";
+      })
+      .addCase(getAdminProfileThunk.fulfilled, (state, action) => {
+        state.adminProfileStatus = "succeeded";
+        state.adminProfile = action.payload;
+      })
+      .addCase(getAdminProfileThunk.rejected, (state, action) => {
+        state.adminProfileStatus = "failed";
+        state.adminProfileError = action.payload as string;
+      })
+      .addCase(updateAdminProfileThunk.fulfilled, (state, action) => {
+        state.adminProfile = action.payload.admin;
+      })
+      // User Payments
+      .addCase(getUserPaymentsThunk.pending, (state) => {
+        state.userPaymentsStatus = "loading";
+        state.userPaymentsError = null;
+      })
+      .addCase(getUserPaymentsThunk.fulfilled, (state, action) => {
+        state.userPaymentsStatus = "succeeded";
+        state.userPayments = action.payload;
+      })
+      .addCase(getUserPaymentsThunk.rejected, (state, action) => {
+         state.userPaymentsStatus = "failed";
+         state.userPaymentsError = action.payload as string;
+      })
+
+      // Cancellations & Refunds
+      .addCase(requestCancellationThunk.fulfilled, () => {
+         // handled in component
+      })
+      .addCase(getCancellationStatusThunk.pending, (state) => {
+        state.cancellationStatusStatus = "loading";
+        state.cancellationStatusError = null;
+      })
+      .addCase(getCancellationStatusThunk.fulfilled, (state, action) => {
+        state.cancellationStatusStatus = "succeeded";
+        state.cancellationStatus = action.payload;
+      })
+      .addCase(getCancellationStatusThunk.rejected, (state, action) => {
+        state.cancellationStatusStatus = "failed";
+        state.cancellationStatusError = action.payload as string;
+      })
+      .addCase(getAdminCancellationRequestsThunk.pending, (state) => {
+        state.cancellationRequestsStatus = "loading";
+        state.cancellationRequestsError = null;
+      })
+      .addCase(getAdminCancellationRequestsThunk.fulfilled, (state, action) => {
+        state.cancellationRequestsStatus = "succeeded";
+        state.cancellationRequests = action.payload;
+      })
+      .addCase(getAdminCancellationRequestsThunk.rejected, (state, action) => {
+        state.cancellationRequestsStatus = "failed";
+        state.cancellationRequestsError = action.payload as string;
+      })
+      .addCase(getCancellationStatsThunk.pending, (state) => {
+        state.cancellationStatsStatus = "loading";
+        state.cancellationStatsError = null;
+      })
+      .addCase(getCancellationStatsThunk.fulfilled, (state, action) => {
+        state.cancellationStatsStatus = "succeeded";
+        state.cancellationStats = action.payload;
+      })
+      .addCase(getCancellationStatsThunk.rejected, (state, action) => {
+        state.cancellationStatsStatus = "failed";
+        state.cancellationStatsError = action.payload as string;
+      })
+      .addCase(verifyOrderStatusThunk.pending, (state) => {
+         state.verifyOrderStatusStatus = "loading";
+         state.verifyOrderStatusError = null;
+      })
+      .addCase(verifyOrderStatusThunk.fulfilled, (state, action) => {
+         state.verifyOrderStatusStatus = "succeeded";
+         state.verifyOrderStatusData = action.payload;
+      })
+      .addCase(verifyOrderStatusThunk.rejected, (state, action) => {
+         state.verifyOrderStatusStatus = "failed";
+         state.verifyOrderStatusError = action.payload as string;
+      })
+      
+      // E-book & Payment Expiry
+      .addCase(completePaymentAfterExpiryThunk.pending, (state) => {
+        state.completePaymentExpiryStatus = "loading";
+        state.completePaymentExpiryError = null;
+        state.completePaymentExpiryDetail = null;
+      })
+      .addCase(completePaymentAfterExpiryThunk.fulfilled, (state, action) => {
+        state.completePaymentExpiryStatus = "succeeded";
+        state.completePaymentExpiryDetail = action.payload.detail || null;
+      })
+      .addCase(completePaymentAfterExpiryThunk.rejected, (state, action) => {
+        state.completePaymentExpiryStatus = "failed";
+        state.completePaymentExpiryError = action.payload as string;
+      })
+      .addCase(uploadEbookThunk.pending, (state) => {
+        state.uploadEbookStatus = "loading";
+        state.uploadEbookError = null;
+      })
+      .addCase(uploadEbookThunk.fulfilled, (state) => {
+        state.uploadEbookStatus = "succeeded";
+      })
+      .addCase(uploadEbookThunk.rejected, (state, action) => {
+        state.uploadEbookStatus = "failed";
+        state.uploadEbookError = action.payload as string;
+      })
+      .addCase(purchaseEbookThunk.pending, (state) => {
+        state.ebookPurchaseStatus = "loading";
+        state.ebookPurchaseError = null;
+        state.ebookPurchaseResponse = null;
+      })
+      .addCase(purchaseEbookThunk.fulfilled, (state, action) => {
+        state.ebookPurchaseStatus = "succeeded";
+        state.ebookPurchaseResponse = action.payload;
+      })
+      .addCase(purchaseEbookThunk.rejected, (state, action) => {
+        state.ebookPurchaseStatus = "failed";
+        state.ebookPurchaseError = action.payload as string;
+      })
+      .addCase(completeEbookPaymentThunk.pending, (state) => {
+        state.completeEbookPaymentStatus = "loading";
+        state.completeEbookPaymentError = null;
+        state.completeEbookPaymentResponse = null;
+      })
+      .addCase(completeEbookPaymentThunk.fulfilled, (state, action) => {
+        state.completeEbookPaymentStatus = "succeeded";
+        state.completeEbookPaymentResponse = action.payload;
+      })
+      .addCase(completeEbookPaymentThunk.rejected, (state, action) => {
+        state.completeEbookPaymentStatus = "failed";
+        state.completeEbookPaymentError = action.payload as string;
+      })
+      .addCase(getUserLibraryThunk.pending, (state) => {
+        state.userLibraryStatus = "loading";
+        state.userLibraryError = null;
+      })
+      .addCase(getUserLibraryThunk.fulfilled, (state, action) => {
+        state.userLibraryStatus = "succeeded";
+        state.userLibrary = action.payload;
+      })
+      .addCase(getUserLibraryThunk.rejected, (state, action) => {
+        state.userLibraryStatus = "failed";
+        state.userLibraryError = action.payload as string;
+      })
+      .addCase(readEbookThunk.pending, (state) => {
+        state.currentEbookStatus = "loading";
+        state.currentEbookError = null;
+        state.currentEbook = null;
+      })
+      .addCase(readEbookThunk.fulfilled, (state, action) => {
+        state.currentEbookStatus = "succeeded";
+        state.currentEbook = action.payload;
+      })
+      .addCase(readEbookThunk.rejected, (state, action) => {
+        state.currentEbookStatus = "failed";
+        state.currentEbookError = action.payload as string;
+      });
+
   },
 });
 export const {

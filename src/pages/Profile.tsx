@@ -7,6 +7,11 @@ import {
   updateUserProfileThunk,
   getOrderHistoryThunk,
   getOrderDetailsThunk,
+  getUserPaymentsThunk,
+  downloadInvoiceThunk,
+  requestCancellationThunk,
+  getCancellationStatusThunk,
+  completePaymentAfterExpiryThunk,
 } from "../redux/slice/authSlice";
 import {
   getAddressesThunk,
@@ -16,9 +21,11 @@ import {
 } from "../redux/slice/authSlice";
 import {
   type AddressItem,
+  type AddressData,
   type OrderHistoryItem,
   type OrderDetailResponse,
   type UserProfile,
+  type UserPayment,
 } from "../redux/utilis/authApi";
 
 // --- Order History Table Sub-Component ---
@@ -98,6 +105,68 @@ const OrderHistoryTable: React.FC<{
   );
 };
 
+
+const UserPaymentsTable: React.FC<{
+  payments: UserPayment[];
+  onDownloadInvoice: (orderId: number) => void;
+}> = ({ payments, onDownloadInvoice }) => {
+  return (
+    <section className="mt-8">
+      <h2 className="text-[#333333] text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-display">
+        My Payments
+      </h2>
+      <div className="px-4 py-3 @container">
+        <div className="flex overflow-hidden rounded-xl border border-[#e6d8d1] bg-[#fbf9f8] shadow-sm">
+          <table className="w-full text-left">
+            <thead className="bg-[#f3ebe8]">
+              <tr>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Payment ID</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Date</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Amount</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Method</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Status</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#e6d8d1] dark:divide-gray-700">
+              {payments.map((payment) => (
+                <tr key={payment.payment_id}>
+                  <td className="h-[72px] px-6 py-4 text-gray-600 text-sm font-normal leading-normal font-body">#{payment.payment_id}</td>
+                  <td className="h-[72px] px-6 py-4 text-gray-600 text-sm font-normal leading-normal font-body">
+                    {new Date(payment.created_at).toLocaleDateString()}
+                  </td>
+                  <td className="h-[72px] px-6 py-4 text-gray-600 text-sm font-normal leading-normal font-body">${payment.amount.toFixed(2)}</td>
+                  <td className="h-[72px] px-6 py-4 text-gray-600 text-sm font-normal leading-normal font-body capitalize">{payment.method}</td>
+                  <td className="h-[72px] px-6 py-4 text-sm font-normal leading-normal">
+                    <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold leading-normal font-body ${
+                      payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {payment.status}
+                    </span>
+                  </td>
+                  <td className="h-[72px] px-6 py-4 text-sm font-bold leading-normal tracking-[0.015em] font-body text-right">
+                    <button
+                      onClick={() => onDownloadInvoice(payment.order_id)}
+                      className="text-primary hover:underline"
+                    >
+                      Invoice
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {payments.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No payments found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 // --- Address Components ---
 
 const AddressModal: React.FC<{
@@ -109,6 +178,7 @@ const AddressModal: React.FC<{
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
+    phone_number: "",
     address: "",
     city: "",
     state: "",
@@ -129,6 +199,7 @@ const AddressModal: React.FC<{
       setFormData({
         first_name: fName,
         last_name: lName,
+        phone_number: address.phone_number || "",
         address: address.address,
         city: address.city,
         state: address.state,
@@ -138,6 +209,7 @@ const AddressModal: React.FC<{
       setFormData({
         first_name: "",
         last_name: "",
+        phone_number: "",
         address: "",
         city: "",
         state: "",
@@ -152,14 +224,15 @@ const AddressModal: React.FC<{
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = formData as AddressData; // unsafe cast but sufficient for now as we added field to state
     try {
       if (address) {
         await dispatch(
-          updateAddressThunk({ id: address.id, data: formData })
+          updateAddressThunk({ id: address.id, data: payload })
         ).unwrap();
         toast.success("Address updated");
       } else {
-        await dispatch(addAddressThunk(formData)).unwrap();
+        await dispatch(addAddressThunk(payload)).unwrap();
         toast.success("Address added");
       }
       onClose();
@@ -197,6 +270,15 @@ const AddressModal: React.FC<{
               required
             />
           </div>
+          <input
+              type="text"
+              name="phone_number"
+              placeholder="Phone Number"
+              value={formData.phone_number}
+              onChange={handleChange}
+              className="h-12 w-full rounded-lg border border-black/10 p-4"
+              required
+            />
           <input
             type="text"
             name="address"
@@ -310,6 +392,7 @@ const AddressList: React.FC = () => {
             <p className="font-bold text-[#333333]">
               {addr.full_name || `${addr.first_name} ${addr.last_name}`}
             </p>
+            <p className="text-gray-600">{addr.phone_number}</p>
             <p className="text-gray-600">{addr.address}</p>
             <p className="text-gray-600">
               {addr.city}, {addr.state} {addr.zip_code}
@@ -494,7 +577,83 @@ const OrderDetailsModal: React.FC<{
   onClose: () => void;
   order: OrderDetailResponse | null;
 }> = ({ isOpen, onClose, order }) => {
+  const dispatch: AppDispatch = useDispatch();
+  const { cancellationStatus } = useSelector((state: RootState) => state.auth);
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelNotes, setCancelNotes] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && order) {
+      dispatch(getCancellationStatusThunk(order.order.id));
+      setShowCancelForm(false);
+      setCancelReason("");
+      setCancelNotes("");
+    }
+  }, [isOpen, order, dispatch]);
+
+  const handleRequestCancellation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!order) return;
+    setIsSubmitting(true);
+    try {
+      await dispatch(
+        requestCancellationThunk({
+          orderId: order.order.id,
+          data: { reason: cancelReason, additional_notes: cancelNotes },
+        })
+      ).unwrap();
+      await dispatch(getCancellationStatusThunk(order.order.id));
+      toast.success("Cancellation request submitted");
+      setShowCancelForm(false);
+    } catch (err: any) {
+      toast.error(err || "Failed to submit request");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCompletePayment = async () => {
+    if (!order) return;
+    try {
+      const res = await dispatch(completePaymentAfterExpiryThunk(order.order.id)).unwrap();
+      if (res.detail) {
+        toast.error(res.detail);
+      } else {
+        toast.success(res.message || "Payment completed successfully");
+        onClose();
+      }
+    } catch (err: any) {
+      let msg = "Payment failed or expired";
+      if (err?.detail) msg = err.detail;
+      else if (err?.message) msg = err.message;
+      else if (typeof err === "string") {
+          try {
+              const parsed = JSON.parse(err);
+              if (parsed.detail) msg = parsed.detail;
+              else msg = err;
+          } catch {
+              msg = err;
+          }
+      }
+      toast.error(msg);
+    }
+  };
+
+  const getCancellationStatusColor = (status: string) => {
+    switch (status) {
+       case 'pending': return 'text-yellow-600 bg-yellow-100';
+       case 'approved': return 'text-green-600 bg-green-100';
+       case 'rejected': return 'text-red-600 bg-red-100';
+       default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
   if (!isOpen || !order) return null;
+
+  const canCancel = ['pending', 'paid', 'processing'].includes(order.order.status.toLowerCase()) && !cancellationStatus?.request_id;
+  const hasRequest = !!cancellationStatus?.request_id;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -536,6 +695,20 @@ const OrderDetailsModal: React.FC<{
             <p className="font-semibold capitalize">{order.order.status}</p>
           </div>
         </div>
+        
+        {/* Cancellation Info */}
+        {hasRequest && (
+            <div className="mb-6 p-4 rounded-lg bg-gray-50 border border-gray-200">
+                <p className="text-sm font-semibold mb-1">Cancellation Request</p>
+                <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Request ID: #{cancellationStatus.request_id}</span>
+                    <span className={`px-2 py-1 rounded-full text-xs font-bold capitalize ${getCancellationStatusColor(cancellationStatus.status)}`}>
+                        {cancellationStatus.status}
+                    </span>
+                </div>
+                 <p className="text-xs text-gray-500 mt-1">{cancellationStatus.message}</p>
+            </div>
+        )}
 
         <div className="border-t border-gray-200 pt-4">
           <div className="flex justify-between py-2">
@@ -560,7 +733,89 @@ const OrderDetailsModal: React.FC<{
               ${order.order.total.toFixed(2)}
             </span>
           </div>
+
+
         </div>
+
+        {order.order.status.toLowerCase() === 'pending' && (
+          <div className="mt-6 flex justify-end gap-3">
+             <button 
+                onClick={handleCompletePayment}
+                className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 transition"
+              >
+                Complete Payment
+              </button>
+             {!showCancelForm && (
+              <button 
+                  onClick={() => setShowCancelForm(true)}
+                  className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+              >
+                  Request Cancellation
+              </button>
+             )}
+          </div>
+        )}
+        
+        {canCancel && !showCancelForm && order.order.status.toLowerCase() !== 'pending' && (
+            <div className="mt-6 flex justify-end">
+                <button 
+                    onClick={() => setShowCancelForm(true)}
+                    className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition"
+                >
+                    Request Cancellation
+                </button>
+            </div>
+        )}
+
+        {showCancelForm && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h4 className="font-bold text-lg mb-3">Request Cancellation</h4>
+                <form onSubmit={handleRequestCancellation} className="space-y-4">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                        <select 
+                            value={cancelReason}
+                            onChange={(e) => setCancelReason(e.target.value)}
+                            className="w-full border border-gray-300 rounded p-2"
+                            required
+                        >
+                            <option value="">Select a reason</option>
+                            <option value="Ordered by mistake">Ordered by mistake</option>
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Found better price">Found better price</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
+                        <textarea 
+                            value={cancelNotes}
+                            onChange={(e) => setCancelNotes(e.target.value)}
+                            className="w-full border border-gray-300 rounded p-2"
+                            rows={2}
+                            placeholder="Optional details..."
+                        />
+                    </div>
+                    <div className="flex justify-end gap-3">
+                         <button 
+                            type="button"
+                            onClick={() => setShowCancelForm(false)}
+                            className="px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                         <button 
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700 disabled:opacity-50"
+                        >
+                            {isSubmitting ? "Submitting..." : "Submit Request"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        )}
+
       </div>
     </div>
   );
@@ -612,14 +867,14 @@ const ProfileInfo: React.FC<{ user: UserProfile }> = ({ user }) => {
 
 const UserProfilePage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
-  const { userProfile, orderHistory, currentOrder } = useSelector(
+  const { userProfile, orderHistory, currentOrder, userPayments } = useSelector(
     (state: RootState) => state.auth
   );
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "profile" | "orders" | "addresses"
+    "profile" | "orders" | "addresses" | "payments"
   >("profile");
 
   useEffect(() => {
@@ -632,8 +887,27 @@ const UserProfilePage: React.FC = () => {
   useEffect(() => {
     if (activeTab === "orders") {
       dispatch(getOrderHistoryThunk());
+    } else if (activeTab === "payments") {
+      dispatch(getUserPaymentsThunk(1));
     }
   }, [activeTab, dispatch]);
+
+  const handleDownloadInvoice = async (orderId: number) => {
+    try {
+      const blob = await dispatch(downloadInvoiceThunk(orderId)).unwrap();
+      const url = window.URL.createObjectURL(blob as Blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `invoice-${orderId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success("Invoice downloaded successfully");
+    } catch (e) {
+      toast.error("Failed to download invoice");
+    }
+  };
 
   const handleViewDetails = async (id: number) => {
     await dispatch(getOrderDetailsThunk(id));
@@ -645,9 +919,7 @@ const UserProfilePage: React.FC = () => {
     return null;
   }
 
-  const avatarUrl = userProfile.profile_image
-    ? `${import.meta.env.VITE_API_BASE_URL}/${userProfile.profile_image}`
-    : `https://ui-avatars.com/api/?name=${userProfile.first_name}+${userProfile.last_name}&background=random`;
+
 
   return (
     <>
@@ -655,11 +927,16 @@ const UserProfilePage: React.FC = () => {
         <div className="p-4 @container">
           <div className="flex w-full flex-col gap-4 @[520px]:flex-row @[520px]:justify-between @[520px]:items-center">
             <div className="flex gap-6 items-center">
-              <img
-                src={avatarUrl}
-                alt="User avatar"
-                className="aspect-square h-32 w-32 rounded-full object-cover"
-              />
+              <div
+                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32"
+                style={{
+                  backgroundImage: `url("${
+                    userProfile.profile_image_url ||
+                    userProfile.profile_image ||
+                    "https://cdn.usegalileo.ai/sdxl10/68579698-0cfa-4680-a292-0b819f390076.png"
+                  }")`,
+                }}
+              ></div>
               <div className="flex flex-col justify-center">
                 <h1 className="text-[#333333]  text-3xl font-bold leading-tight tracking-[-0.015em] font-display">
                   {userProfile.first_name} {userProfile.last_name}
@@ -721,6 +998,18 @@ const UserProfilePage: React.FC = () => {
                   Addresses
                 </p>
               </button>
+              <button
+                onClick={() => setActiveTab("payments")}
+                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors ${
+                  activeTab === "payments"
+                    ? "border-b-primary text-[#333333]"
+                    : "border-b-transparent text-gray-500 hover:text-[#333333]"
+                }`}
+              >
+                <p className="text-sm font-bold leading-normal tracking-[0.015em] font-body">
+                  Payments
+                </p>
+              </button>
               <a
                 className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-logout dark:text-red-400 pb-[13px] pt-4 hover:text-red-700  transition-colors"
                 href="#"
@@ -741,6 +1030,12 @@ const UserProfilePage: React.FC = () => {
           />
         )}
         {activeTab === "addresses" && <AddressList />}
+        {activeTab === "payments" && (
+          <UserPaymentsTable 
+            payments={userPayments?.results || []}
+            onDownloadInvoice={handleDownloadInvoice} 
+          />
+        )}
       </main>
       <EditProfileModal
         isOpen={isEditing}

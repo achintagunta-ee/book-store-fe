@@ -33,7 +33,7 @@ const BookCard: React.FC<{
     <div className="flex flex-col gap-4 rounded-lg bg-background-light  shadow-soft hover:shadow-lift transition-shadow duration-300 group">
       <Link to={`/book/detail/${book.slug}`}>
         <div
-          className="w-full bg-center bg-no-repeat aspect-[3/4] bg-cover rounded-t-lg"
+          className="w-full bg-center bg-no-repeat h-[250px] bg-cover rounded-t-lg"
           role="img"
           aria-label={`Book cover for ${book.title} by ${book.author}`}
           style={{ backgroundImage: `url("${book.imageUrl}")` }}

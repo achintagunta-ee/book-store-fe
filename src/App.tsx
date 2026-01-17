@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
@@ -22,6 +22,39 @@ import { hydrateFromStorage } from "./redux/slice/authSlice";
 import { type AppDispatch } from "./redux/store/store";
 import TrackOrderPage from "./pages/TrackOrder";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import NotificationsPage from "./pages/Notifications";
+import AdminNotificationsPage from "./admin/Notifications";
+import CancellationsPage from "./admin/Cancellations";
+import LibraryPage from "./pages/Library";
+import AboutUs from "./pages/AboutUs";
+import Contact from "./pages/Contact";
+import FAQ from "./pages/FAQ";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import Terms from "./pages/Terms";
+import Shipping from "./pages/Shipping";
+
+const Layout = ({ children }: { children: React.ReactNode }) => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith("/admin");
+
+  return (
+    <>
+      {!isAdminRoute && <Header />}
+      {children}
+      {!isAdminRoute && <Footer />}
+    </>
+  );
+};
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
 
 function App() {
   const dispatch: AppDispatch = useDispatch();
@@ -32,27 +65,38 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Header />
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/track-order" element={<TrackOrderPage />} />
-        <Route path="/books" element={<BookPage />} />
-        <Route path="/book/detail/:slug" element={<BookDetailPage />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/checkout" element={<CheckoutPage />} />
-        <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
-        <Route path="/wishlist" element={<WishlistPage />} />
-        <Route path="/profile" element={<UserProfilePage />} />
-        <Route path="/admin/dashboard" element={<DashboardPage />} />
-        <Route path="/admin/book-management" element={<BooksManagement />} />
-        <Route path="/admin/categories" element={<CategoryManagement />} />
-        <Route path="/admin/payment" element={<PaymentsPage />} />
-        <Route path="/admin/orders" element={<OrdersPage />} />
-        <Route path="/admin/inventory" element={<InventoryDashboard />} />
-        <Route path="/admin/settings" element={<AdminSettings />} />
-      </Routes>
-      <Footer />
+      <Layout>
+        <ScrollToTop />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/track-order" element={<TrackOrderPage />} />
+          <Route path="/books" element={<BookPage />} />
+          <Route path="/book/detail/:slug" element={<BookDetailPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/order-confirmation/:orderId" element={<OrderConfirmation />} />
+          <Route path="/wishlist" element={<WishlistPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/library" element={<LibraryPage />} />
+          <Route path="/profile" element={<UserProfilePage />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/shipping" element={<Shipping />} />
+          <Route path="/admin/dashboard" element={<DashboardPage />} />
+          <Route path="/admin/book-management" element={<BooksManagement />} />
+          <Route path="/admin/categories" element={<CategoryManagement />} />
+          <Route path="/admin/payment" element={<PaymentsPage />} />
+          <Route path="/admin/orders" element={<OrdersPage />} />
+          <Route path="/admin/inventory" element={<InventoryDashboard />} />
+          <Route path="/admin/settings" element={<AdminSettings />} />
+          <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
+          <Route path="/admin/cancellations" element={<CancellationsPage />} />
+        </Routes>
+      </Layout>
     </BrowserRouter>
   );
 }

@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import { useRazorpay } from "react-razorpay";
 import {
   saveAddressThunk,
   placeOrderThunk,
   getAddressSummaryThunk,
-  completePaymentThunk,
   confirmOrderThunk,
+  createRazorpayOrderThunk,
+  verifyRazorpayPaymentThunk,
+  createGuestRazorpayOrderThunk,
+  verifyGuestRazorpayPaymentThunk,
 } from "../redux/slice/authSlice";
+import { fetchCartAsync } from "../redux/slice/cartSlice";
 import type { AppDispatch, RootState } from "../redux/store/store";
 import {
   type AddressData,
@@ -128,10 +134,22 @@ interface StepProps {
   >;
   setOrderId?: React.Dispatch<React.SetStateAction<number | null>>;
   orderId?: number | null;
+  isGuest: boolean;
+  setGuestAddress?: React.Dispatch<React.SetStateAction<AddressData | null>>;
+  guestAddress?: AddressData | null;
+  setGuestEmail?: React.Dispatch<React.SetStateAction<string>>;
+  setGuestPhone?: React.Dispatch<React.SetStateAction<string>>;
 }
 
 // -- Address Step (Replaces Billing Step) --
-const AddressStep: React.FC<StepProps> = ({ setStep, setAddressId }) => {
+const AddressStep: React.FC<StepProps> = ({
+  setStep,
+  setAddressId,
+  isGuest,
+  setGuestAddress,
+  setGuestEmail,
+  setGuestPhone,
+}) => {
   const dispatch = useDispatch<AppDispatch>();
   const { userProfile, addressSummary } = useSelector(
     (state: RootState) => state.auth
@@ -147,11 +165,22 @@ const AddressStep: React.FC<StepProps> = ({ setStep, setAddressId }) => {
     const data: AddressData = {
       first_name: formData.get("first_name") as string,
       last_name: formData.get("last_name") as string,
+      phone_number: (formData.get("phone_number") || formData.get("phone")) as string,
       address: formData.get("address") as string,
       city: formData.get("city") as string,
       state: formData.get("state") as string,
       zip_code: formData.get("zip_code") as string,
     };
+    
+    if (isGuest && setGuestAddress && setGuestEmail && setGuestPhone) {
+        setGuestAddress(data);
+        const email = formData.get("email") as string;
+        const phone = formData.get("phone") as string;
+        setGuestEmail(email);
+        setGuestPhone(phone);
+        setStep("review");
+        return;
+    }
 
     if (setAddressId) {
       const result = await dispatch(saveAddressThunk(data));
@@ -176,7 +205,7 @@ const AddressStep: React.FC<StepProps> = ({ setStep, setAddressId }) => {
   const addresses = addressSummary?.addresses || [];
   const hasAddress = addressSummary?.has_address && addresses.length > 0;
 
-  if (hasAddress && !showAddForm) {
+  if (!isGuest && hasAddress && !showAddForm) {
     return (
       <div className="lg:col-span-2">
         <h2 className="text-text-light dark:text-text-dark text-2xl font-bold font-display leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
@@ -237,6 +266,34 @@ const AddressStep: React.FC<StepProps> = ({ setStep, setAddressId }) => {
             Back to saved addresses
           </button>
         )}
+        {isGuest && (
+             <div className="flex flex-col gap-3 px-4 py-3">
+             <label className="flex flex-col">
+               <p className="text-text-light dark:text-gray-500 text-base font-medium leading-normal pb-2">
+                 Email Address (Required for Guest Checkout)
+               </p>
+               <input
+                 className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-0 border border-primary/30 bg-background-light  focus:border-primary h-14 placeholder:text-text-light/50 dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal"
+                 name="email"
+                 type="email"
+                 placeholder="your@email.com"
+                 required
+               />
+             </label>
+             <label className="flex flex-col">
+               <p className="text-text-light dark:text-gray-500 text-base font-medium leading-normal pb-2">
+                 Phone Number (Required for Guest Checkout)
+               </p>
+               <input
+                 className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-0 border border-primary/30 bg-background-light  focus:border-primary h-14 placeholder:text-text-light/50 dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal"
+                 name="phone"
+                 type="tel"
+                 placeholder="9876543210"
+                 required
+               />
+             </label>
+           </div>
+        )}
         <div className="flex flex-wrap items-end gap-4 px-4 py-3">
           <label className="flex flex-col min-w-40 flex-1">
             <p className="text-text-light dark:text-gray-500 text-base font-medium leading-normal pb-2">
@@ -259,6 +316,21 @@ const AddressStep: React.FC<StepProps> = ({ setStep, setAddressId }) => {
               name="last_name"
               placeholder="Doe"
               defaultValue={userProfile?.last_name || ""}
+              required
+            />
+          </label>
+        </div>
+        <div className="px-4 py-3">
+          <label className="flex flex-col">
+            <p className="text-text-light dark:text-gray-500 text-base font-medium leading-normal pb-2">
+              Phone Number
+            </p>
+            <input
+              className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-0 border border-primary/30 bg-background-light  focus:border-primary h-14 placeholder:text-text-light/50 dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal"
+              name="phone_number"
+              type="tel"
+              placeholder="9876543210"
+              defaultValue=""
               required
             />
           </label>
@@ -315,17 +387,19 @@ const AddressStep: React.FC<StepProps> = ({ setStep, setAddressId }) => {
             />
           </label>
         </div>
-        <div className="px-4 py-3">
-          <label className="flex items-center gap-3">
-            <input
-              className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary/50 border-primary/30 bg-background-light  dark:checked:bg-primary"
-              type="checkbox"
-            />
-            <span className="text-text-light dark:text-gray-500 text-base">
-              Same as shipping address
-            </span>
-          </label>
-        </div>
+        {!isGuest && (
+            <div className="px-4 py-3">
+            <label className="flex items-center gap-3">
+                <input
+                className="form-checkbox h-5 w-5 rounded text-primary focus:ring-primary/50 border-primary/30 bg-background-light  dark:checked:bg-primary"
+                type="checkbox"
+                />
+                <span className="text-text-light dark:text-gray-500 text-base">
+                Same as shipping address
+                </span>
+            </label>
+            </div>
+        )}
         <div className="mt-8">
           <button
             type="submit"
@@ -344,11 +418,17 @@ const ReviewStep: React.FC<StepProps> = ({
   setStep,
   addressId,
   setOrderId,
+  isGuest,
+  guestAddress
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { confirmOrderData } = useSelector((state: RootState) => state.auth);
 
   const handlePlaceOrder = async () => {
+    if (isGuest) {
+        setStep("payment");
+        return;
+    }
     if (addressId && setOrderId) {
       const result = await dispatch(placeOrderThunk(addressId));
       if (placeOrderThunk.fulfilled.match(result)) {
@@ -364,7 +444,9 @@ const ReviewStep: React.FC<StepProps> = ({
     }
   };
 
-  if (!confirmOrderData) return <div>Loading review...</div>;
+  const address = isGuest ? guestAddress : confirmOrderData?.address;
+
+  if (!address) return <div>Loading review...</div>;
 
   return (
     <div className="lg:col-span-2">
@@ -375,13 +457,13 @@ const ReviewStep: React.FC<StepProps> = ({
         <div className="bg-white p-4 rounded-lg border border-primary/20 mb-4">
           <h3 className="font-bold mb-2">Shipping Address</h3>
           <p>
-            {confirmOrderData.address.first_name}{" "}
-            {confirmOrderData.address.last_name}
+            {address.first_name}{" "}
+            {address.last_name}
           </p>
-          <p>{confirmOrderData.address.address}</p>
+          <p>{address.address}</p>
           <p>
-            {confirmOrderData.address.city}, {confirmOrderData.address.state}{" "}
-            {confirmOrderData.address.zip_code}
+            {address.city}, {address.state}{" "}
+            {address.zip_code}
           </p>
         </div>
         <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
@@ -404,98 +486,191 @@ const ReviewStep: React.FC<StepProps> = ({
   );
 };
 
-// -- Payment Step (New Content) --
-const PaymentStep: React.FC<StepProps> = ({ setStep, orderId }) => {
+// -- Payment Step (Razorpay Integration using react-razorpay) --
+
+interface PaymentStepProps extends StepProps {
+    guestEmail?: string;
+    guestPhone?: string;
+}
+
+const PaymentStep: React.FC<PaymentStepProps> = ({ setStep, addressId, isGuest, guestEmail, guestPhone, guestAddress }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const cartState = useSelector((state: RootState) => state.cart);
+  const { isLoading, Razorpay } = useRazorpay();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const handlePaymentSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!orderId) {
-      console.error("Order ID is missing.");
+  const handleRazorpayPayment = async () => {
+    if (isProcessing) return; // Prevent multiple clicks
+    if (isLoading || !Razorpay) {
+        // alert("Razorpay SDK is still loading. Please wait a moment.");
+        // setIsProcessing(false);
+        // return;
+        // Commenting out alert to prevent blocking. The button press might work on subsequent tries or if SDK loads fast enough.
+        console.warn("Razorpay SDK not fully loaded yet.");
+    }
+
+    if (!isGuest && !addressId) {
+      toast.error("Address ID is missing. Please select an address.");
       return;
     }
-    // (c) Payment page - Complete payment
-    const result = await dispatch(completePaymentThunk(orderId));
-    if (completePaymentThunk.fulfilled.match(result)) {
-      navigate(`/order-confirmation/${orderId}`);
-    } else {
-      console.error("Payment failed");
+
+    setIsProcessing(true);
+
+    try {
+        let resultAction;
+        
+        if (isGuest) {
+            if(!guestEmail) {
+                toast.error("Guest email invalid.");
+                setIsProcessing(false);
+                return;
+            }
+            if (!guestAddress) {
+                toast.error("Guest address is missing.");
+                setIsProcessing(false);
+                return;
+            }
+            // Guest Payment
+            // Pass cart items so backend can create order
+            resultAction = await dispatch(createGuestRazorpayOrderThunk({
+                guest: {
+                    name: `${guestAddress.first_name} ${guestAddress.last_name}`,
+                    email: guestEmail,
+                    phone: guestPhone || ""
+                },
+                items: cartState.items,
+                address: guestAddress
+            }));
+        } else {
+            // Authenticated Payment
+            resultAction = await dispatch(createRazorpayOrderThunk(addressId!));
+        }
+
+
+        if (
+            (isGuest && createGuestRazorpayOrderThunk.fulfilled.match(resultAction)) ||
+            (!isGuest && createRazorpayOrderThunk.fulfilled.match(resultAction))
+        ) {
+          const payload = resultAction.payload as any;
+          const {
+            order_id,
+            razorpay_order_id,
+            amount, 
+            amount_paise,
+            razorpay_key,
+            key_id,
+            user_email,
+            user_name,
+            guest_email
+          } = payload;
+          
+          const key = razorpay_key || key_id;
+          const email = guest_email || user_email;
+          const finalAmount = amount || amount_paise;
+
+
+          // 3. Open Razorpay Payment Modal
+          const options: any = {
+            key: key,
+            amount: finalAmount, 
+            currency: "INR",
+            name: "Book Store",
+            description: "Payment Transaction",
+            order_id: razorpay_order_id,
+            handler: async function (response: any) {
+              // 4. Verify Payment
+              let verifyResult;
+              if (isGuest) {
+                 verifyResult = await dispatch(verifyGuestRazorpayPaymentThunk({
+                     orderId: order_id,
+                     razorpayPaymentId: response.razorpay_payment_id,
+                     razorpayOrderId: response.razorpay_order_id,
+                     razorpaySignature: response.razorpay_signature
+                 }));
+              } else {
+                 verifyResult = await dispatch(
+                    verifyRazorpayPaymentThunk({
+                    orderId: order_id,
+                    razorpayPaymentId: response.razorpay_payment_id,
+                    razorpayOrderId: response.razorpay_order_id,
+                    razorpaySignature: response.razorpay_signature,
+                    })
+                 );
+              }
+            
+
+              if (
+                (isGuest && verifyGuestRazorpayPaymentThunk.fulfilled.match(verifyResult)) ||
+                (!isGuest && verifyRazorpayPaymentThunk.fulfilled.match(verifyResult))
+              ) {
+                navigate(`/order-confirmation/${order_id}`);
+              } else {
+                 console.error("Verification failed", verifyResult);
+                toast.error("Payment Verification Failed. Please try again or contact support.");
+              }
+            },
+            prefill: {
+              name: isGuest ? "Guest" : user_name,
+              email: email,
+              contact: "",
+            },
+            theme: {
+              color: "#3399cc",
+            },
+            modal: {
+                ondismiss: function() {
+                    setIsProcessing(false);
+                }
+            }
+          };
+
+          const paymentObject = new Razorpay(options);
+          paymentObject.open();
+        } else {
+          console.error("Create order failed", resultAction);
+          toast.error("Failed to initiate payment. Please try again.");
+          setIsProcessing(false);
+        }
+    } catch (err) {
+        console.error("Payment initiation error:", err);
+        setIsProcessing(false);
     }
   };
 
   return (
     <div className="lg:col-span-2">
       <h2 className="text-text-light dark:text-text-dark text-2xl font-bold font-display leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-        Payment Details
+        Payment Method
       </h2>
-      <form onSubmit={handlePaymentSubmit}>
-        <div className="px-4 py-3">
-          <label className="flex flex-col">
-            <p className="text-text-light dark:text-gray-500 text-base font-medium leading-normal pb-2">
-              Card Number
-            </p>
-            <input
-              className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-0 border border-primary/30 bg-background-light  focus:border-primary h-14 placeholder:text-text-light/50 dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal"
-              placeholder="0000 0000 0000 0000"
-              defaultValue=""
-              required
-            />
-          </label>
+      <div className="px-4 py-6 bg-white dark:bg-primary/5 rounded-lg border border-primary/20 mx-4">
+        <div className="flex flex-col items-center text-center space-y-4">
+           <p className="text-text-light dark:text-text-dark font-medium">
+             Complete your order securely using Razorpay.
+           </p>
+           <p className="text-sm text-text-light/70 dark:text-gray-400">
+             You will be redirected to the secure payment gateway.
+           </p>
         </div>
-        <div className="flex flex-wrap items-end gap-4 px-4 py-3">
-          <label className="flex flex-col min-w-40 flex-1">
-            <p className="text-text-light dark:text-gray-500 text-base font-medium leading-normal pb-2">
-              Expiry Date
-            </p>
-            <input
-              className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-0 border border-primary/30 bg-background-light  focus:border-primary h-14 placeholder:text-text-light/50 dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal"
-              placeholder="MM / YY"
-              defaultValue=""
-              required
-            />
-          </label>
-          <label className="flex flex-col min-w-40 flex-1">
-            <p className="text-text-light dark:text-gray-500 text-base font-medium leading-normal pb-2">
-              CVC
-            </p>
-            <input
-              className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-0 border border-primary/30 bg-background-light  focus:border-primary h-14 placeholder:text-text-light/50 dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal"
-              placeholder="123"
-              defaultValue=""
-              required
-            />
-          </label>
-        </div>
-        <div className="px-4 py-3">
-          <label className="flex flex-col">
-            <p className="text-text-light dark:text-gray-500 text-base font-medium leading-normal pb-2">
-              Name on Card
-            </p>
-            <input
-              className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-text-light dark:text-text-dark focus:outline-0 focus:ring-0 border border-primary/30 bg-background-light  focus:border-primary h-14 placeholder:text-text-light/50 dark:placeholder:text-gray-500 p-[15px] text-base font-normal leading-normal"
-              placeholder="John M. Doe"
-              defaultValue=""
-              required
-            />
-          </label>
-        </div>
-        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+      </div>
+        <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center px-4">
           <button
             type="button"
             onClick={() => setStep("review")}
-            className="w-full max-w-md mx-auto flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 bg-primary/20 text-text-light dark:text-text-dark gap-2 text-lg font-bold leading-normal tracking-[0.015em] transition-colors duration-300"
+            disabled={isProcessing}
+            className="w-full max-w-md mx-auto flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 bg-primary/20 text-text-light dark:text-text-dark gap-2 text-lg font-bold leading-normal tracking-[0.015em] transition-colors duration-300 disabled:opacity-50"
           >
             Back
           </button>
           <button
-            type="submit"
-            className="w-full max-w-md mx-auto flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 bg-primary text-white gap-2 text-lg font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-shadow duration-300"
+            type="button"
+            onClick={handleRazorpayPayment}
+            disabled={isProcessing}
+            className="w-full max-w-md mx-auto flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 bg-primary text-white gap-2 text-lg font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-shadow duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Complete Payment
+            {isProcessing ? "Processing..." : "Pay Now"}
           </button>
         </div>
-      </form>
     </div>
   );
 };
@@ -506,17 +681,50 @@ const CheckoutPage: React.FC = () => {
   const [step, setStep] = useState<CheckoutStep>("address");
   const [addressId, setAddressId] = useState<number | null>(null);
   const [orderId, setOrderId] = useState<number | null>(null);
+  
+  // Guest State
+  const [isGuest, setIsGuest] = useState(false);
+  const [guestAddress, setGuestAddress] = useState<AddressData | null>(null);
+  const [guestEmail, setGuestEmail] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
 
   const { addressSummary } = useSelector((state: RootState) => state.auth);
+  const cartState = useSelector((state: RootState) => state.cart);
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
-    dispatch(getAddressSummaryThunk());
+    const token = localStorage.getItem("auth_access");
+    if (token) {
+        setIsGuest(false);
+        dispatch(getAddressSummaryThunk());
+    } else {
+        setIsGuest(true);
+        dispatch(fetchCartAsync());
+    }
   }, [dispatch]);
 
   // Map address summary to order summary props
-  const summaryProps = addressSummary?.summary
-    ? {
+  // For guest, we use cartState
+  let summaryProps = null; 
+  
+  if (isGuest) {
+      if (cartState.items.length > 0 || cartState.summary.final_total > 0) {
+        summaryProps = {
+            items: cartState.items.map((item) => ({
+                book_title: item.book_name,
+                price: item.effective_price,
+                quantity: item.quantity,
+                total: item.effective_price * item.quantity,
+                imageUrl: item.cover_image_url
+            })),
+            subtotal: cartState.summary.subtotal,
+            shipping: cartState.summary.shipping,
+            tax: 0,
+            total: cartState.summary.final_total,
+        };
+      }
+  } else if (addressSummary?.summary) {
+      summaryProps = {
         items: addressSummary.summary.items.map((item) => ({
           ...item,
           total: item.total || item.price * item.quantity, // Ensure total exists
@@ -525,8 +733,8 @@ const CheckoutPage: React.FC = () => {
         shipping: addressSummary.summary.shipping,
         tax: addressSummary.summary.tax,
         total: addressSummary.summary.total,
-      }
-    : null;
+      };
+  }
 
   const renderStep = () => {
     switch (step) {
@@ -536,6 +744,10 @@ const CheckoutPage: React.FC = () => {
             setStep={setStep}
             setAddressId={setAddressId}
             setOrderId={setOrderId}
+            isGuest={isGuest}
+            setGuestAddress={setGuestAddress}
+            setGuestEmail={setGuestEmail}
+            setGuestPhone={setGuestPhone}
           />
         );
       case "payment":
@@ -544,6 +756,10 @@ const CheckoutPage: React.FC = () => {
             setStep={setStep}
             addressId={addressId}
             orderId={orderId}
+            isGuest={isGuest}
+            guestEmail={guestEmail}
+            guestPhone={guestPhone}
+            guestAddress={guestAddress}
           />
         );
       case "review":
@@ -552,6 +768,8 @@ const CheckoutPage: React.FC = () => {
             setStep={setStep}
             addressId={addressId}
             setOrderId={setOrderId}
+            isGuest={isGuest}
+            guestAddress={guestAddress}
           />
         );
       default:
@@ -560,6 +778,10 @@ const CheckoutPage: React.FC = () => {
             setStep={setStep}
             setAddressId={setAddressId}
             setOrderId={setOrderId}
+            isGuest={isGuest}
+            setGuestAddress={setGuestAddress}
+            setGuestEmail={setGuestEmail}
+            setGuestPhone={setGuestPhone}
           />
         );
     }
@@ -578,7 +800,7 @@ const CheckoutPage: React.FC = () => {
     <main className="flex-1 mt-8 px-0 sm:px-10">
       <div className="flex flex-wrap justify-between gap-3 p-4">
         <p className="text-text-light dark:text-text-dark text-4xl lg:text-5xl font-black font-display leading-tight tracking-[-0.033em] min-w-72">
-          Checkout
+          {isGuest ? "Guest Checkout" : "Checkout"}
         </p>
       </div>
 

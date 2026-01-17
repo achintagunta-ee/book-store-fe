@@ -5,7 +5,7 @@ import {
 } from "../redux/slice/bookSlice";
 import { type RootState, type AppDispatch } from "../redux/store/store";
 import { type Book as ApiBook } from "../redux/utilis/bookApi";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { addToCartAsync } from "../redux/slice/cartSlice";
 import { Toaster, toast } from "react-hot-toast";
 
@@ -15,42 +15,43 @@ interface Book {
   author: string;
   imageUrl: string;
   slug: string;
+  price: number;
 }
 
 const BookCard: React.FC<{ book: Book }> = ({ book }) => {
   const dispatch = useDispatch<AppDispatch>();
   return (
-    <div className="flex h-full min-w-60 flex-1 flex-col gap-4 rounded-lg bg-background-light shadow-[0_4px_12px_rgba(0,0,0,0.05)] ">
-      <Link to={`/book/detail/${book.slug}`}>
-        <div
-          className="aspect-[3/4] w-full rounded-lg bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url("${
-              book.imageUrl ||
-              "https://via.placeholder.com/400x600.png?text=No+Image"
-            }")`,
-          }}
-        ></div>
+    <div className="group relative flex h-full min-w-[240px] w-[240px] flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-gray-100 dark:border-gray-700">
+      <Link to={`/book/detail/${book.slug}`} className="relative h-[250px] w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+         <img 
+            src={book.imageUrl || "https://via.placeholder.com/400x600.png?text=No+Image"} 
+            alt={book.title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+         />
+         {/* Price Tag Overlay */}
+         <div className="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-gray-900 shadow-sm backdrop-blur-sm dark:bg-black/80 dark:text-white">
+            ₹{book.price}
+         </div>
       </Link>
-      <div className="flex flex-1 flex-col justify-between gap-4 p-4 pt-0">
+      <div className="flex flex-1 flex-col justify-between p-4">
         <div>
           <Link to={`/book/detail/${book.slug}`}>
-            <p className="font-display text-lg font-medium   text-secondary-link">
+            <h3 className="line-clamp-2 text-base font-bold text-gray-900 hover:text-primary dark:text-white transition-colors" title={book.title}>
               {book.title}
-            </p>
+            </h3>
           </Link>
-          <p className="font-body text-sm font-normal leading-normal text-text-light/70 dark:text-text-main-dark/70">
-            By {book.author}
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {book.author}
           </p>
         </div>
         <button
           onClick={() => {
-            dispatch(addToCartAsync({ bookId: book.id, quantity: 1 }));
+            dispatch(addToCartAsync({ bookId: book.id, quantity: 1, book }));
             toast.success("Added to cart");
           }}
-          className="flex h-10 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-4 font-body text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-colors hover:bg-primary/30 "
+          className="mt-4 flex w-full items-center justify-center rounded-lg bg-primary/10 py-2 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-95"
         >
-          <span className="truncate">Add to Cart</span>
+          Add to Cart
         </button>
       </div>
     </div>
@@ -61,22 +62,34 @@ const BookSection: React.FC<{ title: string; books: Book[] }> = ({
   title,
   books,
 }) => (
-  <section>
-    <h2 className="font-display px-4 pb-3 pt-5 text-3xl font-bold leading-tight tracking-tight text-secondary-link ">
-      {title}
-    </h2>
-    <div className="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <div className="flex items-stretch gap-6 p-4">
-        {books.map((book) => (
-          <BookCard key={book.title} book={book} />
-        ))}
-      </div>
+  <section className="py-6">
+    <div className="flex items-center justify-between px-4 mb-4 md:px-0">
+        <h2 className="font-display text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+            {title}
+        </h2>
+        <Link to="/books" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+            View All &rarr;
+        </Link>
+    </div>
+    
+    <div className="relative group/slider">
+        <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pl-4 md:pl-0 -mx-4 md:mx-0 snap-x snap-mandatory">
+            <div className="flex gap-4 md:gap-6 pr-4 md:pr-0">
+                {books.map((book) => (
+                <div key={book.id} className="snap-start">
+                    <BookCard book={book} />
+                </div>
+                ))}
+            </div>
+        </div>
+        {/* Optional: Add gradient fade indicators if desired, keeping it simple for now */}
     </div>
   </section>
 );
 
 const HomePage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
+  const navigate = useNavigate();
   const {
     featuredBooks,
     featuredAuthorsBooks,
@@ -102,6 +115,7 @@ const HomePage: React.FC = () => {
           author: book.author,
           imageUrl: book.cover_image_url || "",
           slug: book.slug,
+          price: book.price,
         })),
       },
       {
@@ -112,6 +126,7 @@ const HomePage: React.FC = () => {
           author: book.author,
           imageUrl: book.cover_image_url || "",
           slug: book.slug,
+          price: book.price,
         })),
       },
       {
@@ -122,6 +137,7 @@ const HomePage: React.FC = () => {
           author: book.author,
           imageUrl: book.cover_image_url || "",
           slug: book.slug,
+          price: book.price,
         })),
       },
       {
@@ -132,6 +148,7 @@ const HomePage: React.FC = () => {
           author: book.author,
           imageUrl: book.cover_image_url || "",
           slug: book.slug,
+          price: book.price,
         })),
       },
     ],
@@ -144,29 +161,40 @@ const HomePage: React.FC = () => {
         <div className="flex flex-1 justify-center px-4 py-5 md:px-10 lg:px-20 xl:px-40">
           <div className="layout-content-container flex w-full max-w-screen-xl flex-1 flex-col">
             <main className="mt-5 flex flex-col gap-10">
-              <div className="@container">
-                <div className="@[480px]:p-4">
-                  <Link
-                    to="/books"
-                    className="@[480px]:gap-8 @[480px]:rounded-xl flex min-h-[480px] flex-col items-center justify-center gap-6 bg-cover bg-center bg-no-repeat p-4"
-                    style={{
-                      backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.5) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuA8BqqkIZl_dq3xAsgE4Sh42f0Hqyxg0fEacrUYmJN5rKAUCLj_uuRqITMuuuzATnIArBn9FLh-IvLOqlL7TPN8H4VESZ7vXyI7b3gIv1WQIWyCzm9xvtyFwgkDp1mW_8Zh47mlf34UwEA1KNt5Enub7_j4FHviX_cyElKgwPnWVlWaG5k0wZ9LxeCBTHke0giBnHifhZYmWWA9WacY0fDzg8fZPhYfK_6akxJhzpHzSlBuZBeMdkSgFxmTgFPH2340MqqBeG9fQcY")`,
-                    }}
+              <div className="w-full">
+                  <div 
+                    onClick={() => navigate("/books")}
+                    className="relative w-full overflow-hidden rounded-2xl shadow-xl cursor-pointer group"
                   >
-                    <div className="flex flex-col gap-4 text-center">
-                      <h1 className="font-display text-4xl font-bold leading-tight tracking-tight text-white @[480px]:text-6xl @[480px]:font-bold @[480px]:leading-tight @[480px]:tracking-tight">
-                        Find Your Next Great Read
-                      </h1>
-                      <h2 className="font-body text-lg font-normal leading-normal text-white @[480px]:text-xl @[480px]:font-normal @[480px]:leading-normal">
-                        Discover a world of stories, from timeless classics to
-                        modern bestsellers.
-                      </h2>
-                    </div>
-                    <button className="@[480px]:h-14 @[480px]:px-8 @[480px]:text-lg @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] flex h-12 min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-6 font-body text-base font-bold leading-normal tracking-[0.015em] text-white transition-colors hover:bg-primary/90">
-                      <span className="truncate">Shop Now</span>
-                    </button>
-                  </Link>
-                </div>
+                     <div 
+                        className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                        style={{
+                            backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuA8BqqkIZl_dq3xAsgE4Sh42f0Hqyxg0fEacrUYmJN5rKAUCLj_uuRqITMuuuzATnIArBn9FLh-IvLOqlL7TPN8H4VESZ7vXyI7b3gIv1WQIWyCzm9xvtyFwgkDp1mW_8Zh47mlf34UwEA1KNt5Enub7_j4FHviX_cyElKgwPnWVlWaG5k0wZ9LxeCBTHke0giBnHifhZYmWWA9WacY0fDzg8fZPhYfK_6akxJhzpHzSlBuZBeMdkSgFxmTgFPH2340MqqBeG9fQcY")`,
+                        }}
+                     />
+                     <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
+                     
+                     <div className="relative z-10 flex min-h-[400px] md:min-h-[500px] flex-col justify-center px-6 md:px-16 lg:px-24">
+                       
+                        <h1 className="max-w-2xl font-display text-4xl font-bold leading-tight tracking-tight text-white md:text-5xl lg:text-6xl drop-shadow-sm">
+                           Find Your Next <br/> <span className="text-primary-light text-blue-200">Great Read</span>
+                        </h1>
+                        <p className="mt-6 max-w-lg text-lg font-medium text-gray-200 md:text-xl leading-relaxed drop-shadow-sm">
+                           Discover a world of stories, from timeless classics to modern bestsellers. Elevate your mind with our curated collection.
+                        </p>
+                        
+                        <div className="mt-10 flex flex-wrap gap-4">
+                           <button className="rounded-full bg-white px-8 py-3.5 text-base font-bold text-gray-900 transition-all hover:bg-gray-100 hover:shadow-lg active:scale-95">
+                                Shop Now
+                           </button>
+                           <Link to="/about" onClick={(e) => e.stopPropagation()}>
+                                <button className="rounded-full border border-white/30 bg-white/10 px-8 py-3.5 text-base font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95">
+                                Learn More
+                                </button>
+                           </Link>
+                        </div>
+                     </div>
+                  </div>
               </div>
               
               {bookSections.map((section) => (
@@ -178,29 +206,29 @@ const HomePage: React.FC = () => {
               ))}
 
                {/* Categories Section */}
-              <section>
-                 <h2 className="font-display px-4 pb-3 pt-5 text-3xl font-bold leading-tight tracking-tight text-secondary-link ">
-                  Categories
-                </h2>
-                <div className="flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  <div className="flex items-stretch gap-4 p-4">
+              <section className="py-8">
+                 <div className="flex items-center justify-between px-4 mb-6 md:px-0">
+                    <h2 className="font-display text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+                      Browse by Category
+                    </h2>
+                 </div>
+                 
+                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
                     {(categories || []).map((category) => (
                       <Link
                         key={category.id}
                         to={`/books?category=${category.name}`}
-                        className="flex min-w-[150px] flex-col items-center justify-center gap-3 rounded-xl bg-background-light p-6 shadow-sm transition-all duration-300 hover:scale-105 hover:bg-primary/5 hover:shadow-md border border-transparent hover:border-primary/20"
+                        className="group flex flex-col items-center gap-4 rounded-xl bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
                       >
-                         <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                            {/* Simple icon placeholder or first letter */}
-                            <span className="text-xl font-bold">{category.name.charAt(0).toUpperCase()}</span>
+                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
+                            <span className="text-2xl font-bold">{category.name.charAt(0).toUpperCase()}</span>
                          </div>
-                        <span className="text-center font-display text-base font-semibold text-text-light dark:text-text-main-dark">
+                        <span className="text-center font-display text-sm font-semibold text-gray-900 dark:text-white">
                           {category.name}
                         </span>
                       </Link>
                     ))}
                   </div>
-                </div>
               </section>
             </main>
             {/* <footer className="mt-20 border-t border-solid border-primary/20 px-4 pb-5 pt-10 font-body text-text-light/80 dark:text-text-main-dark/80 sm:px-6 lg:px-10">

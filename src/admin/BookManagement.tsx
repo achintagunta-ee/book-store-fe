@@ -22,6 +22,98 @@ import {
 } from "../redux/slice/bookSlice";
 import type { Book } from "../redux/utilis/bookApi";
 import Sidebar from "./Sidebar";
+import { uploadEbookThunk } from "../redux/slice/authSlice";
+
+const UploadEbookModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  bookId: number | null;
+  bookTitle?: string;
+}> = ({ isOpen, onClose, bookId, bookTitle }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const [file, setFile] = useState<File | null>(null);
+  const [price, setPrice] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+
+  if (!isOpen || !bookId) return null;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file || !price) {
+      toast.error("Please provide both file and price");
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      await dispatch(
+        uploadEbookThunk({
+          bookId,
+          file,
+          ebookPrice: parseFloat(price),
+        })
+      ).unwrap();
+      toast.success("E-book uploaded successfully");
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload E-book");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4">Upload E-book for "{bookTitle}"</h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              E-book PDF File
+            </label>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
+              className="w-full p-2 border rounded mt-1"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">
+              E-book Price
+            </label>
+            <input
+              type="number"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="0.00"
+              step="0.01"
+              className="w-full p-2 border rounded mt-1"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 bg-gray-200 rounded text-gray-800 hover:bg-gray-300"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="px-4 py-2 bg-[#013a67] text-white rounded hover:bg-[#013a67]/90 disabled:opacity-50"
+            >
+              {isUploading ? "Uploading..." : "Upload"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const BookModal: React.FC<{
   isOpen: boolean;
@@ -29,7 +121,8 @@ const BookModal: React.FC<{
   onSave: (formData: FormData) => void;
   book: Partial<Book> | null;
   categories: { id: number; name: string }[];
-}> = ({ isOpen, onClose, onSave, book, categories }) => {
+  isSaving: boolean;
+}> = ({ isOpen, onClose, onSave, book, categories, isSaving }) => {
   const [formData, setFormData] = useState<any>({
     title: book?.title || "",
     author: book?.author || "",
@@ -166,9 +259,10 @@ const BookModal: React.FC<{
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-lg"
+              disabled={isSaving}
+              className="px-4 py-2 bg-primary text-white rounded-lg disabled:opacity-50"
             >
-              Save
+              {isSaving ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
@@ -188,6 +282,9 @@ const BooksManagement: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentBook, setCurrentBook] = useState<Partial<Book> | null>(null);
+
+  const [isEbookModalOpen, setIsEbookModalOpen] = useState(false);
+  const [ebookBook, setEbookBook] = useState<Book | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -255,6 +352,16 @@ const BooksManagement: React.FC = () => {
         onSave={handleSaveBook}
         book={currentBook}
         categories={categories}
+        isSaving={status === "loading"}
+      />
+      <UploadEbookModal
+        isOpen={isEbookModalOpen}
+        onClose={() => {
+          setIsEbookModalOpen(false);
+          setEbookBook(null);
+        }}
+        bookId={ebookBook?.id || null}
+        bookTitle={ebookBook?.title}
       />
       <Sidebar sidebarOpen={sidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -334,6 +441,9 @@ const BooksManagement: React.FC = () => {
                       Title
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                      Author
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
                       Category
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
@@ -367,6 +477,9 @@ const BooksManagement: React.FC = () => {
                         {book.title}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
+                        {book.author}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
                         {categories.find((c) => c.id === book.category_id)
                           ?.name || "N/A"}
                       </td>
@@ -393,6 +506,17 @@ const BooksManagement: React.FC = () => {
                             className="text-[#5c2e2e] hover:text-red-600 transition-colors"
                           >
                             <Trash2 size={20} />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-4 mt-2">
+                           <button
+                            onClick={() => {
+                              setEbookBook(book);
+                              setIsEbookModalOpen(true);
+                            }}
+                            className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
+                          >
+                           <Plus size={14} /> Upload E-book
                           </button>
                         </div>
                       </td>

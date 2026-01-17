@@ -7,8 +7,13 @@ import {
   Settings,
   Tags,
   LogOut,
+  Bell,
+  XCircle,
 } from "lucide-react";
-import { Link, useMatch } from "react-router-dom";
+import { Link, useMatch, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import type { AppDispatch } from "../redux/store/store";
+import { logoutThunk } from "../redux/slice/authSlice";
 
 interface NavItemProps {
   icon: React.ReactNode;
@@ -49,11 +54,21 @@ const navItems = [
   { icon: <Tags size={20} />, label: "Categories", to: "/admin/categories" },
   { icon: <CreditCard size={20} />, label: "Payments", to: "/admin/payment" },
   { icon: <ShoppingCart size={20} />, label: "Orders", to: "/admin/orders" },
+  { icon: <XCircle size={20} />, label: "Cancellations", to: "/admin/cancellations" },
+  { icon: <Bell size={20} />, label: "Notifications", to: "/admin/notifications" },
   { icon: <Package size={20} />, label: "Inventory", to: "/admin/inventory" },
   { icon: <Settings size={20} />, label: "Settings", to: "/admin/settings" },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen }) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await dispatch(logoutThunk());
+    navigate("/login");
+  };
+
   return (
     <div
       className={`${
@@ -86,13 +101,13 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen }) => {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Link
-            to="/login"
-            className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-white/10"
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors hover:bg-white/10 w-full text-left"
           >
             <LogOut size={20} />
             <p className="text-white text-base font-bold">Logout</p>
-          </Link>
+          </button>
         </div>
       </div>
     </div>

@@ -8,6 +8,9 @@ import {
   Menu,
   X,
   LogOut,
+  Bell,
+  BookOpen,
+  ChevronDown,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, Link } from "react-router-dom";
@@ -18,8 +21,18 @@ import {
   logout,
   logoutThunk,
   getWishlistCountThunk,
+  fetchNotificationsThunk,
 } from "../redux/slice/authSlice";
 import { fetchCartAsync } from "../redux/slice/cartSlice";
+import logo from "../assets/images/hita.png";
+
+// Tooltip Component
+const IconTooltip = ({ text }: { text: string }) => (
+  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 dark:bg-gray-200 dark:text-gray-900 shadow-md">
+    {text}
+    <div className="absolute -top-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-b-gray-800 dark:border-b-gray-200"></div>
+  </div>
+);
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,7 +42,7 @@ const Header: React.FC = () => {
   const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
-  const { accessToken, userProfile, profileStatus, wishlistCount } =
+  const { accessToken, userProfile, profileStatus, wishlistCount, notifications } =
     useSelector((state: RootState) => state.auth);
   const { items: cartItems } = useSelector((state: RootState) => state.cart);
   const { searchSuggestions } = useSelector((state: RootState) => state.books);
@@ -55,10 +68,12 @@ const Header: React.FC = () => {
       dispatch(getCurrentUserThunk());
     }
 
+    dispatch(fetchCartAsync());
+
     // If we have a token, fetch the user's cart
     if (accessToken) {
-      dispatch(fetchCartAsync());
       dispatch(getWishlistCountThunk());
+      dispatch(fetchNotificationsThunk());
     }
   }, [accessToken, userProfile, profileStatus, dispatch]);
 
@@ -99,21 +114,14 @@ const Header: React.FC = () => {
     <>
       <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-primary/20 px-4 py-3 sm:px-6 lg:px-10">
         {/* Logo and Store Name */}
-        <div className="flex items-center gap-4 text-text-light ">
-          <div className="size-6 text-primary">
-            <svg
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"></path>
-              <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"></path>
-            </svg>
+        <Link to="/" className="flex items-center gap-4 text-text-light hover:opacity-80 transition-opacity">
+          <div className="size-16">
+             <img src={logo} alt="Hithabodha Logo" className="w-full h-full object-contain rounded-full" />
           </div>
-          <h2 className="font-display text-xl font-bold tracking-tight text-text-light ">
+          <h2 className="font-display text-2xl font-bold tracking-tight text-text-light ">
             Hithabodha Book Store
           </h2>
-        </div>
+        </Link>
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-6 lg:gap-8">
@@ -143,8 +151,8 @@ const Header: React.FC = () => {
             onSubmit={handleSearch}
             className="hidden !h-10 min-w-40 max-w-64 flex-col sm:flex relative"
           >
-            <div className="relative flex h-full w-full flex-1 items-stretch rounded-lg">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center rounded-l-lg border-r-0 border-none bg-primary/20 pl-4 text-text-light/70 /70">
+            <div className="relative flex h-full w-full flex-1 items-stretch rounded-full border border-gray-200 bg-gray-50 dark:bg-gray-800 dark:border-gray-700 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center pl-4 text-gray-500">
                 <Search className="h-5 w-5" aria-hidden="true" />
               </div>
               <input
@@ -159,7 +167,7 @@ const Header: React.FC = () => {
                      // logic handled in effect
                    }
                 }}
-                className="form-input h-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg border-none bg-primary/20 py-2 pl-12 pr-4 font-body text-base font-normal leading-normal text-text-light placeholder:text-text-light/70 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:placeholder:text-text-main-dark/70"
+                className="form-input h-full min-w-0 flex-1 resize-none overflow-hidden rounded-full border-none bg-transparent py-2 pl-12 pr-4 font-body text-base font-normal leading-normal text-text-light placeholder:text-gray-400 focus:outline-none dark:placeholder:text-gray-500 dark:text-white"
                 placeholder="Search"
                 autoComplete="off"
               />
@@ -200,8 +208,23 @@ const Header: React.FC = () => {
             )}
           </form>
           <div className="flex gap-2">
-            <Link to="/wishlist" className="relative">
-              <button className="group flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
+
+            <Link to="/notifications" className="relative group">
+              <button className="flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40">
+                <Bell
+                  className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
+                  strokeWidth={1.5}
+                />
+              </button>
+              {notifications && notifications.length > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  {notifications.length}
+                </span>
+              )}
+              <IconTooltip text="Notifications" />
+            </Link>
+            <Link to="/wishlist" className="relative group">
+              <button className="flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40">
                 <Heart
                   className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
                   strokeWidth={1.5}
@@ -212,9 +235,10 @@ const Header: React.FC = () => {
                   {wishlistCount}
                 </span>
               )}
+              <IconTooltip text="Wishlist" />
             </Link>
-            <Link to="/cart" className="relative">
-              <button className="group flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40">
+            <Link to="/cart" className="relative group">
+              <button className="flex h-10 min-w-0 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-2.5 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40">
                 <ShoppingCart
                   className="h-6 w-6 transition-transform duration-300 group-hover:scale-110"
                   strokeWidth={1.5}
@@ -225,45 +249,66 @@ const Header: React.FC = () => {
                   {cartItemCount}
                 </span>
               )}
+              <IconTooltip text="Cart" />
             </Link>
             {userProfile ? (
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="group flex h-auto cursor-pointer items-center overflow-hidden rounded-lg bg-primary/20 px-3 py-1.5 text-sm font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40"
+                  className="group flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 p-1 pr-3 hover:bg-gray-100 dark:bg-gray-800/50 dark:border-gray-700 dark:hover:bg-gray-800 transition-all hover:border-gray-300 outline-none focus:ring-2 focus:ring-primary/20"
                 >
-                  <User className="mr-2.5 h-6 w-6" strokeWidth={1.5} />
-                  <div className="flex flex-col items-start text-left">
-                    <span className="truncate text-sm font-semibold leading-tight">{`${userProfile.first_name} ${userProfile.last_name}`}</span>
-                    <span className="text-xs font-normal capitalize text-text-light/80">
-                      {userProfile.role}
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
+                    {/* Use avatar if available, else initials */}
+                     {/* {userProfile.avatar ? <img ... /> : ... } */}
+                     <User className="h-5 w-5" />
+                  </div>
+                  <div className="hidden lg:flex flex-col items-start text-left">
+                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200 leading-none">
+                       {userProfile.first_name}
+                    </span>
+                    <span className="text-[10px] text-gray-500 uppercase font-semibold tracking-wider">
+                       {userProfile.role}
                     </span>
                   </div>
+                  <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {isProfileMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-black/5 focus:outline-none z-50">
-                    <div className="p-1">
-                      <div className="px-3 py-2.5 border-b border-gray-200 mb-1">
-                        <p className="font-semibold text-gray-800 truncate">{`${userProfile.first_name} ${userProfile.last_name}`}</p>
-                        <p className="text-sm text-gray-500 truncate">
-                          @{userProfile.username}
-                        </p>
-                      </div>
-                      <Link
-                        to="/profile"
-                        onClick={() => setIsProfileMenuOpen(false)}
-                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-100"
-                        role="menuitem"
-                      >
-                        <User className="mr-3 h-5 w-5 text-gray-500" />
-                        My Profile
-                      </Link>
+                  <div className="absolute right-0 mt-3 w-64 origin-top-right rounded-2xl bg-white dark:bg-gray-900 shadow-xl ring-1 ring-black/5 focus:outline-none z-50 overflow-hidden border border-gray-100 dark:border-gray-800 animation-fade-in-down">
+                    <div className="bg-primary/5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+                      <p className="font-bold text-gray-900 dark:text-white truncate">{`${userProfile.first_name} ${userProfile.last_name}`}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
+                        @{userProfile.username}
+                      </p>
+                    </div>
+                    
+                    <div className="p-2">
+                        <Link
+                          to="/profile"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-3"
+                          role="menuitem"
+                        >
+                          <User className="h-4 w-4 text-gray-400" />
+                          My Profile
+                        </Link>
+                        <Link
+                          to="/library"
+                          onClick={() => setIsProfileMenuOpen(false)}
+                          className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors gap-3"
+                          role="menuitem"
+                        >
+                          <BookOpen className="h-4 w-4 text-gray-400" />
+                          My Library
+                        </Link>
+                    </div>
+
+                    <div className="p-2 border-t border-gray-100 dark:border-gray-800">
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-3 py-2 text-sm text-gray-700 rounded-md hover:bg-red-50 hover:text-red-600"
+                        className="flex items-center w-full px-4 py-2.5 text-sm font-medium text-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors gap-3"
                         role="menuitem"
                       >
-                        <LogOut className="mr-3 h-5 w-5" />
+                        <LogOut className="h-4 w-4" />
                         Logout
                       </button>
                     </div>
@@ -272,8 +317,8 @@ const Header: React.FC = () => {
               </div>
             ) : (
               <Link to="/login">
-                <button className="group flex h-10 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/20 px-4 text-sm font-bold leading-normal tracking-[0.015em] text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30 dark:hover:bg-primary/40">
-                  <User className="mr-2 h-5 w-5" strokeWidth={1.5} />
+                <button className="flex h-10 items-center justify-center gap-2 rounded-full bg-primary px-6 text-sm font-bold text-white transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20 active:scale-95">
+                  <User className="h-4 w-4" strokeWidth={2} />
                   <span>Login</span>
                 </button>
               </Link>
@@ -299,20 +344,14 @@ const Header: React.FC = () => {
           {/* Mobile Menu Header */}
           <div className="flex items-center justify-between border-b border-solid border-primary/20 px-4 py-3 sm:px-6">
             <div className="flex items-center gap-4">
-              <div className="size-6 text-primary">
-                {/* Re-using SVG logo */}
-                <svg
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"></path>
-                  <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm0 10c-2.21 0-4-1.79-4-4s1.79-4 4-4 4 1.79 4 4-1.79 4-4 4z"></path>
-                </svg>
-              </div>
-              <h2 className="font-display text-xl font-bold tracking-tight">
-                Menu
-              </h2>
+              <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4">
+                <div className="size-16">
+                   <img src={logo} alt="Hithabodha Logo" className="w-full h-full object-contain rounded-full" />
+                </div>
+                <h2 className="font-display text-2xl font-bold tracking-tight">
+                  Menu
+                </h2>
+              </Link>
             </div>
             <button
               onClick={() => setIsMenuOpen(false)}
@@ -414,6 +453,14 @@ const Header: React.FC = () => {
                   >
                     <User className="h-6 w-6" strokeWidth={1.5} />
                     <span>Profile</span>
+                  </Link>
+                   <Link
+                    to="/library"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="group flex h-12 w-full min-w-0 cursor-pointer items-center justify-start gap-4 overflow-hidden rounded-lg bg-primary/20 px-4 text-base font-bold text-text-light transition-all duration-300 hover:bg-primary/30 dark:bg-primary/30  dark:hover:bg-primary/40"
+                  >
+                    <BookOpen className="h-6 w-6" strokeWidth={1.5} />
+                    <span>My Library</span>
                   </Link>
                   <button
                     onClick={handleLogout}
