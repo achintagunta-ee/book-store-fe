@@ -42,63 +42,76 @@ const OrderHistoryTable: React.FC<{
 
   return (
     <section className="mt-8">
-      <h2 className="text-[#333333]  text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-display">
+      <h2 className="text-[#333333] text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-display">
         Order History
       </h2>
-      <div className="px-4 py-3 @container">
-        <div className="flex overflow-hidden rounded-xl border border-[#e6d8d1]  bg-[#fbf9f8]  shadow-sm">
+      <div className="px-4 py-3">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-hidden rounded-xl border border-[#e6d8d1] bg-[#fbf9f8] shadow-sm">
           <table className="w-full text-left">
-            <thead className="bg-[#f3ebe8] ">
+            <thead className="bg-[#f3ebe8]">
               <tr>
-                <th className="px-6 py-4 text-left text-[#333333]  w-[150px] text-sm font-semibold leading-normal font-body">
-                  Order ID
-                </th>
-                <th className="px-6 py-4 text-left text-[#333333]  w-[200px] text-sm font-semibold leading-normal font-body">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-left text-[#333333]  w-[150px] text-sm font-semibold leading-normal font-body">
-                  Total
-                </th>
-                <th className="px-6 py-4 text-left text-[#333333]  w-[120px] text-sm font-semibold leading-normal font-body">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-[#333333]  w-[150px] text-sm font-semibold leading-normal font-body"></th>
+                <th className="px-6 py-4 text-left text-[#333333] w-[150px] text-sm font-semibold leading-normal font-body">Order ID</th>
+                <th className="px-6 py-4 text-left text-[#333333] w-[200px] text-sm font-semibold leading-normal font-body">Date</th>
+                <th className="px-6 py-4 text-left text-[#333333] w-[150px] text-sm font-semibold leading-normal font-body">Total</th>
+                <th className="px-6 py-4 text-left text-[#333333] w-[120px] text-sm font-semibold leading-normal font-body">Status</th>
+                <th className="px-6 py-4 text-left text-[#333333] w-[150px] text-sm font-semibold leading-normal font-body"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e6d8d1] dark:divide-gray-700">
+            <tbody className="divide-y divide-[#e6d8d1]">
               {orders.map((order) => (
-                <tr key={order.order_id}>
-                  <td className="h-[72px] px-6 py-4 w-[150px] text-gray-600 dark:text-gray-400 text-sm font-normal leading-normal font-body">
-                    {order.order_id}
-                  </td>
-                  <td className="h-[72px] px-6 py-4 w-[200px] text-gray-600 dark:text-gray-400 text-sm font-normal leading-normal font-body">
-                    {order.date}
-                  </td>
-                  <td className="h-[72px] px-6 py-4 w-[150px] text-gray-600 dark:text-gray-400 text-sm font-normal leading-normal font-body">
-                    ${order.total.toFixed(2)}
-                  </td>
-                  <td className="h-[72px] px-6 py-4 w-[120px] text-sm font-normal leading-normal">
-                    <span
-                      className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold leading-normal font-body ${
-                        statusStyles[order.status] ||
-                        "bg-gray-100 text-gray-800"
-                      }`}
-                    >
+                <tr key={order.order_id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">{order.order_id}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">{order.date}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">${order.total.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm font-normal">
+                    <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold font-body ${statusStyles[order.status] || "bg-gray-100 text-gray-800"}`}>
                       {order.status}
                     </span>
                   </td>
-                  <td className="h-[72px] px-6 py-4 w-[150px] text-primary  text-sm font-bold leading-normal tracking-[0.015em] font-body text-right">
-                    <button
-                      className="hover:underline"
-                      onClick={() => onViewDetails(order.raw_id)}
-                    >
-                      View Details
-                    </button>
+                  <td className="px-6 py-4 text-right">
+                    <button className="text-primary font-bold text-sm hover:underline" onClick={() => onViewDetails(order.raw_id)}>View Details</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {orders.map((order) => (
+            <div key={order.order_id} className="bg-[#fbf9f8] border border-[#e6d8d1] rounded-xl p-4 shadow-sm flex flex-col gap-3">
+              <div className="flex justify-between items-start">
+                 <div>
+                    <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Order ID</span>
+                    <p className="font-bold text-[#333333]">{order.order_id}</p>
+                 </div>
+                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusStyles[order.status] || "bg-gray-100 text-gray-800"}`}>
+                    {order.status}
+                 </span>
+              </div>
+              
+              <div className="flex justify-between items-center border-t border-[#e6d8d1] pt-3 mt-1">
+                 <div>
+                    <span className="text-xs text-gray-500 block">Date</span>
+                    <p className="text-sm text-gray-700">{order.date}</p>
+                 </div>
+                 <div className="text-right">
+                    <span className="text-xs text-gray-500 block">Total</span>
+                    <p className="text-sm font-bold text-gray-900">${order.total.toFixed(2)}</p>
+                 </div>
+              </div>
+
+              <button 
+                onClick={() => onViewDetails(order.raw_id)}
+                className="w-full mt-2 py-2.5 bg-white border border-[#e6d8d1] rounded-lg text-primary text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors"
+              >
+                View Details
+              </button>
+            </div>
+          ))}
+          {orders.length === 0 && <p className="text-gray-500 text-center py-4">No orders found.</p>}
         </div>
       </div>
     </section>
@@ -115,52 +128,79 @@ const UserPaymentsTable: React.FC<{
       <h2 className="text-[#333333] text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-display">
         My Payments
       </h2>
-      <div className="px-4 py-3 @container">
-        <div className="flex overflow-hidden rounded-xl border border-[#e6d8d1] bg-[#fbf9f8] shadow-sm">
+      <div className="px-4 py-3">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-hidden rounded-xl border border-[#e6d8d1] bg-[#fbf9f8] shadow-sm">
           <table className="w-full text-left">
             <thead className="bg-[#f3ebe8]">
               <tr>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Payment ID</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Date</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Amount</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Method</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Status</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold leading-normal font-body">Actions</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Payment ID</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Date</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Amount</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Method</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Status</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e6d8d1] dark:divide-gray-700">
+            <tbody className="divide-y divide-[#e6d8d1]">
               {payments.map((payment) => (
-                <tr key={payment.payment_id}>
-                  <td className="h-[72px] px-6 py-4 text-gray-600 text-sm font-normal leading-normal font-body">#{payment.payment_id}</td>
-                  <td className="h-[72px] px-6 py-4 text-gray-600 text-sm font-normal leading-normal font-body">
-                    {new Date(payment.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="h-[72px] px-6 py-4 text-gray-600 text-sm font-normal leading-normal font-body">${payment.amount.toFixed(2)}</td>
-                  <td className="h-[72px] px-6 py-4 text-gray-600 text-sm font-normal leading-normal font-body capitalize">{payment.method}</td>
-                  <td className="h-[72px] px-6 py-4 text-sm font-normal leading-normal">
-                    <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold leading-normal font-body ${
+                <tr key={payment.payment_id} className="hover:bg-gray-50/50">
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body">#{payment.payment_id}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body">{new Date(payment.created_at).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body">${payment.amount.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body capitalize">{payment.method}</td>
+                  <td className="px-6 py-4 text-sm">
+                    <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold font-body ${
                       payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
                       {payment.status}
                     </span>
                   </td>
-                  <td className="h-[72px] px-6 py-4 text-sm font-bold leading-normal tracking-[0.015em] font-body text-right">
-                    <button
-                      onClick={() => onDownloadInvoice(payment.order_id)}
-                      className="text-primary hover:underline"
-                    >
-                      Invoice
-                    </button>
+                  <td className="px-6 py-4 text-right">
+                    <button onClick={() => onDownloadInvoice(payment.order_id)} className="text-primary hover:underline font-bold text-sm">Invoice</button>
                   </td>
                 </tr>
               ))}
               {payments.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No payments found.</td>
-                </tr>
+                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No payments found.</td></tr>
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden space-y-4">
+          {payments.map((payment) => (
+            <div key={payment.payment_id} className="bg-[#fbf9f8] border border-[#e6d8d1] rounded-xl p-4 shadow-sm flex flex-col gap-3">
+               <div className="flex justify-between items-center">
+                 <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">#{payment.payment_id}</span>
+                 <span className={`px-2 py-1 rounded text-xs font-bold capitalize ${
+                      payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                    {payment.status}
+                 </span>
+               </div>
+               
+               <div className="grid grid-cols-2 gap-y-2 text-sm">
+                 <div className="text-gray-500">Date</div>
+                 <div className="text-right text-gray-900">{new Date(payment.created_at).toLocaleDateString()}</div>
+                 
+                 <div className="text-gray-500">Amount</div>
+                 <div className="text-right text-gray-900 font-bold">${payment.amount.toFixed(2)}</div>
+                 
+                 <div className="text-gray-500">Method</div>
+                 <div className="text-right text-gray-900 capitalize">{payment.method}</div>
+               </div>
+
+               <button 
+                  onClick={() => onDownloadInvoice(payment.order_id)}
+                  className="w-full mt-2 py-2 bg-white border border-[#e6d8d1] text-primary rounded-lg font-bold text-sm hover:bg-gray-50"
+               >
+                 Download Invoice
+               </button>
+            </div>
+          ))}
+          {payments.length === 0 && <p className="text-gray-500 text-center py-4">No payments found.</p>}
         </div>
       </div>
     </section>
@@ -830,11 +870,11 @@ const ProfileInfo: React.FC<{ user: UserProfile }> = ({ user }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-8xl">
         <div className="p-4 rounded-lg bg-[#fbf9f8] border border-[#e6d8d1]">
           <p className="text-sm text-gray-500 mb-1">Username</p>
-          <p className="font-semibold text-[#333333]">{user.username}</p>
+          <p className="font-semibold text-[#333333] break-all">{user.username}</p>
         </div>
         <div className="p-4 rounded-lg bg-[#fbf9f8] border border-[#e6d8d1]">
           <p className="text-sm text-gray-500 mb-1">Email</p>
-          <p className="font-semibold text-[#333333]">{user.email}</p>
+          <p className="font-semibold text-[#333333] break-all">{user.email}</p>
         </div>
         <div className="p-4 rounded-lg bg-[#fbf9f8] border border-[#e6d8d1]">
           <p className="text-sm text-gray-500 mb-1">Full Name</p>
@@ -924,11 +964,11 @@ const UserProfilePage: React.FC = () => {
   return (
     <>
       <main className="flex-grow mt-8 p-5">
-        <div className="p-4 @container">
-          <div className="flex w-full flex-col gap-4 @[520px]:flex-row @[520px]:justify-between @[520px]:items-center">
-            <div className="flex gap-6 items-center">
+        <div className="p-4">
+          <div className="flex w-full flex-col gap-6 md:flex-row md:justify-between md:items-center">
+            <div className="flex flex-col md:flex-row gap-6 items-center text-center md:text-left">
               <div
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32"
+                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 shadow-sm"
                 style={{
                   backgroundImage: `url("${
                     userProfile.profile_image_url ||
@@ -938,22 +978,22 @@ const UserProfilePage: React.FC = () => {
                 }}
               ></div>
               <div className="flex flex-col justify-center">
-                <h1 className="text-[#333333]  text-3xl font-bold leading-tight tracking-[-0.015em] font-display">
+                <h1 className="text-[#333333] text-3xl font-bold leading-tight tracking-[-0.015em] font-display">
                   {userProfile.first_name} {userProfile.last_name}
                 </h1>
-                <p className="text-gray-500  text-base font-normal leading-normal font-body">
+                <p className="text-gray-500 text-base font-normal leading-normal font-body break-all">
                   {userProfile.email}
                 </p>
               </div>
             </div>
-            <div className="flex w-full max-w-[480px] gap-3 @[480px]:w-auto">
+            <div className="flex flex-row w-full md:w-auto gap-3">
               <button
                 onClick={() => setIsEditing(true)}
-                className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#f3ebe8] dark:bg-gray-800 text-[#333333] dark:text-white text-sm font-semibold leading-normal tracking-[0.015em] flex-1 @[480px]:flex-auto hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#f3ebe8] hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[#333333] dark:text-white text-sm font-semibold transition-colors flex-1 md:flex-auto"
               >
                 <span className="truncate font-body">Edit Profile</span>
               </button>
-              <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-semibold leading-normal tracking-[0.015em] flex-1 @[480px]:flex-auto hover:bg-opacity-90 transition-colors">
+              <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary hover:bg-opacity-90 text-white text-sm font-semibold transition-colors flex-1 md:flex-auto">
                 <span className="truncate font-body">Change Password</span>
               </button>
             </div>
@@ -961,10 +1001,10 @@ const UserProfilePage: React.FC = () => {
         </div>
         <div className="mt-8">
           <div className="pb-3">
-            <div className="flex border-b border-[#e6d8d1]  px-4 gap-8">
+            <div className="flex border-b border-[#e6d8d1] px-4 gap-4 md:gap-8 overflow-x-auto no-scrollbar whitespace-nowrap">
               <button
                 onClick={() => setActiveTab("profile")}
-                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors ${
+                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors px-2 md:px-0 ${
                   activeTab === "profile"
                     ? "border-b-primary text-[#333333]"
                     : "border-b-transparent text-gray-500 hover:text-[#333333]"
@@ -976,7 +1016,7 @@ const UserProfilePage: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab("orders")}
-                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors ${
+                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors px-2 md:px-0 ${
                   activeTab === "orders"
                     ? "border-b-primary text-[#333333]"
                     : "border-b-transparent text-gray-500 hover:text-[#333333]"
@@ -988,7 +1028,7 @@ const UserProfilePage: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab("addresses")}
-                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors ${
+                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors px-2 md:px-0 ${
                   activeTab === "addresses"
                     ? "border-b-primary text-[#333333]"
                     : "border-b-transparent text-gray-500 hover:text-[#333333]"
@@ -1000,7 +1040,7 @@ const UserProfilePage: React.FC = () => {
               </button>
               <button
                 onClick={() => setActiveTab("payments")}
-                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors ${
+                className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors px-2 md:px-0 ${
                   activeTab === "payments"
                     ? "border-b-primary text-[#333333]"
                     : "border-b-transparent text-gray-500 hover:text-[#333333]"
@@ -1011,12 +1051,9 @@ const UserProfilePage: React.FC = () => {
                 </p>
               </button>
               <a
-                className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-logout dark:text-red-400 pb-[13px] pt-4 hover:text-red-700  transition-colors"
+                className="flex flex-col items-center justify-center border-b-[3px] border-b-transparent text-logout dark:text-red-400 pb-[13px] pt-4 hover:text-red-700 transition-colors px-2 md:px-0"
                 href="#"
               >
-                {/* <p className="text-sm font-bold leading-normal tracking-[0.015em] font-body">
-                  Logout
-                </p> */}
               </a>
             </div>
           </div>

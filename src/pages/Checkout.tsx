@@ -12,6 +12,7 @@ import {
   verifyRazorpayPaymentThunk,
   createGuestRazorpayOrderThunk,
   verifyGuestRazorpayPaymentThunk,
+  getGuestOrderDetailsThunk,
 } from "../redux/slice/authSlice";
 import { fetchCartAsync } from "../redux/slice/cartSlice";
 import type { AppDispatch, RootState } from "../redux/store/store";
@@ -493,7 +494,7 @@ interface PaymentStepProps extends StepProps {
     guestPhone?: string;
 }
 
-const PaymentStep: React.FC<PaymentStepProps> = ({ setStep, addressId, isGuest, guestEmail, guestPhone, guestAddress }) => {
+const PaymentStep: React.FC<PaymentStepProps> = ({ setStep, addressId, orderId, isGuest, guestEmail, guestPhone, guestAddress }) => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
   const cartState = useSelector((state: RootState) => state.cart);
@@ -531,17 +532,22 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ setStep, addressId, isGuest, 
                 setIsProcessing(false);
                 return;
             }
-            // Guest Payment
-            // Pass cart items so backend can create order
-            resultAction = await dispatch(createGuestRazorpayOrderThunk({
-                guest: {
-                    name: `${guestAddress.first_name} ${guestAddress.last_name}`,
-                    email: guestEmail,
-                    phone: guestPhone || ""
-                },
-                items: cartState.items,
-                address: guestAddress
-            }));
+            if (orderId) {
+                // If we already have an order ID, fetch details instead of creating new
+                resultAction = await dispatch(getGuestOrderDetailsThunk(orderId));
+            } else {
+                // Guest Payment
+                // Pass cart items so backend can create order
+                resultAction = await dispatch(createGuestRazorpayOrderThunk({
+                    guest: {
+                        name: `${guestAddress.first_name} ${guestAddress.last_name}`,
+                        email: guestEmail,
+                        phone: guestPhone || ""
+                    },
+                    items: cartState.items,
+                    address: guestAddress
+                }));
+            }
         } else {
             // Authenticated Payment
             resultAction = await dispatch(createRazorpayOrderThunk(addressId!));
@@ -549,7 +555,7 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ setStep, addressId, isGuest, 
 
 
         if (
-            (isGuest && createGuestRazorpayOrderThunk.fulfilled.match(resultAction)) ||
+            (isGuest && (createGuestRazorpayOrderThunk.fulfilled.match(resultAction) || getGuestOrderDetailsThunk.fulfilled.match(resultAction))) ||
             (!isGuest && createRazorpayOrderThunk.fulfilled.match(resultAction))
         ) {
           const payload = resultAction.payload as any;

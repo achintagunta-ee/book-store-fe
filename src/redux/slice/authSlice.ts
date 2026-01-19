@@ -127,6 +127,8 @@ import {
   createGuestRazorpayOrderApi,
   verifyGuestRazorpayPaymentApi,
   approveCancellationApi,
+  getGuestOrderDetailsApi,
+  type GuestOrderDetailsResponse,
 } from "../utilis/authApi";
 
 const PROFILE_KEY = "user_profile";
@@ -302,6 +304,9 @@ interface AuthState {
   currentEbook: ReadEbookResponse | null;
   currentEbookStatus: "idle" | "loading" | "succeeded" | "failed";
   currentEbookError: string | null;
+  guestOrderDetails: GuestOrderDetailsResponse | null;
+  guestOrderDetailsStatus: "idle" | "loading" | "succeeded" | "failed";
+  guestOrderDetailsError: string | null;
 }
 
 const initialState: AuthState = {
@@ -427,6 +432,9 @@ const initialState: AuthState = {
   currentEbook: null,
   currentEbookStatus: "idle",
   currentEbookError: null,
+  guestOrderDetails: null,
+  guestOrderDetailsStatus: "idle",
+  guestOrderDetailsError: null,
 };
 
 export const loginThunk = createAsyncThunk(
@@ -1629,11 +1637,11 @@ export const verifyRazorpayPaymentThunk = createAsyncThunk(
 export const createGuestRazorpayOrderThunk = createAsyncThunk(
   "checkout/createGuestRazorpayOrder",
   async (
-    { guest, items, address }: { guest: { name: string; email: string; phone: string }; items: any[]; address: any },
+    { guest, items, address, order_id }: { guest: { name: string; email: string; phone: string }; items: any[]; address: any; order_id?: number | null },
     { rejectWithValue }
   ) => {
     try {
-      return await createGuestRazorpayOrderApi(guest, items, address);
+      return await createGuestRazorpayOrderApi(guest, items, address, order_id);
     } catch (error: unknown) {
       if (error instanceof Error) {
         return rejectWithValue(
@@ -1641,6 +1649,22 @@ export const createGuestRazorpayOrderThunk = createAsyncThunk(
         );
       }
       return rejectWithValue("Failed to create Guest Razorpay order");
+    }
+  }
+);
+
+export const getGuestOrderDetailsThunk = createAsyncThunk(
+  "checkout/getGuestOrderDetails",
+  async (orderId: string | number, { rejectWithValue }) => {
+    try {
+      return await getGuestOrderDetailsApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to get guest order details"
+        );
+      }
+      return rejectWithValue("Failed to get guest order details");
     }
   }
 );
@@ -2222,6 +2246,20 @@ const authSlice = createSlice({
       .addCase(getCancellationStatusThunk.rejected, (state, action) => {
         state.cancellationStatusStatus = "failed";
         state.cancellationStatusError = action.payload as string;
+      })
+      // Guest Order Details
+      .addCase(getGuestOrderDetailsThunk.pending, (state) => {
+        state.guestOrderDetailsStatus = "loading";
+        state.guestOrderDetailsError = null;
+      })
+      .addCase(getGuestOrderDetailsThunk.fulfilled, (state, action) => {
+        state.guestOrderDetailsStatus = "succeeded";
+        state.guestOrderDetails = action.payload;
+        state.guestOrderDetailsError = null;
+      })
+      .addCase(getGuestOrderDetailsThunk.rejected, (state, action) => {
+        state.guestOrderDetailsStatus = "failed";
+        state.guestOrderDetailsError = action.payload as string;
       })
       .addCase(getAdminCancellationRequestsThunk.pending, (state) => {
         state.cancellationRequestsStatus = "loading";

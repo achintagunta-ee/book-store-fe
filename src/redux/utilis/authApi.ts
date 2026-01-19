@@ -1601,7 +1601,7 @@ export interface VerifyGuestRazorpayPaymentResponse {
   amount: number;
 }
 
-export async function createGuestRazorpayOrderApi(guest: { name: string; email: string; phone: string }, items: any[], address: any) {
+export async function createGuestRazorpayOrderApi(guest: { name: string; email: string; phone: string }, items: any[], address: any, order_id?: number | null) {
   const formattedAddress = {
     line1: address.address,
     line2: "", 
@@ -1617,7 +1617,7 @@ export async function createGuestRazorpayOrderApi(guest: { name: string; email: 
 
   return request<CreateGuestRazorpayOrderResponse>(`/checkout/guest`, {
     method: "POST",
-    body: JSON.stringify({ guest, items: formattedItems, address: formattedAddress }),
+    body: JSON.stringify({ guest, items: formattedItems, address: formattedAddress, order_id }),
   });
 }
 
@@ -1639,4 +1639,18 @@ export async function verifyGuestRazorpayPaymentApi(
       }),
     }
   );
+}
+
+// Guest Order Details
+export interface GuestOrderDetailsResponse {
+  order_id: number;
+  razorpay_order_id: string;
+  razorpay_key: string;
+  amount: number;
+  guest_email: string;
+  guest_name: string;
+}
+
+export async function getGuestOrderDetailsApi(orderId: string | number) {
+  return request<GuestOrderDetailsResponse>(`/checkout/guest/${orderId}`);
 }
