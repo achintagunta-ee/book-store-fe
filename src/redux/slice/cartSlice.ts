@@ -7,6 +7,12 @@ import {
   removeCartItemApi,
   clearCartApi,
 } from "../utilis/bookApi";
+import {
+  placeOrderThunk,
+  completePaymentThunk,
+  verifyRazorpayPaymentThunk,
+  verifyGuestRazorpayPaymentThunk,
+} from "./authSlice";
 
 export interface CartState extends ViewCartResponse {
   status: "idle" | "loading" | "succeeded" | "failed";
@@ -64,25 +70,25 @@ export const fetchCartAsync = createAsyncThunk(
       // Map to ViewCartResponse structure for compatibility
       return {
         items: response.items.map(item => ({
-            item_id: item.item_id,
+            item_id: item.item_id || item.book_id,
             book_id: item.book_id,
-            book_name: item.book_name,
-            slug: item.slug,
-            cover_image_url: item.cover_image_url,
+            book_name: item.book_name || item.book_title || "Unknown Book",
+            slug: item.slug || "",
+            cover_image_url: item.cover_image_url || item.cover_image || "",
             price: item.price,
-            discount_price: item.discount_price,
-            offer_price: item.offer_price,
-            effective_price: item.effective_price,
+            discount_price: item.discount_price || null,
+            offer_price: item.offer_price || null,
+            effective_price: item.effective_price || item.price,
             quantity: item.quantity,
-            stock: item.stock,
-            in_stock: item.in_stock,
+            stock: item.stock || 100,
+            in_stock: item.in_stock !== undefined ? item.in_stock : true,
             total: item.total
         })),
         summary: {
-            subtotal: response.subtotal,
-            shipping: response.shipping,
-            tax: response.tax,
-            final_total: response.total
+            subtotal: response.summary.subtotal,
+            shipping: response.summary.shipping,
+            tax: response.summary.tax,
+            final_total: response.summary.final_total
         }
       };
     } catch (error: any) {
@@ -94,7 +100,7 @@ export const fetchCartAsync = createAsyncThunk(
 export const addToCartAsync = createAsyncThunk(
   "cart/addToCart",
   async (
-    { bookId, quantity, book }: { bookId: number; quantity: number; book?: any },
+    { book_id, quantity, book }: { book_id: number; quantity: number; book?: any },
     { dispatch, rejectWithValue }
   ) => {
     try {
@@ -102,7 +108,7 @@ export const addToCartAsync = createAsyncThunk(
       if (!token) {
         const cart = getGuestCart();
         const existingItemIndex = cart.items.findIndex(
-          (i) => i.book_id === bookId
+          (i) => i.book_id === book_id
         );
         if (existingItemIndex > -1) {
           cart.items[existingItemIndex].quantity += quantity;
@@ -112,7 +118,7 @@ export const addToCartAsync = createAsyncThunk(
           }
           cart.items.push({
             item_id: Date.now(),
-            book_id: bookId,
+            book_id: book_id,
             book_name: book.title || book.book_name,
             slug: book.slug,
             cover_image_url: book.cover_image_url || book.imageUrl,
@@ -131,7 +137,7 @@ export const addToCartAsync = createAsyncThunk(
         return;
       }
 
-      await addToCartApi(bookId, quantity);
+      await addToCartApi(book_id, quantity);
       dispatch(fetchCartAsync()); // Refetch cart to get updated state
     } catch (error: any) {
       return rejectWithValue(error.message);
@@ -246,6 +252,29 @@ export const cartSlice = createSlice({
       .addCase(removeCartItemAsync.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.error.message;
+      })
+      // Clear cart on successful order
+      .addCase(placeOrderThunk.fulfilled, (state) => {
+        state.items = [];
+        state.summary = { subtotal: 0, shipping: 0, final_total: 0 };
+        state.status = "succeeded";
+      })
+      .addCase(completePaymentThunk.fulfilled, (state) => {
+        state.items = [];
+        state.summary = { subtotal: 0, shipping: 0, final_total: 0 };
+        state.status = "succeeded";
+      })
+      .addCase(verifyRazorpayPaymentThunk.fulfilled, (state) => {
+        state.items = [];
+        state.summary = { subtotal: 0, shipping: 0, final_total: 0 };
+        state.status = "succeeded";
+      })
+      .addCase(verifyGuestRazorpayPaymentThunk.fulfilled, (state) => {
+        state.items = [];
+        state.summary = { subtotal: 0, shipping: 0, final_total: 0 };
+        state.status = "succeeded";
+        // Also clear guest cart from local storage
+        localStorage.removeItem(GUEST_CART_KEY);
       });
   },
 });

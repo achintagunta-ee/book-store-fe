@@ -109,7 +109,7 @@ const NotificationsPage: React.FC = () => {
         )}
 
         <div className="space-y-4">
-          {notifications.map((notification) => (
+          {(notifications || []).map((notification) => (
             <div
               key={notification.notification_id}
               onClick={() => handleViewNotification(notification.notification_id)}

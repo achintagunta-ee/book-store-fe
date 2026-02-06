@@ -56,23 +56,35 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
     <div className="flex flex-col sm:flex-row sm:items-center gap-6 p-6 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
       {/* Image & Main Info */}
       <div className="flex items-start gap-5 flex-grow">
-        <Link to={`/book/detail/${item.slug}`} className="shrink-0">
-          <div
+        {item.slug ? (
+          <Link to={`/book/detail/${item.slug}`} className="shrink-0">
+            <div
             className="h-32 w-24 rounded-lg bg-cover bg-center shadow-sm border border-gray-100 dark:border-gray-700 transition-transform hover:scale-105"
             data-alt={`Book cover of ${item.book_name}`}
             style={{ backgroundImage: `url("${imageUrl}")` }}
-          ></div>
-        </Link>
+            ></div>
+          </Link>
+        ) : (
+             <div
+            className="h-32 w-24 rounded-lg bg-cover bg-center shadow-sm border border-gray-100 dark:border-gray-700 shrink-0"
+            data-alt={`Book cover of ${item.book_name}`}
+            style={{ backgroundImage: `url("${imageUrl}")` }}
+            ></div>
+        )}
         
         <div className="flex flex-col gap-1 py-1">
-          <Link to={`/book/detail/${item.slug}`}>
-            <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark line-clamp-2 hover:text-primary transition-colors">
+          {item.slug ? (
+            <Link to={`/book/detail/${item.slug}`}>
+                <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark line-clamp-2 hover:text-primary transition-colors">
+                {item.book_name}
+                </h3>
+            </Link>
+          ) : (
+            <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark line-clamp-2">
               {item.book_name}
             </h3>
-          </Link>
-          <p className="text-sm text-text-light/60 dark:text-text-dark/60 font-medium">
-             Paperback
-          </p>
+          )}
+
           <div className="mt-auto pt-2">
              <p className="text-xl font-bold text-primary">
                 ${(item.effective_price || 0).toFixed(2)}
@@ -148,10 +160,17 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ summary }) => {
           </span>
         </div>
         
-        <div className="flex justify-between items-center text-text-light/80 dark:text-text-dark/80 pb-4 border-b border-gray-100 dark:border-gray-700">
+        <div className="flex justify-between items-center text-text-light/80 dark:text-text-dark/80">
           <span>Shipping</span>
           <span className="font-medium text-text-main dark:text-text-main-dark">
             ${(summary?.shipping || 0).toFixed(2)}
+          </span>
+        </div>
+
+        <div className="flex justify-between items-center text-text-light/80 dark:text-text-dark/80 pb-4 border-b border-gray-100 dark:border-gray-700">
+          <span>Tax</span>
+          <span className="font-medium text-text-main dark:text-text-main-dark">
+            {typeof summary?.tax === 'number' ? `$${summary.tax.toFixed(2)}` : summary?.tax || '$0.00'}
           </span>
         </div>
         

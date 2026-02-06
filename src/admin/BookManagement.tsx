@@ -484,7 +484,7 @@ const BooksManagement: React.FC = () => {
                           ?.name || "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
-                        ${book.price.toFixed(2)}
+                        ${(Number(book.price) || 0).toFixed(2)}
                       </td>
                       <td
                         className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${

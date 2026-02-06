@@ -367,7 +367,7 @@ const BookPage: React.FC = () => {
      if (!Array.isArray(publicBooks)) return [];
  
      return publicBooks.map((book: ApiBook) => ({
-       id: book.id,
+       id: book.book_id || book.id,
        slug: book.slug,
        title: book.title,
        author: book.author,
@@ -409,7 +409,7 @@ const BookPage: React.FC = () => {
 
   const handleAddToCart = (id: number) => {
     const book = allBooksData.find(b => b.id === id);
-    dispatch(addToCartAsync({ bookId: id, quantity: 1, book }));
+    dispatch(addToCartAsync({ book_id: id, quantity: 1, book }));
     toast.success("Added to cart");
   };
 

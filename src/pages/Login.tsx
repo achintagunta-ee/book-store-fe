@@ -72,8 +72,30 @@ const LoginPage: React.FC = () => {
     try {
       setValidationErrors({});
       if (isRegistering) {
+        const password = formData.password;
+        if (password.length < 8) {
+          setValidationErrors({ password: "Password must be at least 8 characters long." });
+          return;
+        }
+        if (!/[A-Z]/.test(password)) {
+          setValidationErrors({ password: "Password must contain at least one uppercase letter." });
+          return;
+        }
+        if (!/[a-z]/.test(password)) {
+          setValidationErrors({ password: "Password must contain at least one lowercase letter." });
+          return;
+        }
+        if (!/[0-9]/.test(password)) {
+          setValidationErrors({ password: "Password must contain at least one number." });
+          return;
+        }
+        if (!/[^A-Za-z0-9]/.test(password)) {
+          setValidationErrors({ password: "Password must contain at least one special character." });
+          return;
+        }
+
         if (formData.password !== formData.confirm_password) {
-           setValidationErrors({ ...validationErrors, confirm_password: "Passwords do not match." });
+           setValidationErrors({ confirm_password: "Passwords do not match." });
            return;
         }
         await dispatch(registerThunk(formData)).unwrap();

@@ -17,7 +17,8 @@ import {
   checkWishlistStatusThunk,
   getAddressesThunk,
   purchaseEbookThunk,
-  completeEbookPaymentThunk,
+  createEbookRazorpayOrderThunk,
+  verifyEbookRazorpayPaymentThunk,
 } from "../redux/slice/authSlice";
 
 import {
@@ -32,6 +33,8 @@ import {
   MdStarBorder,
   MdFavoriteBorder,
   MdFavorite,
+  MdEdit,
+  MdDelete,
 } from "react-icons/md";
 import { Toaster, toast } from "react-hot-toast";
 
@@ -229,6 +232,10 @@ const BookDetailPage: React.FC = () => {
   const [editingReview, setEditingReview] = useState<Review | null>(null);
   const { userProfile, addresses } = useSelector((state: RootState) => state.auth);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isEbookBuying, setIsEbookBuying] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
+  const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
   const currentUserName = userProfile
     ? `${userProfile.first_name} ${userProfile.last_name}`.trim()
     : null;
@@ -282,14 +289,21 @@ const BookDetailPage: React.FC = () => {
     }
     if (!bookData) return;
 
-    if (isInWishlist) {
-      await dispatch(removeFromWishlistThunk(bookData.id));
-      setIsInWishlist(false);
-      toast.success("Removed from wishlist");
-    } else {
-      await dispatch(addToWishlistThunk(bookData.id));
-      setIsInWishlist(true);
-      toast.success("Added to wishlist");
+    setIsTogglingWishlist(true);
+    try {
+      if (isInWishlist) {
+        await dispatch(removeFromWishlistThunk(bookData.id));
+        setIsInWishlist(false);
+        toast.success("Removed from wishlist");
+      } else {
+        await dispatch(addToWishlistThunk(bookData.id));
+        setIsInWishlist(true);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      toast.error("Failed to update wishlist");
+    } finally {
+      setIsTogglingWishlist(false);
     }
   };
 
@@ -312,7 +326,8 @@ const BookDetailPage: React.FC = () => {
     });
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = async (e: React.MouseEvent) => {
+    e.preventDefault(); 
     if (!userProfile) {
       toast.error("Please login to buy books");
       return;
@@ -331,6 +346,7 @@ const BookDetailPage: React.FC = () => {
       return;
     }
 
+    setIsBuyingNow(true);
     try {
       const token = localStorage.getItem("auth_access");
       // 1. Create Razorpay Order
@@ -385,12 +401,14 @@ const BookDetailPage: React.FC = () => {
                  }
                  
                  const verifyData = await verifyRes.json();
-                 toast.success(verifyData.message || "Order placed successfully!");
+                 toast.success(verifyData.message || `Order #${data.order_id} placed successfully!`);
                  navigate(`/order-confirmation/${data.order_id}`);
 
             } catch (err: any) {
                 console.error("Verification Error", err);
                 toast.error(err.message || "Payment verification failed");
+            } finally {
+                setIsBuyingNow(false);
             }
         },
         prefill: {
@@ -400,6 +418,11 @@ const BookDetailPage: React.FC = () => {
         theme: {
             color: "#3399cc",
         },
+        modal: {
+            ondismiss: function() {
+                setIsBuyingNow(false);
+            }
+        }
       };
       
       const rzp1 = new Razorpay(options);
@@ -408,6 +431,7 @@ const BookDetailPage: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Something went wrong processing your order.");
+      setIsBuyingNow(false);
     }
   };
 
@@ -418,25 +442,82 @@ const BookDetailPage: React.FC = () => {
     }
     if (!bookData) return;
 
+    if (!Razorpay) {
+      toast.error("Payment system is loading. Please try again in a moment.");
+      return;
+    }
+
+    setIsEbookBuying(true);
     try {
-      // 1. Initiate Purchase
+      // 1. Initiate Purchase (creates database record)
       const purchaseRes = await dispatch(purchaseEbookThunk(bookData.id)).unwrap();
       
       if (purchaseRes.status === "pending") {
-         // 2. Complete Payment
-         await dispatch(completeEbookPaymentThunk(purchaseRes.purchase_id)).unwrap();
-         toast.success("E-book purchased successfully! Check your library.");
-         // navigate("/library"); // Optional: redirect to library
+         // 2. Create Razorpay Order
+         const orderData = await dispatch(createEbookRazorpayOrderThunk(purchaseRes.purchase_id)).unwrap();
+
+         const options: any = {
+          key: orderData.razorpay_key,
+          amount: orderData.amount * 100, // already in paise if coming from API, but double check. API says "amount": 200.0, usually means rupees. If logic matches buy-now, multiply by 100.
+          currency: "INR",
+          name: "Book Store",
+          description: `E-book: ${bookData.title}`,
+          order_id: orderData.razorpay_order_id,
+          handler: async function (response: any) {
+               try {
+                   // 3. Verify Payment
+                   const verifyData = await dispatch(verifyEbookRazorpayPaymentThunk({
+                      purchaseId: purchaseRes.purchase_id,
+                      razorpayPaymentId: response.razorpay_payment_id,
+                      razorpayOrderId: response.razorpay_order_id,
+                      razorpaySignature: response.razorpay_signature
+                   })).unwrap();
+                   
+                   toast.success(verifyData.message || "E-book purchased successfully! Check your library.");
+                   navigate("/library"); 
+              } catch (err: any) {
+                  console.error("Verification Error", err);
+                  toast.error(err.message || "Payment verification failed");
+              } finally {
+                  setIsEbookBuying(false);
+              }
+          },
+          prefill: {
+              name: `${userProfile.first_name} ${userProfile.last_name}`,
+              email: userProfile.email,
+          },
+          theme: {
+              color: "#3399cc",
+          },
+          modal: {
+              ondismiss: function() {
+                  setIsEbookBuying(false);
+              }
+          }
+        };
+        
+        const rzp1 = new Razorpay(options);
+        rzp1.open();
+      } else {
+        setIsEbookBuying(false);
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to purchase E-book");
+      toast.error(err.message || "Failed to initiate E-book purchase");
+      setIsEbookBuying(false);
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!bookData) return;
-    dispatch(addToCartAsync({ bookId: bookData.id, quantity: 1, book: bookData }));
-    toast.success(`${bookData.title} added to cart!`);
+    setIsAddingToCart(true);
+    try {
+      await dispatch(addToCartAsync({ book_id: bookData.book_id || bookData.id, quantity: 1, book: bookData })).unwrap();
+      toast.success(`${bookData.title} added to cart!`);
+    } catch (error) {
+      toast.error("Failed to add to cart");
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   if (status === "loading") {
@@ -510,27 +591,33 @@ const BookDetailPage: React.FC = () => {
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                 <button
                   onClick={handleAddToCart}
-                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-primary/90 hover:shadow-lg"
+                  disabled={isAddingToCart}
+                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-primary/90 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  <span className="truncate">Add to Cart</span>
+                  <span className="truncate">{isAddingToCart ? "Adding..." : "Add to Cart"}</span>
                 </button>
                 <button 
                   onClick={handleBuyNow}
-                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg">
-                  <span className="truncate">Buy Now</span>
+                  disabled={isBuyingNow}
+                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
+                  <span className="truncate">{isBuyingNow ? "Processing..." : "Buy Now"}</span>
                 </button>
                 {bookData.is_ebook && (
                   <button 
                   onClick={handleBuyEbook}
-                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-green-600 px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-green-700 hover:shadow-lg">
-                  <span className="truncate">Buy E-Book (${bookData.ebook_price})</span>
+                  disabled={isEbookBuying}
+                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-green-600 px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-green-700 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
+                  <span className="truncate">{isEbookBuying ? "Checking out..." : `Buy E-Book ($${bookData.ebook_price})`}</span>
                 </button>
                 )}
                 <button
                   onClick={handleWishlistToggle}
-                  className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-4 py-3 text-base font-bold leading-normal tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg"
+                  disabled={isTogglingWishlist}
+                  className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-secondary-link px-4 py-3 text-base font-bold leading-normal tracking-wider text-white shadow-md transition-colors hover:bg-opacity-90 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {isInWishlist ? (
+                  {isTogglingWishlist ? (
+                    <div className="h-6 w-6 animate-pulse rounded-full bg-white/30" />
+                  ) : isInWishlist ? (
                     <MdFavorite className="h-6 w-6 text-red-500" />
                   ) : (
                     <MdFavoriteBorder className="h-6 w-6" />
@@ -655,18 +742,20 @@ const BookDetailPage: React.FC = () => {
                       {/* Show Edit/Delete buttons only if the user owns the review */}
                       {currentUserName &&
                         currentUserName === review.user_name && (
-                          <div className="flex flex-shrink-0 gap-4 pl-4">
+                          <div className="flex flex-shrink-0 gap-2 pl-4">
                             <button
                               onClick={() => setEditingReview(review)}
-                              className="text-sm text-blue-500 hover:text-blue-700"
+                              className="p-2 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                              title="Edit Review"
                             >
-                              Edit
+                              <MdEdit className="text-xl" />
                             </button>
                             <button
                               onClick={() => handleDeleteReview(review.id)}
-                              className="text-sm text-red-500 hover:text-red-700"
+                              className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                              title="Delete Review"
                             >
-                              Delete
+                              <MdDelete className="text-xl" />
                             </button>
                           </div>
                         )}

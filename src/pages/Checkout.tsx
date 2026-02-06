@@ -65,7 +65,7 @@ const OrderSummaryItem: React.FC<OrderSummaryItemProps> = ({ item }) => {
         </div>
       </div>
       <p className="font-bold text-text-light dark:text-text-dark">
-        ${item.total.toFixed(2)}
+        ${(item.total || 0).toFixed(2)}
       </p>
     </div>
   );
@@ -105,19 +105,19 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       <div className="mt-6 pt-4 border-t border-primary/20 space-y-2">
         <div className="flex justify-between text-text-light/70 ">
           <span>Subtotal</span>
-          <span>${subtotal.toFixed(2)}</span>
+          <span>${(subtotal || 0).toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-text-light/70 ">
           <span>Shipping</span>
-          <span>${shipping.toFixed(2)}</span>
+          <span>${(shipping || 0).toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-text-light/70 ">
           <span>Tax</span>
-          <span>${tax.toFixed(2)}</span>
+          <span>${(tax || 0).toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-lg font-bold text-text-light dark:text-text-dark mt-2">
           <span>Total</span>
-          <span>${total.toFixed(2)}</span>
+          <span>${(total || 0).toFixed(2)}</span>
         </div>
       </div>
     </div>

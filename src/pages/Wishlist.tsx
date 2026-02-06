@@ -104,7 +104,7 @@ const WishlistPage: React.FC = () => {
   };
 
   const handleAddToCart = (id: string) => {
-    dispatch(addToCartAsync({ bookId: parseInt(id), quantity: 1 }));
+    dispatch(addToCartAsync({ book_id: parseInt(id), quantity: 1 }));
     toast.success("Added to cart");
   };
 

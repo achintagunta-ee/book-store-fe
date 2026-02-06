@@ -434,7 +434,17 @@ export const bookSlice = createSlice({
       })
       .addCase(fetchBooksAsync.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.books = action.payload;
+        // Check if payload is the new paginated object structure
+        if (action.payload && 'results' in action.payload && Array.isArray((action.payload as any).results)) {
+            state.books = (action.payload as any).results;
+        } 
+        // Fallback for direct array response (if API changes back or for other endpoints)
+        else if (Array.isArray(action.payload)) {
+          state.books = action.payload;
+        } else {
+          console.warn("fetchBooksAsync payload format unknown:", action.payload);
+          state.books = [];
+        }
       })
       .addCase(fetchBooksAsync.rejected, (state, action) => {
         state.status = "failed";

@@ -94,6 +94,7 @@ export interface UpdateCategoryData {
 // Book API
 export interface Book {
   id: number;
+  book_id?: number;
   title: string;
   slug: string;
   author: string;
@@ -184,7 +185,7 @@ export interface CartViewItem {
 export interface CartSummary {
   subtotal: number;
   shipping: number;
-  tax?: number;
+  tax?: number | string;
   final_total: number;
 }
 
@@ -193,9 +194,18 @@ export interface ViewCartResponse {
   summary: CartSummary;
 }
 
+// Paginated responses
+export interface BooksResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  limit: number;
+  results: Book[];
+}
+
 // Fetch all books
 export const fetchBooksApi = async () => {
-  return request<Book[]>("/admin/books/list");
+  return request<BooksResponse>("/admin/books/list");
 };
 
 // Create a new book (using FormData for file upload)
@@ -263,33 +273,36 @@ export const addToCartApi = async (book_id: number, quantity: number) => {
 };
 
 export interface CartDetailsItem {
-  item_id: number;
+  item_id?: number;
   book_id: number;
-  book_name: string;
-  slug: string;
+  book_name?: string;
+  book_title?: string;
+  slug?: string;
   price: number;
-  cover_image: string;
+  cover_image?: string;
   cover_image_url: string;
   quantity: number;
-  stock: number;
-  in_stock: boolean;
+  stock?: number;
+  in_stock?: boolean;
   total: number;
-  discount_price: number | null;
-  offer_price: number | null;
-  effective_price: number;
+  discount_price?: number | null;
+  offer_price?: number | null;
+  effective_price?: number;
 }
 
 export interface CartDetailsResponse {
   items: CartDetailsItem[];
-  subtotal: number;
-  shipping: number;
-  tax: number;
-  total: number;
+  summary: {
+    subtotal: number;
+    shipping: number;
+    tax: number | string;
+    final_total: number;
+  };
 }
 
 // View the cart
 export const viewCartApi = async () => {
-  return request<CartDetailsResponse>("/cart/details");
+  return request<CartDetailsResponse>("/cart/");
 };
 
 // Update a cart item's quantity

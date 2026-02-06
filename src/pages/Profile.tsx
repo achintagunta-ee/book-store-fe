@@ -40,6 +40,8 @@ const OrderHistoryTable: React.FC<{
     pending: "bg-yellow-100 text-yellow-800",
   };
 
+  const safeOrders = Array.isArray(orders) ? orders : [];
+
   return (
     <section className="mt-8">
       <h2 className="text-[#333333] text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-display">
@@ -59,7 +61,7 @@ const OrderHistoryTable: React.FC<{
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e6d8d1]">
-              {orders.map((order) => (
+              {safeOrders.map((order) => (
                 <tr key={order.order_id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">{order.order_id}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">{order.date}</td>
@@ -74,13 +76,18 @@ const OrderHistoryTable: React.FC<{
                   </td>
                 </tr>
               ))}
+              {safeOrders.length === 0 && (
+                <tr>
+                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No orders found.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
 
         {/* Mobile Card View */}
         <div className="md:hidden space-y-4">
-          {orders.map((order) => (
+          {safeOrders.map((order) => (
             <div key={order.order_id} className="bg-[#fbf9f8] border border-[#e6d8d1] rounded-xl p-4 shadow-sm flex flex-col gap-3">
               <div className="flex justify-between items-start">
                  <div>
@@ -111,7 +118,7 @@ const OrderHistoryTable: React.FC<{
               </button>
             </div>
           ))}
-          {orders.length === 0 && <p className="text-gray-500 text-center py-4">No orders found.</p>}
+          {safeOrders.length === 0 && <p className="text-gray-500 text-center py-4">No orders found.</p>}
         </div>
       </div>
     </section>
@@ -157,7 +164,7 @@ const UserPaymentsTable: React.FC<{
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={() => onDownloadInvoice(payment.order_id)} className="text-primary hover:underline font-bold text-sm">Invoice</button>
+                    <button onClick={() => onDownloadInvoice((payment.raw_id || payment.order_id) as number)} className="text-primary hover:underline font-bold text-sm">Invoice</button>
                   </td>
                 </tr>
               ))}
@@ -192,8 +199,9 @@ const UserPaymentsTable: React.FC<{
                  <div className="text-right text-gray-900 capitalize">{payment.method}</div>
                </div>
 
+
                <button 
-                  onClick={() => onDownloadInvoice(payment.order_id)}
+                  onClick={() => onDownloadInvoice((payment.raw_id || payment.order_id) as number)}
                   className="w-full mt-2 py-2 bg-white border border-[#e6d8d1] text-primary rounded-lg font-bold text-sm hover:bg-gray-50"
                >
                  Download Invoice
@@ -409,6 +417,8 @@ const AddressList: React.FC = () => {
     }
   };
 
+  const safeAddresses = Array.isArray(addresses) ? addresses : [];
+
   return (
     <section className="mt-8 px-4">
       <div className="flex justify-between items-center mb-4">
@@ -424,7 +434,7 @@ const AddressList: React.FC = () => {
         </button>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        {addresses.map((addr) => (
+        {safeAddresses.map((addr) => (
           <div
             key={addr.id}
             className="border border-[#e6d8d1] p-4 rounded-lg shadow-sm bg-[#fbf9f8]"
@@ -457,7 +467,7 @@ const AddressList: React.FC = () => {
             </div>
           </div>
         ))}
-        {addresses.length === 0 && (
+        {safeAddresses.length === 0 && (
           <p className="text-gray-500">No addresses found.</p>
         )}
       </div>
@@ -1062,7 +1072,7 @@ const UserProfilePage: React.FC = () => {
         {activeTab === "profile" && <ProfileInfo user={userProfile} />}
         {activeTab === "orders" && (
           <OrderHistoryTable
-            orders={orderHistory}
+            orders={orderHistory?.results || []}
             onViewDetails={handleViewDetails}
           />
         )}

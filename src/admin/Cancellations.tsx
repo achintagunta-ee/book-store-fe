@@ -53,7 +53,7 @@ const CancellationsPage: React.FC = () => {
     );
   }, [dispatch, currentPage, statusFilter]);
 
-  const requests = cancellationRequests?.requests || [];
+  const requests = cancellationRequests?.results || [];
   const totalPages = cancellationRequests?.total_pages || 1;
 
   const handleOpenRefund = (req: CancellationRequestItem) => {
@@ -65,7 +65,6 @@ const CancellationsPage: React.FC = () => {
     setAdminNotes("");
     setShowRefundModal(true);
   };
-
   const handleOpenReject = (req: CancellationRequestItem) => {
     setSelectedRequest(req);
     setRejectReason("");
@@ -227,13 +226,12 @@ const CancellationsPage: React.FC = () => {
                         <td className="px-6 py-4 text-sm text-[#261d1a]">#{req.request_id}</td>
                         <td className="px-6 py-4 text-sm text-[#261d1a]">#{req.order_id}</td>
                         <td className="px-6 py-4 text-sm text-[#261d1a]">
-                            <div>{req.customer_name}</div>
-                            <div className="text-xs text-gray-500">{req.customer_email}</div>
+                            <div>{req.customer}</div>
                         </td>
                         <td className="px-6 py-4 text-sm text-[#261d1a] max-w-xs truncate" title={req.reason}>
                             {req.reason}
                         </td>
-                         <td className="px-6 py-4 text-sm text-[#261d1a]">₹{req.order_total}</td>
+                         <td className="px-6 py-4 text-sm text-[#261d1a]">₹{req.amount}</td>
                         <td className="px-6 py-4">
                           <span className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusColor(req.status)}`}>
                             {req.status}

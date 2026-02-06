@@ -32,6 +32,7 @@ import {
   getOrderHistoryApi,
   getOrderDetailsApi,
   type OrderHistoryItem,
+  type OrderHistoryResponse,
   type OrderDetailResponse,
   type AddressSummaryResponse,
   type ConfirmOrderResponse,
@@ -114,11 +115,13 @@ import {
   completePaymentAfterExpiryApi,
   uploadEbookApi,
   purchaseEbookApi,
-  completeEbookPaymentApi,
+  createEbookRazorpayOrderApi,
+  verifyEbookRazorpayPaymentApi,
   getUserLibraryApi,
   readEbookApi,
   type EbookPurchaseResponse,
-  type CompleteEbookPaymentResponse,
+  type CreateEbookRazorpayOrderResponse,
+  type VerifyEbookRazorpayPaymentResponse,
   type LibraryBook,
   type ReadEbookResponse,
   type AdminOrderNotificationItem,
@@ -129,7 +132,20 @@ import {
   approveCancellationApi,
   getGuestOrderDetailsApi,
   type GuestOrderDetailsResponse,
+  viewGuestOrderInvoiceApi,
+  downloadGuestInvoiceApi,
+  type GuestInvoiceResponse,
+  getEbookPurchasesListApi,
+  getEbookPaymentsListApi,
+  updateEbookPriceApi,
+  toggleEbookStatusApi,
+  getEbookListApi,
+  type EbookPurchaseItem,
+  type EbookPaymentItem,
+  type EbookListResponse,
 } from "../utilis/authApi";
+
+
 
 const PROFILE_KEY = "user_profile";
 
@@ -196,7 +212,7 @@ interface AuthState {
   wishlistStatus: "idle" | "loading" | "succeeded" | "failed";
   wishlistError: string | null;
   wishlistCount: number;
-  orderHistory: OrderHistoryItem[];
+  orderHistory: OrderHistoryResponse | null;
   orderHistoryStatus: "idle" | "loading" | "succeeded" | "failed";
   orderHistoryError: string | null;
   currentOrder: OrderDetailResponse | null;
@@ -295,9 +311,12 @@ interface AuthState {
   ebookPurchaseStatus: "idle" | "loading" | "succeeded" | "failed";
   ebookPurchaseError: string | null;
   ebookPurchaseResponse: EbookPurchaseResponse | null;
-  completeEbookPaymentStatus: "idle" | "loading" | "succeeded" | "failed";
-  completeEbookPaymentError: string | null;
-  completeEbookPaymentResponse: CompleteEbookPaymentResponse | null;
+  createEbookRazorpayOrderStatus: "idle" | "loading" | "succeeded" | "failed";
+  createEbookRazorpayOrderError: string | null;
+  createEbookRazorpayOrderResponse: CreateEbookRazorpayOrderResponse | null;
+  verifyEbookRazorpayPaymentStatus: "idle" | "loading" | "succeeded" | "failed";
+  verifyEbookRazorpayPaymentError: string | null;
+  verifyEbookRazorpayPaymentResponse: VerifyEbookRazorpayPaymentResponse | null;
   userLibrary: LibraryBook[];
   userLibraryStatus: "idle" | "loading" | "succeeded" | "failed";
   userLibraryError: string | null;
@@ -307,6 +326,18 @@ interface AuthState {
   guestOrderDetails: GuestOrderDetailsResponse | null;
   guestOrderDetailsStatus: "idle" | "loading" | "succeeded" | "failed";
   guestOrderDetailsError: string | null;
+  guestInvoice: GuestInvoiceResponse | null;
+  guestInvoiceStatus: "idle" | "loading" | "succeeded" | "failed";
+  guestInvoiceError: string | null;
+  ebookPurchasesList: EbookPurchaseItem[];
+  ebookPurchasesListStatus: "idle" | "loading" | "succeeded" | "failed";
+  ebookPurchasesListError: string | null;
+  ebookPaymentsList: EbookPaymentItem[];
+  ebookPaymentsListStatus: "idle" | "loading" | "succeeded" | "failed";
+  ebookPaymentsListError: string | null;
+  ebookList: EbookListResponse | null;
+  ebookListStatus: "idle" | "loading" | "succeeded" | "failed";
+  ebookListError: string | null;
 }
 
 const initialState: AuthState = {
@@ -324,7 +355,7 @@ const initialState: AuthState = {
   wishlistStatus: "idle",
   wishlistError: null,
   wishlistCount: 0,
-  orderHistory: [],
+  orderHistory: null,
   orderHistoryStatus: "idle",
   orderHistoryError: null,
   currentOrder: null,
@@ -423,9 +454,12 @@ const initialState: AuthState = {
   ebookPurchaseStatus: "idle",
   ebookPurchaseError: null,
   ebookPurchaseResponse: null,
-  completeEbookPaymentStatus: "idle",
-  completeEbookPaymentError: null,
-  completeEbookPaymentResponse: null,
+  createEbookRazorpayOrderStatus: "idle",
+  createEbookRazorpayOrderError: null,
+  createEbookRazorpayOrderResponse: null,
+  verifyEbookRazorpayPaymentStatus: "idle",
+  verifyEbookRazorpayPaymentError: null,
+  verifyEbookRazorpayPaymentResponse: null,
   userLibrary: [],
   userLibraryStatus: "idle",
   userLibraryError: null,
@@ -435,6 +469,18 @@ const initialState: AuthState = {
   guestOrderDetails: null,
   guestOrderDetailsStatus: "idle",
   guestOrderDetailsError: null,
+  guestInvoice: null,
+  guestInvoiceStatus: "idle",
+  guestInvoiceError: null,
+  ebookPurchasesList: [],
+  ebookPurchasesListStatus: "idle",
+  ebookPurchasesListError: null,
+  ebookPaymentsList: [],
+  ebookPaymentsListStatus: "idle",
+  ebookPaymentsListError: null,
+  ebookList: null,
+  ebookListStatus: "idle",
+  ebookListError: null,
 };
 
 export const loginThunk = createAsyncThunk(
@@ -845,11 +891,12 @@ export const getWishlistCountThunk = createAsyncThunk(
   }
 );
 
+
 export const getOrderHistoryThunk = createAsyncThunk(
   "auth/getOrderHistory",
-  async (_, { rejectWithValue }) => {
+  async (page: number | undefined, { rejectWithValue }) => {
     try {
-      return await getOrderHistoryApi();
+      return await getOrderHistoryApi(page);
     } catch (error: unknown) {
       if (error instanceof Error) {
         return rejectWithValue(
@@ -909,17 +956,52 @@ export const purchaseEbookThunk = createAsyncThunk(
   }
 );
 
-export const completeEbookPaymentThunk = createAsyncThunk(
-  "ebooks/completePayment",
+export const createEbookRazorpayOrderThunk = createAsyncThunk(
+  "auth/createEbookRazorpayOrder",
   async (purchaseId: number, { rejectWithValue }) => {
     try {
-      const data = await completeEbookPaymentApi(purchaseId);
-      return data;
+      return await createEbookRazorpayOrderApi(purchaseId);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        return rejectWithValue(error.message || "Failed to complete ebook payment");
+        return rejectWithValue(
+          error.message || "Failed to create Razorpay order for ebook"
+        );
       }
-      return rejectWithValue("Failed to complete ebook payment");
+      return rejectWithValue("Failed to create Razorpay order for ebook");
+    }
+  }
+);
+
+export const verifyEbookRazorpayPaymentThunk = createAsyncThunk(
+  "auth/verifyEbookRazorpayPayment",
+  async (
+    {
+      purchaseId,
+      razorpayPaymentId,
+      razorpayOrderId,
+      razorpaySignature,
+    }: {
+      purchaseId: number;
+      razorpayPaymentId: string;
+      razorpayOrderId: string;
+      razorpaySignature: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await verifyEbookRazorpayPaymentApi(
+        purchaseId,
+        razorpayPaymentId,
+        razorpayOrderId,
+        razorpaySignature
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to verify ebook payment"
+        );
+      }
+      return rejectWithValue("Failed to verify ebook payment");
     }
   }
 );
@@ -1703,6 +1785,127 @@ export const verifyGuestRazorpayPaymentThunk = createAsyncThunk(
   }
 );
 
+export const viewGuestOrderInvoiceThunk = createAsyncThunk(
+  "checkout/viewGuestOrderInvoice",
+  async (orderId: string | number, { rejectWithValue }) => {
+    try {
+      return await viewGuestOrderInvoiceApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to view guest order invoice"
+        );
+      }
+      return rejectWithValue("Failed to view guest order invoice");
+    }
+  }
+);
+
+export const downloadGuestInvoiceThunk = createAsyncThunk(
+  "checkout/downloadGuestInvoice",
+  async (orderId: string | number, { rejectWithValue }) => {
+    try {
+      return await downloadGuestInvoiceApi(orderId);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to download guest invoice"
+        );
+      }
+      return rejectWithValue("Failed to download guest invoice");
+    }
+  }
+);
+
+
+
+export const getEbookPurchasesListThunk = createAsyncThunk(
+  "admin/getEbookPurchasesList",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getEbookPurchasesListApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to get ebook purchases list"
+        );
+      }
+      return rejectWithValue("Failed to get ebook purchases list");
+    }
+  }
+);
+
+export const getEbookPaymentsListThunk = createAsyncThunk(
+  "admin/getEbookPaymentsList",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getEbookPaymentsListApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to get ebook payments list"
+        );
+      }
+      return rejectWithValue("Failed to get ebook payments list");
+    }
+  }
+);
+
+export const updateEbookPriceThunk = createAsyncThunk(
+  "admin/updateEbookPrice",
+  async (
+    { bookId, price }: { bookId: number; price: number },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await updateEbookPriceApi(bookId, price);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to update ebook price"
+        );
+      }
+      return rejectWithValue("Failed to update ebook price");
+    }
+  }
+);
+
+export const toggleEbookStatusThunk = createAsyncThunk(
+  "admin/toggleEbookStatus",
+  async (
+    { bookId, enabled }: { bookId: number; enabled: boolean },
+    { rejectWithValue }
+  ) => {
+    try {
+      return await toggleEbookStatusApi(bookId, enabled);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to toggle ebook status"
+        );
+      }
+      return rejectWithValue("Failed to toggle ebook status");
+    }
+  }
+);
+
+export const getEbookListThunk = createAsyncThunk(
+  "admin/getEbookList",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getEbookListApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to get ebook list"
+        );
+      }
+      return rejectWithValue("Failed to get ebook list");
+    }
+  }
+);
+
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -1827,7 +2030,11 @@ const authSlice = createSlice({
       })
       .addCase(getAddressesThunk.fulfilled, (state, action) => {
         state.addressStatus = "succeeded";
-        state.addresses = action.payload;
+        // The API actually returns a paginated response { results: [...] }
+        // We cast it to any here to access .results because the thunk return type inferencing might be tricky 
+        // without updating the entire chain, but essentially we want the array.
+        const payload = action.payload as unknown as { results: AddressItem[] }; 
+        state.addresses = payload.results || [];
       })
       .addCase(getAddressesThunk.rejected, (state, action) => {
         state.addressStatus = "failed";
@@ -2027,7 +2234,19 @@ const authSlice = createSlice({
       })
       .addCase(fetchNotificationsThunk.fulfilled, (state, action) => {
         state.notificationsStatus = "succeeded";
-        state.notifications = action.payload;
+        const payload = action.payload as any;
+        if (Array.isArray(payload)) {
+          state.notifications = payload;
+        } else if (payload && Array.isArray(payload.results)) {
+          state.notifications = payload.results; // Common pagination pattern
+        } else if (payload && Array.isArray(payload.items)) {
+          state.notifications = payload.items;
+        } else if (payload && Array.isArray(payload.notifications)) {
+          state.notifications = payload.notifications;
+        } else {
+          state.notifications = [];
+          console.warn("fetchNotificationsThunk: payload is not an array", payload);
+        }
       })
       .addCase(fetchNotificationsThunk.rejected, (state, action) => {
         state.notificationsStatus = "failed";
@@ -2084,7 +2303,12 @@ const authSlice = createSlice({
       })
       .addCase(getInventoryListThunk.fulfilled, (state, action) => {
         state.inventoryListStatus = "succeeded";
-        state.inventoryList = action.payload;
+        if (Array.isArray(action.payload)) {
+            state.inventoryList = action.payload;
+        } else {
+            console.warn("getInventoryListThunk: payload is not an array", action.payload);
+            state.inventoryList = [];
+        }
       })
       .addCase(getInventoryListThunk.rejected, (state, action) => {
         state.inventoryListStatus = "failed";
@@ -2238,6 +2462,7 @@ const authSlice = createSlice({
       .addCase(getCancellationStatusThunk.pending, (state) => {
         state.cancellationStatusStatus = "loading";
         state.cancellationStatusError = null;
+        state.cancellationStatus = null;
       })
       .addCase(getCancellationStatusThunk.fulfilled, (state, action) => {
         state.cancellationStatusStatus = "succeeded";
@@ -2246,6 +2471,7 @@ const authSlice = createSlice({
       .addCase(getCancellationStatusThunk.rejected, (state, action) => {
         state.cancellationStatusStatus = "failed";
         state.cancellationStatusError = action.payload as string;
+        state.cancellationStatus = null;
       })
       // Guest Order Details
       .addCase(getGuestOrderDetailsThunk.pending, (state) => {
@@ -2336,18 +2562,32 @@ const authSlice = createSlice({
         state.ebookPurchaseStatus = "failed";
         state.ebookPurchaseError = action.payload as string;
       })
-      .addCase(completeEbookPaymentThunk.pending, (state) => {
-        state.completeEbookPaymentStatus = "loading";
-        state.completeEbookPaymentError = null;
-        state.completeEbookPaymentResponse = null;
+      .addCase(createEbookRazorpayOrderThunk.pending, (state) => {
+        state.createEbookRazorpayOrderStatus = "loading";
+        state.createEbookRazorpayOrderError = null;
+        state.createEbookRazorpayOrderResponse = null;
       })
-      .addCase(completeEbookPaymentThunk.fulfilled, (state, action) => {
-        state.completeEbookPaymentStatus = "succeeded";
-        state.completeEbookPaymentResponse = action.payload;
+      .addCase(createEbookRazorpayOrderThunk.fulfilled, (state, action) => {
+        state.createEbookRazorpayOrderStatus = "succeeded";
+        state.createEbookRazorpayOrderResponse = action.payload;
       })
-      .addCase(completeEbookPaymentThunk.rejected, (state, action) => {
-        state.completeEbookPaymentStatus = "failed";
-        state.completeEbookPaymentError = action.payload as string;
+      .addCase(createEbookRazorpayOrderThunk.rejected, (state, action) => {
+        state.createEbookRazorpayOrderStatus = "failed";
+        state.createEbookRazorpayOrderError = action.payload as string;
+      })
+      .addCase(verifyEbookRazorpayPaymentThunk.pending, (state) => {
+        state.verifyEbookRazorpayPaymentStatus = "loading";
+        state.verifyEbookRazorpayPaymentError = null;
+        state.verifyEbookRazorpayPaymentResponse = null;
+      })
+      .addCase(verifyEbookRazorpayPaymentThunk.fulfilled, (state, action) => {
+        state.verifyEbookRazorpayPaymentStatus = "succeeded";
+        state.verifyEbookRazorpayPaymentResponse = action.payload;
+        // Optionally update other states like userLibrary or purchase status if needed
+      })
+      .addCase(verifyEbookRazorpayPaymentThunk.rejected, (state, action) => {
+        state.verifyEbookRazorpayPaymentStatus = "failed";
+        state.verifyEbookRazorpayPaymentError = action.payload as string;
       })
       .addCase(getUserLibraryThunk.pending, (state) => {
         state.userLibraryStatus = "loading";
@@ -2373,6 +2613,63 @@ const authSlice = createSlice({
       .addCase(readEbookThunk.rejected, (state, action) => {
         state.currentEbookStatus = "failed";
         state.currentEbookError = action.payload as string;
+      })
+      // Guest Invoice
+      .addCase(viewGuestOrderInvoiceThunk.pending, (state) => {
+        state.guestInvoiceStatus = "loading";
+        state.guestInvoiceError = null;
+        state.guestInvoice = null;
+      })
+      .addCase(viewGuestOrderInvoiceThunk.fulfilled, (state, action) => {
+        state.guestInvoiceStatus = "succeeded";
+        state.guestInvoice = action.payload;
+      })
+      .addCase(viewGuestOrderInvoiceThunk.rejected, (state, action) => {
+        state.guestInvoiceStatus = "failed";
+        state.guestInvoiceError = action.payload as string;
+      })
+      // Ebook Management
+      .addCase(getEbookPurchasesListThunk.pending, (state) => {
+        state.ebookPurchasesListStatus = "loading";
+        state.ebookPurchasesListError = null;
+      })
+      .addCase(getEbookPurchasesListThunk.fulfilled, (state, action) => {
+        state.ebookPurchasesListStatus = "succeeded";
+        state.ebookPurchasesList = action.payload;
+      })
+      .addCase(getEbookPurchasesListThunk.rejected, (state, action) => {
+        state.ebookPurchasesListStatus = "failed";
+        state.ebookPurchasesListError = action.payload as string;
+      })
+      .addCase(getEbookPaymentsListThunk.pending, (state) => {
+        state.ebookPaymentsListStatus = "loading";
+        state.ebookPaymentsListError = null;
+      })
+      .addCase(getEbookPaymentsListThunk.fulfilled, (state, action) => {
+        state.ebookPaymentsListStatus = "succeeded";
+        state.ebookPaymentsList = action.payload;
+      })
+      .addCase(getEbookPaymentsListThunk.rejected, (state, action) => {
+        state.ebookPaymentsListStatus = "failed";
+        state.ebookPaymentsListError = action.payload as string;
+      })
+      .addCase(updateEbookPriceThunk.fulfilled, (state, action) => {
+         // Optionally update the list if we have one locally, or just trigger re-fetch in component
+      })
+      .addCase(toggleEbookStatusThunk.fulfilled, (state, action) => {
+         // Optionally update the list if we have one locally
+      })
+      .addCase(getEbookListThunk.pending, (state) => {
+        state.ebookListStatus = "loading";
+        state.ebookListError = null;
+      })
+      .addCase(getEbookListThunk.fulfilled, (state, action) => {
+        state.ebookListStatus = "succeeded";
+        state.ebookList = action.payload;
+      })
+      .addCase(getEbookListThunk.rejected, (state, action) => {
+        state.ebookListStatus = "failed";
+        state.ebookListError = action.payload as string;
       });
 
   },

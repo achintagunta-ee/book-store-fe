@@ -483,13 +483,13 @@ const OrdersPage: React.FC = () => {
 														#{order.order_id}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														{order.customer_name}
+														{order.customer}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														{order.date}
+														{new Date(order.date).toLocaleString()}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														₹{order.total_amount}
+														₹{order.total}
 													</td>
 													<td className="h-[72px] px-4 py-2">
 														<select

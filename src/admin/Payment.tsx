@@ -103,13 +103,15 @@ const PaymentsPage: React.FC = () => {
 		paymentsList = [
 			{
 				payment_id: adminPaymentDetail.payment_id,
-				txn_id: adminPaymentDetail.txn_id,
 				order_id: adminPaymentDetail.order_id,
 				amount: adminPaymentDetail.amount,
 				status: adminPaymentDetail.status,
-				method: adminPaymentDetail.method,
-				customer_name: adminPaymentDetail.customer.name,
-				created_at: adminPaymentDetail.created_at,
+				customer: adminPaymentDetail.customer.name,
+				date: adminPaymentDetail.created_at,
+                actions: {
+                    view: `/admin/payments/${adminPaymentDetail.payment_id}`,
+                    receipt: `/admin/payments/${adminPaymentDetail.payment_id}/receipt`
+                }
 			},
 		];
 	}
@@ -396,10 +398,10 @@ const PaymentsPage: React.FC = () => {
 														#{payment.order_id}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														{payment.customer_name}
+														{payment.customer}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main/80 text-sm">
-														{new Date(payment.created_at).toLocaleDateString()}
+														{new Date(payment.date).toLocaleDateString()}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
 														${(payment.amount || 0).toFixed(2)}
@@ -491,7 +493,7 @@ const PaymentsPage: React.FC = () => {
 									</div>
 									<div>
 										<p className="text-xs uppercase text-gray-500 font-semibold mb-1">Date</p>
-										<p className="font-medium">{new Date(invoice.created_at).toLocaleString()}</p>
+										<p className="font-medium">{new Date(invoice.date).toLocaleString()}</p>
 									</div>
 									<div>
 										<p className="text-xs uppercase text-gray-500 font-semibold mb-1">Order ID</p>
@@ -500,7 +502,7 @@ const PaymentsPage: React.FC = () => {
 									<div>
 										<p className="text-xs uppercase text-gray-500 font-semibold mb-1">Status</p>
 										<p className="font-medium capitalize px-2 py-0.5 inline-block rounded bg-white border border-gray-200 text-sm">
-											{invoice.status}
+											{invoice.order_status}
 										</p>
 									</div>
 								</div>
@@ -521,22 +523,22 @@ const PaymentsPage: React.FC = () => {
 													<td className="py-3 px-4 text-sm">{item.title}</td>
 													<td className="text-right py-3 px-4 text-sm text-gray-600">{item.quantity}</td>
 													<td className="text-right py-3 px-4 text-sm text-gray-600">${(item.price || 0).toFixed(2)}</td>
-													<td className="text-right py-3 px-4 text-sm font-medium">${(item.line_total || 0).toFixed(2)}</td>
+													<td className="text-right py-3 px-4 text-sm font-medium">${(item.total || 0).toFixed(2)}</td>
 												</tr>
 											))}
 										</tbody>
 										<tfoot className="bg-gray-50">
 											<tr>
 												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Subtotal:</td>
-												<td className="text-right py-2 px-4 text-sm font-medium">${(invoice.subtotal || 0).toFixed(2)}</td>
+												<td className="text-right py-2 px-4 text-sm font-medium">${(invoice.summary.subtotal || 0).toFixed(2)}</td>
 											</tr>
 											<tr>
-												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Tax:</td>
-												<td className="text-right py-2 px-4 text-sm font-medium">${(invoice.tax || 0).toFixed(2)}</td>
+												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Shipping:</td>
+												<td className="text-right py-2 px-4 text-sm font-medium">${(invoice.summary.shipping || 0).toFixed(2)}</td>
 											</tr>
 											<tr className="border-t border-gray-200">
 												<td colSpan={3} className="text-right py-3 px-4 font-bold text-gray-900">Total:</td>
-												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">${(invoice.total || 0).toFixed(2)}</td>
+												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">${(invoice.summary.total || 0).toFixed(2)}</td>
 											</tr>
 										</tfoot>
 									</table>
@@ -568,7 +570,7 @@ const PaymentsPage: React.FC = () => {
 							<div className="space-y-6">
 								<div className="p-6 bg-green-50 rounded-xl text-center border border-green-100">
 									<p className="text-4xl font-bold text-green-600 mb-1">
-                                        ${(receipt.payment?.amount ?? receipt.amount ?? 0).toFixed(2)}
+                                        ${(receipt.amount || 0).toFixed(2)}
                                     </p>
 									<div className="inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-0.5 rounded text-sm font-medium">
 										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
@@ -581,32 +583,26 @@ const PaymentsPage: React.FC = () => {
 										<span className="text-sm text-gray-500">Receipt ID</span>
 										<span className="font-mono text-sm font-medium text-gray-700">{receipt.receipt_id}</span>
 									</div>
-                                    {(receipt.customer?.name) && (
-                                        <div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
-                                            <span className="text-sm text-gray-500">Customer</span>
-                                            <span className="font-medium text-sm text-gray-700">{receipt.customer.name}</span>
-                                        </div>
-                                    )}
 									<div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
 										<span className="text-sm text-gray-500">Transaction ID</span>
-										<span className="font-mono text-sm font-medium text-gray-700 text-right truncate max-w-[150px]" title={receipt.payment?.txn_id || receipt.txn_id}>
-                                            {receipt.payment?.txn_id || receipt.txn_id || 'N/A'}
+										<span className="font-mono text-sm font-medium text-gray-700 text-right truncate max-w-[150px]" title={receipt.txn_id}>
+                                            {receipt.txn_id || 'N/A'}
                                         </span>
 									</div>
 									<div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
 										<span className="text-sm text-gray-500">Order ID</span>
-										<span className="font-medium text-sm text-gray-700">#{receipt.payment?.order_id || receipt.order_id}</span>
+										<span className="font-medium text-sm text-gray-700">#{receipt.order_id}</span>
 									</div>
 									<div className="flex justify-between items-center pb-2 border-b border-dashed border-gray-200">
 										<span className="text-sm text-gray-500">Date Paid</span>
 										<span className="font-medium text-sm text-gray-700">
-                                            {new Date(receipt.payment?.paid_at || receipt.paid_at || Date.now()).toLocaleString()}
+                                            {new Date(receipt.paid_at).toLocaleString()}
                                         </span>
 									</div>
 									<div className="flex justify-between items-center">
 										<span className="text-sm text-gray-500">Payment Method</span>
 										<span className="capitalize font-medium text-sm text-gray-700 bg-gray-100 px-2 py-0.5 rounded">
-                                            {receipt.payment?.method || receipt.method || 'Unknown'}
+                                            {receipt.method || 'Unknown'}
                                         </span>
 									</div>
 								</div>

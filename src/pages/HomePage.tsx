@@ -46,7 +46,7 @@ const BookCard: React.FC<{ book: Book }> = ({ book }) => {
         </div>
         <button
           onClick={() => {
-            dispatch(addToCartAsync({ bookId: book.id, quantity: 1, book }));
+            dispatch(addToCartAsync({ book_id: book.id, quantity: 1, book }));
             toast.success("Added to cart");
           }}
           className="mt-4 flex w-full items-center justify-center rounded-lg bg-primary/10 py-2 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-95"
@@ -107,32 +107,32 @@ const HomePage: React.FC = () => {
 
   const bookSections = useMemo(
     () => [
-      {
-        title: "Featured Books",
-        books: (featuredBooks || []).map((book: ApiBook) => ({
-          id: book.id,
-          title: book.title,
-          author: book.author,
-          imageUrl: book.cover_image_url || "",
-          slug: book.slug,
-          price: book.price,
-        })),
-      },
-      {
-        title: "Featured Authors",
-        books: (featuredAuthorsBooks || []).map((book: ApiBook) => ({
-          id: book.id,
-          title: book.title,
-          author: book.author,
-          imageUrl: book.cover_image_url || "",
-          slug: book.slug,
-          price: book.price,
-        })),
-      },
+      // {
+      //   title: "Featured Books",
+      //   books: (featuredBooks || []).map((book: ApiBook) => ({
+      //     id: book.book_id || book.id,
+      //     title: book.title,
+      //     author: book.author,
+      //     imageUrl: book.cover_image_url || "",
+      //     slug: book.slug,
+      //     price: book.price,
+      //   })),
+      // },
+      // {
+      //   title: "Featured Authors",
+      //   books: (featuredAuthorsBooks || []).map((book: ApiBook) => ({
+      //     id: book.book_id || book.id,
+      //     title: book.title,
+      //     author: book.author,
+      //     imageUrl: book.cover_image_url || "",
+      //     slug: book.slug,
+      //     price: book.price,
+      //   })),
+      // },
       {
         title: "New Arrivals",
         books: (newArrivals || []).map((book: ApiBook) => ({
-          id: book.id,
+          id: book.book_id || book.id,
           title: book.title,
           author: book.author,
           imageUrl: book.cover_image_url || "",
@@ -143,7 +143,7 @@ const HomePage: React.FC = () => {
       {
         title: "Popular Books",
         books: (popularBooks || []).map((book: ApiBook) => ({
-          id: book.id,
+          id: book.book_id || book.id,
           title: book.title,
           author: book.author,
           imageUrl: book.cover_image_url || "",

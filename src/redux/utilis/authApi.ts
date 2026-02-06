@@ -478,8 +478,16 @@ export interface AddressItem {
   zip_code: string;
 }
 
+export interface AddressListResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  limit: number;
+  results: AddressItem[];
+}
+
 export async function getAddressesApi() {
-  return request<AddressItem[]>("/users/profile/addresses");
+  return request<AddressListResponse>("/users/profile/addresses");
 }
 
 export async function addAddressApi(data: AddressData) {
@@ -555,8 +563,16 @@ export interface OrderHistoryItem {
   details_url: string;
 }
 
-export async function getOrderHistoryApi() {
-  return request<OrderHistoryItem[]>("/users/profile/orders/history");
+export interface OrderHistoryResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  limit: number;
+  results: OrderHistoryItem[];
+}
+
+export async function getOrderHistoryApi(page: number = 1) {
+  return request<OrderHistoryResponse>(`/users/profile/orders/history?page=${page}`);
 }
 
 export interface OrderDetailResponse {
@@ -582,17 +598,14 @@ export async function getOrderDetailsApi(orderId: number) {
 
 export interface AdminPayment {
   payment_id: number;
-  txn_id: string;
   order_id: number;
+  customer: string;
+  date: string;
   amount: number;
   status: string;
-  method: string;
-  customer_name: string;
-  created_at: string;
-  date?: string;
-  actions?: {
-    view_invoice: string;
-    download_receipt: string;
+  actions: {
+    view: string;
+    receipt: string;
   };
 }
 
@@ -600,6 +613,7 @@ export interface AdminPaymentsResponse {
   total_items: number;
   total_pages: number;
   current_page: number;
+  limit: number;
   results: AdminPayment[];
 }
 
@@ -648,19 +662,31 @@ export interface InvoiceItem {
   title: string;
   price: number;
   quantity: number;
-  line_total: number;
+  total: number;
 }
 
 export interface ViewInvoiceResponse {
   invoice_id: string;
   order_id: number;
-  customer_id: number;
-  status: string;
-  created_at: string;
+  customer: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  payment: {
+    txn_id: string;
+    method: string;
+    status: string;
+    amount: number;
+  };
+  order_status: string;
+  date: string;
   items: InvoiceItem[];
-  subtotal: number;
-  tax: number;
-  total: number;
+  summary: {
+    subtotal: number;
+    shipping: number;
+    total: number;
+  };
 }
 
 export async function getInvoiceApi(orderId: number) {
@@ -671,34 +697,13 @@ export async function getInvoiceApi(orderId: number) {
 // g) Payment Receipt
 export interface PaymentReceiptResponse {
   receipt_id: string;
-  // Nested structure
-  payment?: {
-    id: number;
-    txn_id: string;
-    order_id: number;
-    amount: number;
-    method: string;
-    status: string;
-    paid_at: string;
-  };
-  customer?: {
-    name: string;
-    email: string;
-  };
-  order_summary?: {
-    total: number;
-    subtotal: number;
-    tax: number;
-    shipping: number;
-  };
-  // Flat structure fallback
-  payment_id?: number;
-  txn_id?: string;
-  order_id?: number;
-  amount?: number;
-  method?: string;
-  status?: string;
-  paid_at?: string;
+  payment_id: number;
+  txn_id: string;
+  order_id: number;
+  amount: number;
+  method: string;
+  status: string;
+  paid_at: string;
 }
 
 export async function getPaymentReceiptApi(paymentId: number) {
@@ -709,7 +714,8 @@ export async function getPaymentReceiptApi(paymentId: number) {
 export interface UserPayment {
   payment_id: number;
   txn_id: string;
-  order_id: number;
+  order_id: number | string;
+  raw_id?: number;
   amount: number;
   status: string;
   method: string;
@@ -736,16 +742,24 @@ export async function getUserPaymentsApi(page: number = 1) {
 // 39) Admin Orders Management
 export interface AdminOrder {
   order_id: number;
-  customer_name: string;
+  customer: string;
+  email: string;
   date: string;
-  total_amount: number;
+  total: number;
   status: string;
+  actions: {
+    view: string;
+    notify: string;
+    track: string;
+    invoice: string;
+  };
 }
 
 export interface AdminOrdersResponse {
   total_items: number;
   total_pages: number;
   current_page: number;
+  limit: number;
   results: AdminOrder[];
 }
 
@@ -850,17 +864,53 @@ export async function purchaseEbookApi(bookId: number) {
   });
 }
 
-// c) Complete Ebook Payment
-export interface CompleteEbookPaymentResponse {
+// c) RazorPay Integration - Ebook Purchase
+export interface CreateEbookRazorpayOrderResponse {
+  purchase_id: number;
+  razorpay_order_id: string;
+  razorpay_key: string;
+  amount: number;
+  user_email: string;
+  user_name: string;
   message: string;
-  access_expires_at: string;
 }
 
-export async function completeEbookPaymentApi(purchaseId: number) {
-  return request<CompleteEbookPaymentResponse>(
-    `/ebooks/${purchaseId}/payment-complete`,
+export async function createEbookRazorpayOrderApi(purchaseId: number) {
+  return request<CreateEbookRazorpayOrderResponse>(
+    `/ebooks/${purchaseId}/create-razorpay-order`,
     {
       method: "POST",
+    }
+  );
+}
+
+// d) Verify Payment - Ebook
+export interface VerifyEbookRazorpayPaymentResponse {
+  message: string;
+  purchase_id: number;
+  payment_id: number;
+  txn_id: string;
+  book_title: string;
+  access: string;
+  library_url: string;
+  continue_shopping_url: string;
+}
+
+export async function verifyEbookRazorpayPaymentApi(
+  purchaseId: number,
+  razorpayPaymentId: string,
+  razorpayOrderId: string,
+  razorpaySignature: string
+) {
+  return request<VerifyEbookRazorpayPaymentResponse>(
+    `/ebooks/${purchaseId}/verify-razorpay-payment`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        razorpay_payment_id: razorpayPaymentId,
+        razorpay_order_id: razorpayOrderId,
+        razorpay_signature: razorpaySignature,
+      }),
     }
   );
 }
@@ -887,7 +937,7 @@ export interface ReadEbookResponse {
 }
 
 export async function readEbookApi(bookId: number) {
-  return request<ReadEbookResponse>(`/users/library/books/${bookId}/read`);
+  return request<ReadEbookResponse>(`/users/library/ebooks/${bookId}/read`);
 }
 
 export async function downloadOrderInvoiceApi(orderId: number) {
@@ -1412,20 +1462,22 @@ export async function getCancellationStatusApi(orderId: number) {
 export interface CancellationRequestItem {
   request_id: number;
   order_id: number;
-  customer_name: string;
-  customer_email: string;
-  order_total: number;
-  order_status: string;
+  customer: string;
+  amount: number;
+  status: string;
   requested_at: string;
   reason: string;
-  additional_notes: string;
-  status: string;
+  actions: {
+    approve: string;
+    reject: string;
+    refund: string;
+  };
 }
 
 export interface AdminCancellationRequestsResponse {
-  requests: CancellationRequestItem[];
-  total: number;
-  page: number;
+  results: CancellationRequestItem[];
+  total_items: number;
+  current_page: number;
   limit: number;
   total_pages: number;
 }
@@ -1651,6 +1703,201 @@ export interface GuestOrderDetailsResponse {
   guest_name: string;
 }
 
+
 export async function getGuestOrderDetailsApi(orderId: string | number) {
   return request<GuestOrderDetailsResponse>(`/checkout/guest/${orderId}`);
+}
+
+// 66) Guest user Invoice APIs
+
+export interface GuestInvoiceResponse {
+  invoice_id: string;
+  order_id: number;
+  guest: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  payment: {
+    txn_id: string;
+    method: string;
+    status: string;
+    amount: number;
+  };
+  order_status: string;
+  date: string;
+  summary: {
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+  };
+  items: {
+    title: string;
+    price: number;
+    quantity: number;
+    total: number;
+  }[];
+}
+
+export async function viewGuestOrderInvoiceApi(orderId: string | number) {
+  return request<GuestInvoiceResponse>(`/checkout/guest/${orderId}/view-invoice`);
+}
+
+export async function downloadGuestInvoiceApi(orderId: string | number) {
+  const token = localStorage.getItem("auth_access");
+  const headers: Record<string, string> = {
+    "Accept": "application/pdf"
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+  
+  const res = await fetch(`${BASE_URL}/checkout/guest/${orderId}/invoice/download`, {
+    headers,
+  });
+
+  if (res.status === 401) {
+    if (window.location.pathname !== "/login") {
+      localStorage.removeItem("auth_access");
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
+  }
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Failed to download invoice");
+  }
+
+  const arrayBuffer = await res.arrayBuffer();
+  
+  // Check for PDF magic bytes: %PDF (hex: 25 50 44 46)
+  const headerBytes = new Uint8Array(arrayBuffer.slice(0, 4));
+  const isPdfBinary = headerBytes[0] === 0x25 && 
+                      headerBytes[1] === 0x50 && 
+                      headerBytes[2] === 0x44 && 
+                      headerBytes[3] === 0x46;
+
+  if (isPdfBinary) {
+    return new Blob([arrayBuffer], { type: "application/pdf" });
+  }
+
+  // Try to decode as text to check for Base64 or JSON
+  const textDecoder = new TextDecoder();
+  const text = textDecoder.decode(arrayBuffer).trim();
+
+  // Check if it's Base64 encoded PDF (starts with JVBERi)
+  const cleanText = text.replace(/^["']|["']$/g, '');
+  if (cleanText.startsWith("JVBERi")) {
+    try {
+      const binaryString = atob(cleanText);
+      const len = binaryString.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      return new Blob([bytes], { type: "application/pdf" });
+    } catch (e) {
+      console.error("Failed to decode Base64 string", e);
+    }
+  }
+
+  // Check for JSON
+  try {
+    if (text.startsWith("{") || text.startsWith("[")) {
+      const json = JSON.parse(text);
+      if (json && (json.message || json.error)) {
+        throw new Error(json.message || json.error);
+      }
+    }
+  } catch (e) {
+    // Ignore JSON parse error, it might be just garbage text
+  }
+
+  // Fallback: Return original buffer as PDF blob
+  return new Blob([arrayBuffer], { type: "application/pdf" });
+}
+
+
+// 61) E-book Management - Additional APIs
+
+// e) Admin List E Purchases
+export interface EbookPurchaseItem {
+  book_id: number;
+  amount: number;
+  status: string;
+  access_expires_at: string | null;
+  created_at: string;
+  renewal_count: number;
+  user_id: number;
+  id: number;
+  updated_at: string;
+  last_renewed_at: string | null;
+}
+
+export async function getEbookPurchasesListApi() {
+  return request<EbookPurchaseItem[]>("/ebooks/admin/purchases-status-list");
+}
+
+// f) Admin List E Payments
+export interface EbookPaymentItem {
+  amount: number;
+  id: number;
+  txn_id: string;
+  method: string;
+  ebook_purchase_id: number;
+  user_id: number;
+  status: string;
+  created_at: string;
+}
+
+export async function getEbookPaymentsListApi() {
+  return request<EbookPaymentItem[]>("/ebooks/admin/payments-list");
+}
+
+// g) Update E book price
+export interface UpdateEbookPriceResponse {
+  message: string;
+  ebook_price: number;
+}
+
+export async function updateEbookPriceApi(bookId: number, price: number) {
+  return request<UpdateEbookPriceResponse>(`/ebooks/admin/update-ebook-price/${bookId}?ebook_price=${price}`, {
+    method: "PUT",
+  });
+}
+
+// h) Toggle eBook Enable/Disable by admin
+export interface ToggleEbookResponse {
+  message: string;
+  book_id?: number;
+  is_ebook?: boolean;
+}
+
+export async function toggleEbookStatusApi(bookId: number, enabled: boolean) {
+  return request<ToggleEbookResponse>(`/ebooks/admin/toggle-ebook/${bookId}?enabled=${enabled}`, {
+    method: "PATCH",
+  });
+}
+
+// i) Ebook List
+export interface EbookListItem {
+  book_id: number;
+  title: string;
+  author: string;
+  ebook_price: number;
+  pdf_uploaded: boolean;
+  is_ebook: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EbookListResponse {
+  total: number;
+  ebooks: EbookListItem[];
+}
+
+export async function getEbookListApi() {
+  return request<EbookListResponse>("/ebooks/admin/list");
 }

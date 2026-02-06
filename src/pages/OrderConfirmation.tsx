@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../redux/store/store";
-import { trackOrderThunk, downloadInvoiceThunk, viewOrderInvoiceThunk } from "../redux/slice/authSlice";
+import { trackOrderThunk, downloadInvoiceThunk, viewOrderInvoiceThunk, viewGuestOrderInvoiceThunk, downloadGuestInvoiceThunk } from "../redux/slice/authSlice";
 import {
   type TrackOrderResponse,
 } from "../redux/utilis/authApi";
@@ -22,12 +22,28 @@ const OrderConfirmation: React.FC = () => {
     if (orderId) {
       // (f) Get Order at thankyou page
       const id = parseInt(orderId, 10);
+      const token = localStorage.getItem("auth_access");
+      
       if (!isNaN(id)) {
-        // Automatically fetch tracking info
-        dispatch(trackOrderThunk(id))
-          .unwrap()
-          .then((res) => setTrackingInfo(res))
-          .catch((err) => console.error("Failed to track order", err));
+        if (token) {
+          // Logged-in user
+          dispatch(trackOrderThunk(id))
+            .unwrap()
+            .then((res) => setTrackingInfo(res))
+            .catch((err) => console.error("Failed to track order", err));
+        } else {
+          // Guest user - attempt to get info via invoice API
+          dispatch(viewGuestOrderInvoiceThunk(id))
+            .unwrap()
+            .then((res) => {
+               setTrackingInfo({
+                 order_id: `#${res.order_id}`,
+                 status: res.order_status,
+                 created_at: res.date
+               });
+            })
+            .catch((err) => console.error("Failed to track guest order", err));
+        }
       }
     }
   }, [orderId, dispatch]);
@@ -39,7 +55,10 @@ const OrderConfirmation: React.FC = () => {
       const id = parseInt(orderId, 10);
       if (isNaN(id)) throw new Error("Invalid Order ID");
       
-      const blob = await dispatch(downloadInvoiceThunk(id)).unwrap();
+      const token = localStorage.getItem("auth_access");
+      const action = token ? downloadInvoiceThunk(id) : downloadGuestInvoiceThunk(id);
+      
+      const blob = await dispatch(action).unwrap();
       // Create a new blob with the correct type to ensure it's treated as a PDF
       const pdfBlob = new Blob([blob], { type: "application/pdf" });
       const url = window.URL.createObjectURL(pdfBlob);
@@ -62,8 +81,31 @@ const OrderConfirmation: React.FC = () => {
       const id = parseInt(orderId, 10);
       if (isNaN(id)) throw new Error("Invalid Order ID");
       
-      const response = await dispatch(viewOrderInvoiceThunk(id)).unwrap();
-      setInvoiceData(response);
+      const token = localStorage.getItem("auth_access");
+      const action = token ? viewOrderInvoiceThunk(id) : viewGuestOrderInvoiceThunk(id);
+      
+      const response = await dispatch(action).unwrap();
+      
+      let formattedData: any = response;
+      // Check if it's the guest response structure (has 'guest' property or 'summary' object)
+      if ('guest' in response && 'summary' in response) {
+          formattedData = {
+              ...response,
+              txn_id: response.payment.txn_id,
+              payment_status: response.payment.status,
+              // Map summary fields to top level if needed, or UI might need check. 
+              // OrderConfirmation expects top level subtotal, tax, total.
+              subtotal: response.summary.subtotal,
+              tax: response.summary.tax,
+              total: response.summary.total,
+              items: response.items.map((item: any) => ({
+                  ...item,
+                  qty: item.quantity
+              }))
+          };
+      }
+      
+      setInvoiceData(formattedData);
       setShowInvoiceModal(true);
     } catch (error) {
       console.error("Invoice view error:", error);
