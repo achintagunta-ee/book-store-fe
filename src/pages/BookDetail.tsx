@@ -242,7 +242,7 @@ const BookDetailPage: React.FC = () => {
 
   const {
     book: bookData,
-    category: categoryName,
+    category: categoryRaw,
     reviews,
     total_reviews,
     average_rating,
@@ -259,6 +259,8 @@ const BookDetailPage: React.FC = () => {
       },
     [currentBook]
   );
+  
+  const categoryName = typeof categoryRaw === 'object' && categoryRaw !== null ? (categoryRaw as any).name : categoryRaw;
 
   useEffect(() => {
     if (slug) {

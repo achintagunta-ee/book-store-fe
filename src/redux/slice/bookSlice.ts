@@ -36,6 +36,11 @@ import {
   fetchHomeDataApi,
   type HomeBook,
   fetchDynamicSearchBooksApi,
+  addBookImagesApi,
+  removeBookImageApi,
+  listBookImagesApi,
+  reorderBookImagesApi,
+  type BookImage,
 } from "../utilis/bookApi";
 
 export interface BookState {
@@ -64,6 +69,9 @@ export interface BookState {
   searchSuggestions: Book[];
   searchSuggestionsStatus: "idle" | "loading" | "succeeded" | "failed";
   totalBooks: number;
+  bookImages: BookImage[];
+  bookImagesStatus: "idle" | "loading" | "succeeded" | "failed";
+  bookImagesError: string | null | undefined;
 }
 
 const initialState: BookState = {
@@ -92,6 +100,9 @@ const initialState: BookState = {
   searchSuggestions: [],
   searchSuggestionsStatus: "idle",
   totalBooks: 0,
+  bookImages: [],
+  bookImagesStatus: "idle",
+  bookImagesError: null,
 };
 
 // Admin Thunks
@@ -422,6 +433,39 @@ export const fetchHomeDataAsync = createAsyncThunk(
   }
 );
 
+
+export const listBookImagesAsync = createAsyncThunk(
+  "books/listBookImages",
+  async (bookId: number) => {
+    const response = await listBookImagesApi(bookId);
+    return response.images;
+  }
+);
+
+export const addBookImagesAsync = createAsyncThunk(
+  "books/addBookImages",
+  async ({ bookId, formData }: { bookId: number; formData: FormData }) => {
+    const response = await addBookImagesApi(bookId, formData);
+    return response.images;
+  }
+);
+
+export const removeBookImageAsync = createAsyncThunk(
+  "books/removeBookImage",
+  async (imageId: number) => {
+    await removeBookImageApi(imageId);
+    return imageId;
+  }
+);
+
+export const reorderBookImagesAsync = createAsyncThunk(
+  "books/reorderBookImages",
+  async ({ bookId, order }: { bookId: number; order: number[] }) => {
+    await reorderBookImagesApi(bookId, order);
+    return order;
+  }
+);
+
 export const bookSlice = createSlice({
   name: "books",
   initialState,
@@ -646,6 +690,34 @@ export const bookSlice = createSlice({
       })
       .addCase(fetchHomeDataAsync.rejected, (state) => {
         state.homeDataStatus = "failed";
+      })
+      // Book Images
+      .addCase(listBookImagesAsync.pending, (state) => {
+        state.bookImagesStatus = "loading";
+      })
+      .addCase(listBookImagesAsync.fulfilled, (state, action) => {
+        state.bookImagesStatus = "succeeded";
+        state.bookImages = action.payload;
+      })
+      .addCase(listBookImagesAsync.rejected, (state, action) => {
+        state.bookImagesStatus = "failed";
+        state.bookImagesError = action.error.message;
+      })
+      .addCase(addBookImagesAsync.fulfilled, (state, action) => {
+        state.bookImages = [...state.bookImages, ...action.payload];
+      })
+      .addCase(removeBookImageAsync.fulfilled, (state, action) => {
+        state.bookImages = state.bookImages.filter(img => img.image_id !== action.payload);
+      })
+      .addCase(reorderBookImagesAsync.fulfilled, (state, action) => {
+         const order = action.payload;
+         state.bookImages.sort((a, b) => {
+            const indexA = order.indexOf(a.image_id);
+            const indexB = order.indexOf(b.image_id);
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+         });
       });
   },
 });

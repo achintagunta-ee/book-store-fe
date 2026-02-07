@@ -13,18 +13,20 @@ import { type InventoryItem } from "../redux/utilis/authApi";
 
 const InventoryDashboard: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
-	const { inventorySummary, inventoryList } = useSelector((state: RootState) => state.auth);
+	const { inventorySummary, inventoryList, inventoryMeta } = useSelector((state: RootState) => state.auth);
     
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sidebarOpen, setSidebarOpen] = useState(true);
     const [editingBook, setEditingBook] = useState<InventoryItem | null>(null);
     const [newStock, setNewStock] = useState<number>(0);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     useEffect(() => {
         dispatch(getInventorySummaryThunk());
-        dispatch(getInventoryListThunk());
-    }, [dispatch]);
+        dispatch(getInventoryListThunk({ page: currentPage, limit: itemsPerPage }));
+    }, [dispatch, currentPage]);
 
 	const filteredBooks = inventoryList.filter(
 		(book) =>
@@ -63,8 +65,9 @@ const InventoryDashboard: React.FC = () => {
                 .unwrap()
                 .then(() => {
                     setEditingBook(null);
-                    // Optionally refresh list or summary
+                    // Refresh list and summary
                     dispatch(getInventorySummaryThunk());
+                    dispatch(getInventoryListThunk({ page: currentPage, limit: itemsPerPage }));
                     toast.success("Stock updated successfully");
                 })
                 .catch((err: any) => {
@@ -73,6 +76,12 @@ const InventoryDashboard: React.FC = () => {
                 .finally(() => {
                     setIsUpdating(false);
                 });
+        }
+    };
+
+    const handlePageChange = (newPage: number) => {
+        if (inventoryMeta && newPage >= 1 && newPage <= inventoryMeta.total_pages) {
+            setCurrentPage(newPage);
         }
     };
 
@@ -138,7 +147,7 @@ const InventoryDashboard: React.FC = () => {
 					</div>
 
 					{/* Inventory Table */}
-					<div className="overflow-x-auto rounded-lg border border-[#e2d8d4]">
+					<div className="overflow-x-auto rounded-lg border border-[#e2d8d4] mb-4">
 						<table className="w-full bg-white">
 							<thead className="bg-[#f8f4f1]">
 								<tr>
@@ -148,12 +157,18 @@ const InventoryDashboard: React.FC = () => {
 									<th className="px-6 py-4 text-left text-[#5c2e2e] text-sm font-semibold uppercase tracking-wider">
 										Author
 									</th>
+                                    <th className="px-6 py-4 text-left text-[#5c2e2e] text-sm font-semibold uppercase tracking-wider">
+                                        Price
+                                    </th>
 									<th className="px-6 py-4 text-left text-[#5c2e2e] text-sm font-semibold uppercase tracking-wider">
 										Current Stock
 									</th>
 									<th className="px-6 py-4 text-left text-[#5c2e2e] text-sm font-semibold uppercase tracking-wider">
 										Status
 									</th>
+                                    <th className="px-6 py-4 text-left text-[#5c2e2e] text-sm font-semibold uppercase tracking-wider">
+                                        Last Updated
+                                    </th>
 									<th className="px-6 py-4 text-right text-[#5c2e2e] text-sm font-semibold uppercase tracking-wider">
 										Actions
 									</th>
@@ -169,6 +184,9 @@ const InventoryDashboard: React.FC = () => {
 											<td className="px-6 py-4 whitespace-nowrap text-[#8E5A4F]">
 												{book.author}
 											</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-[#261d1a]">
+                                                ${book.price !== undefined ? book.price.toFixed(2) : '0.00'}
+                                            </td>
 											<td
 												className={`px-6 py-4 whitespace-nowrap font-semibold ${
 													book.status.toLowerCase().includes("low")
@@ -187,6 +205,9 @@ const InventoryDashboard: React.FC = () => {
 													{book.status}
 												</span>
 											</td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {book.updated_at ? new Date(book.updated_at).toLocaleDateString() : '-'}
+                                            </td>
 											<td className="px-6 py-4 whitespace-nowrap text-right">
 												<button
 													onClick={() => handleEditClick(book)}
@@ -199,7 +220,7 @@ const InventoryDashboard: React.FC = () => {
 									))
 								) : (
 									<tr>
-										<td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+										<td colSpan={7} className="px-6 py-8 text-center text-gray-500">
 											<div className="flex flex-col items-center justify-center">
 												<Box size={48} className="text-gray-300 mb-2" />
 												<p>No books found matching your search.</p>
@@ -210,6 +231,57 @@ const InventoryDashboard: React.FC = () => {
 							</tbody>
 						</table>
 					</div>
+
+                    {/* Pagination */}
+                    {inventoryMeta && inventoryMeta.total_pages > 1 && (
+                        <div className="flex justify-between items-center bg-white px-4 py-3 border border-[#e2d8d4] rounded-lg shadow-sm">
+                            <div className="text-sm text-[#5c2e2e]">
+                                Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, inventoryMeta.total)}</span> of <span className="font-medium">{inventoryMeta.total}</span> results
+                            </div>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handlePageChange(currentPage - 1)}
+                                    disabled={currentPage === 1}
+                                    className="px-3 py-1 text-sm font-medium rounded-md bg-white border border-[#e2d8d4] text-[#5c2e2e] hover:bg-[#f8f4f1] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Previous
+                                </button>
+                                {Array.from({ length: Math.min(5, inventoryMeta.total_pages) }, (_, i) => {
+                                    // Logic to show a window of pages around current page
+                                    let pageNum = i + 1;
+                                    if (inventoryMeta.total_pages > 5) {
+                                        if (currentPage > 3) {
+                                            pageNum = currentPage - 2 + i;
+                                        }
+                                        if (pageNum > inventoryMeta.total_pages) {
+                                            pageNum = inventoryMeta.total_pages - 4 + i;
+                                        }
+                                    }
+                                    
+                                    return (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => handlePageChange(pageNum)}
+                                            className={`px-3 py-1 text-sm font-medium rounded-md border ${
+                                                currentPage === pageNum
+                                                    ? "bg-[#B35E3F] text-white border-[#B35E3F]"
+                                                    : "bg-white border-[#e2d8d4] text-[#5c2e2e] hover:bg-[#f8f4f1]"
+                                            }`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    );
+                                })}
+                                <button
+                                    onClick={() => handlePageChange(currentPage + 1)}
+                                    disabled={currentPage === inventoryMeta.total_pages}
+                                    className="px-3 py-1 text-sm font-medium rounded-md bg-white border border-[#e2d8d4] text-[#5c2e2e] hover:bg-[#f8f4f1] disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    )}
 				</div>
 			</main>
 

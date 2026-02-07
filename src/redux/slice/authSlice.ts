@@ -31,7 +31,6 @@ import {
   type WishlistItem,
   getOrderHistoryApi,
   getOrderDetailsApi,
-  type OrderHistoryItem,
   type OrderHistoryResponse,
   type OrderDetailResponse,
   type AddressSummaryResponse,
@@ -261,6 +260,12 @@ interface AuthState {
   inventorySummary: InventorySummary | null;
   inventorySummaryStatus: "idle" | "loading" | "succeeded" | "failed";
   inventorySummaryError: string | null;
+  inventoryMeta: {
+    total: number;
+    total_pages: number;
+    page: number;
+    limit: number;
+  } | null;
   inventoryList: InventoryItem[];
   inventoryListStatus: "idle" | "loading" | "succeeded" | "failed";
   inventoryListError: string | null;
@@ -405,6 +410,7 @@ const initialState: AuthState = {
   inventorySummaryStatus: "idle",
   inventorySummaryError: null,
   inventoryList: [],
+  inventoryMeta: null,
   inventoryListStatus: "idle",
   inventoryListError: null,
   generalSettings: null,
@@ -500,6 +506,9 @@ export const loginThunk = createAsyncThunk(
     }
   }
 );
+// ... (skipping lines to avoid clutter, keeping structure)
+
+
 
 export const registerThunk = createAsyncThunk(
   "auth/register",
@@ -1319,9 +1328,9 @@ export const getInventorySummaryThunk = createAsyncThunk(
 
 export const getInventoryListThunk = createAsyncThunk(
   "admin/getInventoryList",
-  async (_, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10 }: { page?: number; limit?: number } = {}, { rejectWithValue }) => {
     try {
-      return await getInventoryListApi();
+      return await getInventoryListApi(page, limit);
     } catch (error: unknown) {
       if (error instanceof Error) {
         return rejectWithValue(
@@ -2269,7 +2278,7 @@ const authSlice = createSlice({
       })
       .addCase(getAdminNotificationsThunk.fulfilled, (state, action) => {
         state.adminNotificationsStatus = "succeeded";
-        state.adminNotifications = action.payload;
+        state.adminNotifications = action.payload.results;
       })
       .addCase(getAdminNotificationsThunk.rejected, (state, action) => {
         state.adminNotificationsStatus = "failed";
@@ -2303,11 +2312,18 @@ const authSlice = createSlice({
       })
       .addCase(getInventoryListThunk.fulfilled, (state, action) => {
         state.inventoryListStatus = "succeeded";
-        if (Array.isArray(action.payload)) {
-            state.inventoryList = action.payload;
+        if (action.payload && Array.isArray(action.payload.data)) {
+            state.inventoryList = action.payload.data;
+            state.inventoryMeta = {
+              total: action.payload.total,
+              total_pages: action.payload.total_pages,
+              page: action.payload.page,
+              limit: action.payload.limit
+            };
         } else {
-            console.warn("getInventoryListThunk: payload is not an array", action.payload);
+            console.warn("getInventoryListThunk: payload data is not an array", action.payload);
             state.inventoryList = [];
+            state.inventoryMeta = null;
         }
       })
       .addCase(getInventoryListThunk.rejected, (state, action) => {
@@ -2653,10 +2669,10 @@ const authSlice = createSlice({
         state.ebookPaymentsListStatus = "failed";
         state.ebookPaymentsListError = action.payload as string;
       })
-      .addCase(updateEbookPriceThunk.fulfilled, (state, action) => {
+      .addCase(updateEbookPriceThunk.fulfilled, () => {
          // Optionally update the list if we have one locally, or just trigger re-fetch in component
       })
-      .addCase(toggleEbookStatusThunk.fulfilled, (state, action) => {
+      .addCase(toggleEbookStatusThunk.fulfilled, () => {
          // Optionally update the list if we have one locally
       })
       .addCase(getEbookListThunk.pending, (state) => {

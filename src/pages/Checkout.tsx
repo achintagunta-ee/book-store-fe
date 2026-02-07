@@ -732,8 +732,12 @@ const CheckoutPage: React.FC = () => {
   } else if (addressSummary?.summary) {
       summaryProps = {
         items: addressSummary.summary.items.map((item) => ({
-          ...item,
-          total: item.total || item.price * item.quantity, // Ensure total exists
+          book_title: item.book_title,
+          price: item.price,
+          quantity: item.quantity,
+          total: item.total,
+          imageUrl: item.cover_image_url,
+          imageAlt: item.book_title
         })),
         subtotal: addressSummary.summary.subtotal,
         shipping: addressSummary.summary.shipping,

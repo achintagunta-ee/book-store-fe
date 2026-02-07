@@ -132,7 +132,7 @@ export interface Review {
 
 export interface BookDetailResponse {
   book: Book;
-  category: string;
+  category: string | { id: number; name: string };
   related_books: Book[];
   average_rating: number | null;
   total_reviews: number;
@@ -501,6 +501,7 @@ export const deleteReviewApi = async (reviewId: number) => {
   });
 };
 
+
 // Home Page API
 export interface HomeBook {
   book_id: number;
@@ -512,6 +513,7 @@ export interface HomeBook {
   cover_image: string;
   rating: number;
   cover_image_url: string;
+  category_id?: number;
 }
 
 export interface HomePageResponse {
@@ -525,4 +527,49 @@ export interface HomePageResponse {
 export const fetchHomeDataApi = async () => {
   return request<HomePageResponse>("/users/home");
 };
+
+// --- Book Image Management APIs ---
+
+export interface BookImage {
+  image_id: number;
+  url: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface AddBookImagesResponse {
+  message: string;
+  images: BookImage[];
+}
+
+export interface ListBookImagesResponse {
+  book_id: number;
+  images: BookImage[];
+}
+
+export const addBookImagesApi = async (bookId: number, formData: FormData) => {
+  // logic to handle multiple 'images' keys in formData is automatically handled by passing FormData body
+  return request<AddBookImagesResponse>(`/admin/books/${bookId}/add-images`, {
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const removeBookImageApi = async (imageId: number) => {
+  return request<{ message: string }>(`/admin/books/images/${imageId}`, {
+    method: "DELETE",
+  });
+};
+
+export const listBookImagesApi = async (bookId: number) => {
+  return request<ListBookImagesResponse>(`/admin/books/${bookId}/list-images`);
+};
+
+export const reorderBookImagesApi = async (bookId: number, order: number[]) => {
+  return request<{ message: string }>(`/admin/books/${bookId}/images/reorder`, {
+    method: "PATCH",
+    body: JSON.stringify({ order }),
+  });
+};
+
 

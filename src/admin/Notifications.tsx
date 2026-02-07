@@ -64,16 +64,7 @@ const AdminNotificationsPage: React.FC = () => {
             >
               All
             </button>
-            <button
-              onClick={() => setActiveTab("inventory")}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
-                activeTab === "inventory"
-                  ? "bg-[#B35E3F] text-white"
-                  : "bg-white text-card-border hover:bg-gray-100"
-              }`}
-            >
-              Inventory
-            </button>
+            {/* Removed Inventory tab */ }
             <button
               onClick={() => setActiveTab("order")}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
@@ -133,11 +124,11 @@ const AdminNotificationsPage: React.FC = () => {
                             {notification.content}
                           </td>
                           <td className="h-[72px] px-4 py-2 text-text-main text-sm capitalize">
-                            {notification.trigger_source} #{notification.related_id}
+                            {notification.trigger_source} #{notification.related_id ?? notification.order_id ?? notification.purchase_id}
                           </td>
                           <td className="h-[72px] px-4 py-2">
                             <span className="inline-flex px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 capitalize">
-                              {notification.status}
+                              {notification.notification_status || notification.status}
                             </span>
                           </td>
                           <td className="h-[72px] px-4 py-2 text-text-main text-sm">
@@ -214,7 +205,7 @@ const AdminNotificationsPage: React.FC = () => {
                   </h3>
                   <p className="text-text-main capitalize">
                     {currentAdminNotification.trigger_source} #
-                    {currentAdminNotification.related_id}
+                    {currentAdminNotification.related_id ?? currentAdminNotification.order_id ?? currentAdminNotification.purchase_id}
                   </p>
                 </div>
                 <div>
@@ -222,7 +213,7 @@ const AdminNotificationsPage: React.FC = () => {
                     Status
                   </h3>
                   <p className="text-text-main capitalize">
-                    {currentAdminNotification.status}
+                    {currentAdminNotification.notification_status || currentAdminNotification.status}
                   </p>
                 </div>
               </div>
@@ -260,8 +251,9 @@ const AdminNotificationsPage: React.FC = () => {
               {currentAdminNotification.trigger_source === "order" && (
                 <button
                   onClick={() => {
-                    if (currentAdminNotification.related_id) {
-                      dispatch(notifyCustomerThunk(currentAdminNotification.related_id))
+                    const relatedId = currentAdminNotification.related_id ?? currentAdminNotification.order_id;
+                    if (relatedId) {
+                      dispatch(notifyCustomerThunk(relatedId))
                         .unwrap()
                         .then(() => {
                            toast.success("Customer notified successfully!");

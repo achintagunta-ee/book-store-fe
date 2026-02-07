@@ -183,6 +183,7 @@ export interface OrderSummaryItem {
   price: number;
   quantity: number;
   total: number;
+  cover_image_url?: string;
 }
 
 export interface AddressSummaryResponse {
@@ -599,7 +600,7 @@ export async function getOrderDetailsApi(orderId: number) {
 export interface AdminPayment {
   payment_id: number;
   order_id: number;
-  customer: string;
+  customer: string | { id: number; name: string };
   date: string;
   amount: number;
   status: string;
@@ -742,7 +743,7 @@ export async function getUserPaymentsApi(page: number = 1) {
 // 39) Admin Orders Management
 export interface AdminOrder {
   order_id: number;
-  customer: string;
+  customer: string | { id: number; name: string };
   email: string;
   date: string;
   total: number;
@@ -1020,7 +1021,7 @@ export interface AdminInvoiceResponse {
   invoice_id: string;
   order_id: number;
   customer: {
-    id?: number;
+    id: number;
     name: string;
     email: string;
   };
@@ -1035,8 +1036,8 @@ export interface AdminInvoiceResponse {
   summary: {
     subtotal: number;
     shipping: number;
-    tax: number;
     total: number;
+    tax?: number; // Optional as not in user example but good to have
   };
   items: {
     title: string;
@@ -1047,7 +1048,7 @@ export interface AdminInvoiceResponse {
 }
 
 export async function getAdminOrderInvoiceApi(orderId: number) {
-  return request<AdminInvoiceResponse>(`/admin/orders/${orderId}/invoice`);
+  return request<AdminInvoiceResponse>(`/admin/orders/${orderId}/view-invoice`);
 }
 
 export interface UpdateOrderStatusResponse {
@@ -1097,31 +1098,47 @@ export async function viewNotificationApi(notificationId: number) {
 }
 
 // 43) Admin Notifications
+// 43) Admin Notifications
 export interface AdminNotificationItem {
   notification_id: number;
   title: string;
   content: string;
   trigger_source: string;
-  related_id: number;
-  status: string;
+  related_id?: number;
+  order_id?: number;
+  purchase_id?: number;
+  order_status?: string;
+  notification_status?: string;
+  status: string; // This might be notification_status in the new response, keeping for compatibility
   created_at: string;
+}
+
+export interface AdminNotificationsResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  limit: number;
+  results: AdminNotificationItem[];
 }
 
 export async function getAdminNotificationsApi(triggerSource?: string) {
   const query = triggerSource ? `?trigger_source=${triggerSource}` : "";
-  return request<AdminNotificationItem[]>(`/admin/notifications${query}`);
+  return request<AdminNotificationsResponse>(`/admin/notifications${query}`);
 }
 
 export interface AdminNotificationDetail {
   notification_id: number;
   recipient_role: string;
   user_id: number;
-  related_id: number;
+  related_id?: number;
+  order_id?: number;
+  purchase_id?: number;
   trigger_source: string;
   title: string;
   channel: string;
   content: string;
-  status: string;
+  status?: string;
+  notification_status?: string;
   created_at: string;
 }
 
@@ -1162,11 +1179,26 @@ export interface InventoryItem {
   title: string;
   author: string;
   stock: number;
+  price: number;
   status: string;
+  updated_at: string;
+  actions: {
+    edit: string;
+    update_stock: string;
+    view: string;
+  };
 }
 
-export async function getInventoryListApi() {
-  return request<InventoryItem[]>("/admin/book/inventory");
+export interface InventoryListResponse {
+  data: InventoryItem[];
+  total: number;
+  total_pages: number;
+  page: number;
+  limit: number;
+}
+
+export async function getInventoryListApi(page: number = 1, limit: number = 10) {
+  return request<InventoryListResponse>(`/admin/book/inventory?page=${page}&limit=${limit}`);
 }
 
 export interface UpdateStockResponse {
@@ -1462,7 +1494,7 @@ export async function getCancellationStatusApi(orderId: number) {
 export interface CancellationRequestItem {
   request_id: number;
   order_id: number;
-  customer: string;
+  customer: string | { id: number; name: string };
   amount: number;
   status: string;
   requested_at: string;

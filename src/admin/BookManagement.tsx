@@ -9,7 +9,9 @@ import {
   ChevronRight,
   SlidersHorizontal,
   X,
+  Image as ImageIcon,
 } from "lucide-react";
+import BookImagesModal from "./BookImagesModal";
 import { useDispatch, useSelector } from "react-redux";
 import { Toaster, toast } from "react-hot-toast";
 import type { AppDispatch, RootState } from "../redux/store/store";
@@ -286,6 +288,9 @@ const BooksManagement: React.FC = () => {
   const [isEbookModalOpen, setIsEbookModalOpen] = useState(false);
   const [ebookBook, setEbookBook] = useState<Book | null>(null);
 
+  const [isImagesModalOpen, setIsImagesModalOpen] = useState(false);
+  const [imagesBook, setImagesBook] = useState<Book | null>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -362,6 +367,15 @@ const BooksManagement: React.FC = () => {
         }}
         bookId={ebookBook?.id || null}
         bookTitle={ebookBook?.title}
+      />
+      <BookImagesModal
+        isOpen={isImagesModalOpen}
+        onClose={() => {
+          setIsImagesModalOpen(false);
+          setImagesBook(null);
+        }}
+        bookId={imagesBook?.id || null}
+        bookTitle={imagesBook?.title}
       />
       <Sidebar sidebarOpen={sidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -517,6 +531,15 @@ const BooksManagement: React.FC = () => {
                             className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
                           >
                            <Plus size={14} /> Upload E-book
+                          </button>
+                          <button
+                            onClick={() => {
+                              setImagesBook(book);
+                              setIsImagesModalOpen(true);
+                            }}
+                            className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
+                          >
+                           <ImageIcon size={14} /> Manage Images
                           </button>
                         </div>
                       </td>

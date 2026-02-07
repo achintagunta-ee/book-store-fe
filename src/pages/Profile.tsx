@@ -764,23 +764,23 @@ const OrderDetailsModal: React.FC<{
           <div className="flex justify-between py-2">
             <span className="text-gray-600">Subtotal</span>
             <span className="font-semibold">
-              ${order.order.subtotal.toFixed(2)}
+              ${(order.order.subtotal || 0).toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between py-2">
             <span className="text-gray-600">Shipping</span>
             <span className="font-semibold">
-              ${order.order.shipping.toFixed(2)}
+              ${(order.order.shipping || 0).toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between py-2">
             <span className="text-gray-600">Tax</span>
-            <span className="font-semibold">${order.order.tax.toFixed(2)}</span>
+            <span className="font-semibold">${(order.order.tax || 0).toFixed(2)}</span>
           </div>
           <div className="flex justify-between py-2 border-t border-gray-200 mt-2">
             <span className="text-lg font-bold">Total</span>
             <span className="text-lg font-bold text-primary">
-              ${order.order.total.toFixed(2)}
+              ${(order.order.total || 0).toFixed(2)}
             </span>
           </div>
 

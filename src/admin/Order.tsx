@@ -147,12 +147,13 @@ const OrdersPage: React.FC = () => {
 		const timer = setTimeout(() => {
 			fetchOrders();
 		}, 500);
-        // Fetch inventory list for dropdown if not already available
-        if (!inventoryList || inventoryList.length === 0) {
-            dispatch(getInventoryListThunk());
-        }
-		return () => clearTimeout(timer);
+        return () => clearTimeout(timer);
 	}, [searchQuery, statusFilter, startDate, endDate, currentPage]);
+
+    // Fetch inventory list for dropdown
+    useEffect(() => {
+        dispatch(getInventoryListThunk({ limit: 1000 }));
+    }, [dispatch]);
 
 	const fetchOrders = () => {
 		dispatch(getAdminOrdersThunk({
@@ -483,7 +484,7 @@ const OrdersPage: React.FC = () => {
 														#{order.order_id}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														{order.customer}
+														{typeof order.customer === 'string' ? order.customer : order.customer?.name}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
 														{new Date(order.date).toLocaleString()}
@@ -738,15 +739,16 @@ const OrdersPage: React.FC = () => {
 						
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 							<div className="bg-gray-50 p-4 rounded-lg">
-								<h3 className="text-lg font-bold text-[#261d1a] mb-2">Customer</h3>
-								<p className="text-text-main"><span className="font-semibold">Name:</span> {adminOrderInvoice.customer.name}</p>
-								<p className="text-text-main"><span className="font-semibold">Email:</span> {adminOrderInvoice.customer.email}</p>
+								<h3 className="text-lg font-bold text-[#261d1a] mb-2">Order Info</h3>
+								<p className="text-text-main"><span className="font-semibold">Order ID:</span> #{adminOrderInvoice.order_id}</p>
+								<p className="text-text-main"><span className="font-semibold">Customer:</span> {typeof adminOrderInvoice.customer === 'string' ? adminOrderInvoice.customer : adminOrderInvoice.customer?.name} {typeof adminOrderInvoice.customer === 'object' ? `(${adminOrderInvoice.customer?.email})` : ''}</p>
+								<p className="text-text-main"><span className="font-semibold">Date:</span> {new Date(adminOrderInvoice.date).toLocaleString()}</p>
 							</div>
 							<div className="bg-gray-50 p-4 rounded-lg">
-								<h3 className="text-lg font-bold text-[#261d1a] mb-2">Payment Info</h3>
-								<p className="text-text-main"><span className="font-semibold">Method:</span> {adminOrderInvoice.payment.method}</p>
-								<p className="text-text-main"><span className="font-semibold">Status:</span> {adminOrderInvoice.payment.status}</p>
-								<p className="text-text-main"><span className="font-semibold">Transaction ID:</span> {adminOrderInvoice.payment.txn_id}</p>
+								<h3 className="text-lg font-bold text-[#261d1a] mb-2">Statuses</h3>
+								<p className="text-text-main capitalize"><span className="font-semibold">Order Status:</span> {adminOrderInvoice.order_status}</p>
+								<p className="text-text-main capitalize"><span className="font-semibold">Payment Status:</span> {adminOrderInvoice.payment?.status}</p>
+								<p className="text-text-main"><span className="font-semibold">Method:</span> {adminOrderInvoice.payment?.method}</p>
 							</div>
 						</div>
 
@@ -763,7 +765,7 @@ const OrdersPage: React.FC = () => {
 										</tr>
 									</thead>
 									<tbody className="divide-y">
-										{adminOrderInvoice.items.map((item: any, idx: number) => (
+										{adminOrderInvoice.items && adminOrderInvoice.items.map((item: any, idx: number) => (
 											<tr key={idx} className="bg-white hover:bg-gray-50">
 												<td className="px-4 py-3 font-medium text-gray-900">{item.title}</td>
 												<td className="px-4 py-3 text-right">₹{item.price}</td>
@@ -780,15 +782,23 @@ const OrdersPage: React.FC = () => {
 							<div className="w-full max-w-xs space-y-2">
 								<div className="flex justify-between text-text-main">
 									<span>Subtotal:</span>
-									<span>₹{adminOrderInvoice.summary.subtotal}</span>
+									<span>₹{adminOrderInvoice.summary?.subtotal}</span>
 								</div>
-								<div className="flex justify-between text-text-main">
-									<span>Tax:</span>
-									<span>₹{adminOrderInvoice.summary.tax}</span>
-								</div>
+								{adminOrderInvoice.summary?.shipping > 0 && (
+									<div className="flex justify-between text-text-main">
+										<span>Shipping:</span>
+										<span>₹{adminOrderInvoice.summary?.shipping}</span>
+									</div>
+								)}
+								{adminOrderInvoice.summary?.tax !== undefined && (
+									<div className="flex justify-between text-text-main">
+										<span>Tax:</span>
+										<span>₹{adminOrderInvoice.summary?.tax}</span>
+									</div>
+								)}
 								<div className="flex justify-between text-card-border font-bold text-lg border-t pt-2">
 									<span>Total:</span>
-									<span>₹{adminOrderInvoice.summary.total}</span>
+									<span>₹{adminOrderInvoice.summary?.total}</span>
 								</div>
 							</div>
 						</div>
@@ -812,8 +822,8 @@ const OrdersPage: React.FC = () => {
 						<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 							<div className="bg-gray-50 p-4 rounded-lg">
 								<h3 className="text-lg font-bold text-[#261d1a] mb-2">Customer Info</h3>
-								<p className="text-text-main"><span className="font-semibold">Name:</span> {adminOrderDetail.customer.name}</p>
-								<p className="text-text-main"><span className="font-semibold">Email:</span> {adminOrderDetail.customer.email}</p>
+								<p className="text-text-main"><span className="font-semibold">Name:</span> {typeof adminOrderDetail.customer === 'string' ? adminOrderDetail.customer : adminOrderDetail.customer?.name}</p>
+								<p className="text-text-main"><span className="font-semibold">Email:</span> {typeof adminOrderDetail.customer === 'object' ? adminOrderDetail.customer?.email : ''}</p>
 							</div>
 							<div className="bg-gray-50 p-4 rounded-lg">
 								<h3 className="text-lg font-bold text-[#261d1a] mb-2">Order Info</h3>

@@ -226,7 +226,7 @@ const CancellationsPage: React.FC = () => {
                         <td className="px-6 py-4 text-sm text-[#261d1a]">#{req.request_id}</td>
                         <td className="px-6 py-4 text-sm text-[#261d1a]">#{req.order_id}</td>
                         <td className="px-6 py-4 text-sm text-[#261d1a]">
-                            <div>{req.customer}</div>
+                            <div>{typeof req.customer === 'string' ? req.customer : req.customer?.name}</div>
                         </td>
                         <td className="px-6 py-4 text-sm text-[#261d1a] max-w-xs truncate" title={req.reason}>
                             {req.reason}

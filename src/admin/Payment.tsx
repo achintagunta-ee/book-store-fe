@@ -398,7 +398,7 @@ const PaymentsPage: React.FC = () => {
 														#{payment.order_id}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														{payment.customer}
+														{typeof payment.customer === 'string' ? payment.customer : payment.customer?.name}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main/80 text-sm">
 														{new Date(payment.date).toLocaleDateString()}
