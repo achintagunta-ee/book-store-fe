@@ -25,6 +25,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import NotificationsPage from "./pages/Notifications";
 import AdminNotificationsPage from "./admin/Notifications";
 import CancellationsPage from "./admin/Cancellations";
+import HelpDocs from "./admin/Help";
 import LibraryPage from "./pages/Library";
 import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
@@ -95,6 +96,7 @@ function App() {
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
           <Route path="/admin/cancellations" element={<CancellationsPage />} />
+          <Route path="/admin/help" element={<HelpDocs />} />
         </Routes>
       </Layout>
     </BrowserRouter>

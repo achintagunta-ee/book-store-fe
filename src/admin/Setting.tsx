@@ -207,16 +207,7 @@ const AdminSettings: React.FC = () => {
                 >
                   <p className="text-sm font-bold">General</p>
                 </button>
-                <button
-                  onClick={() => setActiveTab("payment")}
-                  className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 ${
-                    activeTab === "payment"
-                      ? "border-b-[#B35E3F] text-[#333333]"
-                      : "border-b-transparent text-[#8a685c] hover:text-[#333333]"
-                  }`}
-                >
-                  <p className="text-sm font-bold">Payment Gateways</p>
-                </button>
+                
                 <button
                   onClick={() => setActiveTab("profile")}
                   className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 ${
@@ -346,83 +337,7 @@ const AdminSettings: React.FC = () => {
               </div>
             )}
 
-            {/* Payment Gateways Tab */}
-            {activeTab === "payment" && (
-              <div className="p-4">
-                <h2 className="text-[#333333] text-[22px] font-bold leading-tight tracking-[-0.015em] pb-3 pt-5">
-                  Payment Gateways
-                </h2>
-                <div className="space-y-6 mt-4">
-                  <div className="max-w-[480px] p-6 border border-[#e2d8d4] rounded-lg bg-white">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[#333333] text-lg font-semibold">
-                        Stripe
-                      </h3>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          defaultChecked
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#B35E3F] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B35E3F]"></div>
-                      </label>
-                    </div>
-                    <p className="text-[#8a685c] text-sm mb-4">
-                      Accept credit card payments via Stripe
-                    </p>
-                    <button className="text-[#B35E3F] hover:text-[#5c2e2e] text-sm font-medium">
-                      Configure
-                    </button>
-                  </div>
-
-                  <div className="max-w-[480px] p-6 border border-[#e2d8d4] rounded-lg bg-white">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[#333333] text-lg font-semibold">
-                        PayPal
-                      </h3>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" className="sr-only peer" />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#B35E3F] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B35E3F]"></div>
-                      </label>
-                    </div>
-                    <p className="text-[#8a685c] text-sm mb-4">
-                      Accept payments through PayPal
-                    </p>
-                    <button className="text-[#B35E3F] hover:text-[#5c2e2e] text-sm font-medium">
-                      Configure
-                    </button>
-                  </div>
-
-                  <div className="max-w-[480px] p-6 border border-[#e2d8d4] rounded-lg bg-white">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[#333333] text-lg font-semibold">
-                        Cash on Delivery
-                      </h3>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          className="sr-only peer"
-                          defaultChecked
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#B35E3F] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#B35E3F]"></div>
-                      </label>
-                    </div>
-                    <p className="text-[#8a685c] text-sm">
-                      Accept cash payments on delivery
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <button
-                    onClick={handleSaveChanges}
-                    className="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-8 bg-[#B35E3F] text-white text-base font-bold leading-normal hover:opacity-90"
-                  >
-                    <span className="truncate">Save Changes</span>
-                  </button>
-                </div>
-              </div>
-            )}
+          
 
             {/* My Profile Tab */}
             {activeTab === "profile" && (
