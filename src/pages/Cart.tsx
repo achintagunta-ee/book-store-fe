@@ -87,7 +87,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
 
           <div className="mt-auto pt-2">
              <p className="text-xl font-bold text-primary">
-                ${(item.effective_price || 0).toFixed(2)}
+                ₹{(item.effective_price || 0).toFixed(2)}
              </p>
           </div>
         </div>
@@ -156,28 +156,23 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ summary }) => {
         <div className="flex justify-between items-center text-text-light/80 dark:text-text-dark/80">
           <span>Subtotal</span>
           <span className="font-medium text-text-main dark:text-text-main-dark">
-            ${(summary?.subtotal || 0).toFixed(2)}
+            ₹{(summary?.subtotal || 0).toFixed(2)}
           </span>
         </div>
         
-        <div className="flex justify-between items-center text-text-light/80 dark:text-text-dark/80">
+        <div className="flex justify-between items-center text-text-light/80 dark:text-text-dark/80 pb-4 border-b border-gray-100 dark:border-gray-700">
           <span>Shipping</span>
           <span className="font-medium text-text-main dark:text-text-main-dark">
-            ${(summary?.shipping || 0).toFixed(2)}
+            ₹{(summary?.shipping || 0).toFixed(2)}
           </span>
         </div>
 
-        <div className="flex justify-between items-center text-text-light/80 dark:text-text-dark/80 pb-4 border-b border-gray-100 dark:border-gray-700">
-          <span>Tax</span>
-          <span className="font-medium text-text-main dark:text-text-main-dark">
-            {typeof summary?.tax === 'number' ? `$${summary.tax.toFixed(2)}` : summary?.tax || '$0.00'}
-          </span>
-        </div>
+
         
         <div className="flex justify-between items-center pt-2">
           <span className="text-lg font-bold text-text-main dark:text-text-main-dark">Total</span>
           <span className="text-2xl font-bold text-primary">
-            ${(summary?.final_total || 0).toFixed(2)}
+            ₹{(summary?.final_total || 0).toFixed(2)}
           </span>
         </div>
       </div>
@@ -249,9 +244,9 @@ const CartPage: React.FC = () => {
         {cartItems.length > 0 && (
           <button
             onClick={() => dispatch(clearCartAsync())}
-            className="text-sm font-bold text-red-500 hover:text-red-700 hover:bg-red-50 px-4 py-2 rounded-md transition-colors"
+            className="group flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-700 hover:shadow active:scale-95 dark:border-red-900/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
           >
-            Clear Cart
+            <span>Clear Cart</span>
           </button>
         )}
       </div>
@@ -259,9 +254,6 @@ const CartPage: React.FC = () => {
       {cartItems.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
            
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-               <span className="material-symbols-outlined text-4xl text-gray-400">shopping_bag</span>
-          </div>
           <h3 className="text-2xl font-bold text-gray-800 font-display">
             Your Cart is Empty
           </h3>

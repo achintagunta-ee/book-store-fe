@@ -10,6 +10,7 @@ import {
 import type { BookImage } from "../redux/utilis/bookApi";
 import { X, Upload, Trash2, MoveLeft, MoveRight, Save } from "lucide-react";
 import toast from "react-hot-toast";
+import ConfirmationModal from "./ConfirmationModal";
 
 interface BookImagesModalProps {
   isOpen: boolean;
@@ -32,6 +33,11 @@ const BookImagesModal: React.FC<BookImagesModalProps> = ({
   const [localImages, setLocalImages] = useState<BookImage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
+
+  // Confirmation Modal State
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [imageToDelete, setImageToDelete] = useState<number | null>(null);
 
   useEffect(() => {
     if (isOpen && bookId) {
@@ -75,13 +81,22 @@ const BookImagesModal: React.FC<BookImagesModalProps> = ({
     }
   };
 
-  const handleDelete = async (imageId: number) => {
-    if (!window.confirm("Are you sure you want to delete this image?")) return;
-    try {
-      await dispatch(removeBookImageAsync(imageId)).unwrap();
-      toast.success("Image deleted successfully");
-    } catch (err: any) {
-      toast.error("Failed to delete image");
+  const handleDeleteClick = (imageId: number) => {
+    setImageToDelete(imageId);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (imageToDelete) {
+        try {
+            await dispatch(removeBookImageAsync(imageToDelete)).unwrap();
+            toast.success("Image deleted successfully");
+        } catch (err: any) {
+            toast.error("Failed to delete image");
+        } finally {
+            setImageToDelete(null);
+            setIsConfirmOpen(false);
+        }
     }
   };
 
@@ -104,19 +119,30 @@ const BookImagesModal: React.FC<BookImagesModalProps> = ({
   const handleSaveOrder = async () => {
     if (!bookId) return;
     const order = localImages.map((img) => img.image_id);
+    setIsSavingOrder(true);
     try {
       await dispatch(reorderBookImagesAsync({ bookId, order })).unwrap();
       toast.success("Image order saved");
       setHasUnsavedChanges(false);
     } catch (err: any) {
       toast.error("Failed to save order");
+    } finally {
+        setIsSavingOrder(false);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
+        <ConfirmationModal
+            isOpen={isConfirmOpen}
+            onClose={() => setIsConfirmOpen(false)}
+            onConfirm={confirmDelete}
+            title="Delete Image"
+            message="Are you sure you want to delete this image? This action cannot be undone."
+            isProcessing={false} 
+        />
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-[#261d1a]">
@@ -152,15 +178,15 @@ const BookImagesModal: React.FC<BookImagesModalProps> = ({
 
           <button
             onClick={handleSaveOrder}
-            disabled={!hasUnsavedChanges}
+            disabled={!hasUnsavedChanges || isSavingOrder}
             className={`flex items-center gap-2 px-4 py-2 rounded font-medium ${
-              hasUnsavedChanges
+              hasUnsavedChanges && !isSavingOrder
                 ? "bg-green-600 text-white hover:bg-green-700"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
             <Save size={18} />
-            Save Order
+            {isSavingOrder ? "Saving..." : "Save Order"}
           </button>
         </div>
 
@@ -206,7 +232,7 @@ const BookImagesModal: React.FC<BookImagesModalProps> = ({
                         </button>
                     </div>
                     <button
-                        onClick={() => handleDelete(img.image_id)}
+                        onClick={() => handleDeleteClick(img.image_id)}
                         className="p-1 text-red-400 hover:text-red-600"
                         title="Delete Image"
                     >

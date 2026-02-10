@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Menu, X, Eye } from "lucide-react";
+import { X, Eye } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../redux/store/store";
@@ -20,6 +20,8 @@ const AdminNotificationsPage: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [isNotifying, setIsNotifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     const source = activeTab === "all" ? undefined : activeTab;
@@ -35,17 +37,12 @@ const AdminNotificationsPage: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full bg-background-light overflow-hidden">
-      <Sidebar sidebarOpen={sidebarOpen} />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <main className="flex-1 overflow-y-auto">
         <div className="px-10 py-5">
           {/* Header */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden text-[#261d1a] hover:text-[#013a67] transition-colors mb-4"
-          >
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+
           <div className="flex flex-wrap justify-between gap-3 p-4">
             <h1 className="text-card-border text-4xl font-black leading-tight tracking-tight">
                Notifications
@@ -166,7 +163,7 @@ const AdminNotificationsPage: React.FC = () => {
 
       {/* Detail Modal */}
       {showDetailModal && currentAdminNotification && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto pt-10 pb-10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm overflow-y-auto pt-10 pb-10">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-lg m-4 relative">
             <button
               onClick={() => setShowDetailModal(false)}
@@ -253,6 +250,7 @@ const AdminNotificationsPage: React.FC = () => {
                   onClick={() => {
                     const relatedId = currentAdminNotification.related_id ?? currentAdminNotification.order_id;
                     if (relatedId) {
+                      setIsNotifying(true);
                       dispatch(notifyCustomerThunk(relatedId))
                         .unwrap()
                         .then(() => {
@@ -260,17 +258,20 @@ const AdminNotificationsPage: React.FC = () => {
                         })
                         .catch((err) => {
                           toast.error(err || "Failed to notify customer");
-                        });
+                        })
+                        .finally(() => setIsNotifying(false));
                     }
                   }}
-                  className="px-6 py-2 rounded-lg text-white bg-[#B35E3F] hover:bg-[#8e4b32] transition-colors"
+                  disabled={isNotifying}
+                  className="px-6 py-2 rounded-lg text-white bg-[#B35E3F] hover:bg-[#8e4b32] transition-colors disabled:opacity-50"
                 >
-                  Notify Customer
+                  {isNotifying ? "Sending..." : "Notify Customer"}
                 </button>
               )}
               <button
                 onClick={() => {
                   if (currentAdminNotification.notification_id) {
+                    setIsResending(true);
                     dispatch(resendNotificationThunk(currentAdminNotification.notification_id))
                       .unwrap()
                       .then(() => {
@@ -279,12 +280,14 @@ const AdminNotificationsPage: React.FC = () => {
                       })
                       .catch((err) => {
                         toast.error(err || "Failed to resend notification");
-                      });
+                      })
+                      .finally(() => setIsResending(false));
                   }
                 }}
-                className="px-6 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                disabled={isResending}
+                className="px-6 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
-                Resend
+                {isResending ? "Resending..." : "Resend"}
               </button>
               <button
                 onClick={() => setShowDetailModal(false)}

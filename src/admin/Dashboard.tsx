@@ -5,8 +5,6 @@ import {
   CreditCard,
   ShoppingCart,
   Package,
-  Menu,
-  X,
   BookOpen,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
@@ -70,7 +68,7 @@ const Dashboard: React.FC = () => {
     },
     {
       title: "Total Revenue",
-      value: `$${dashboardStats?.cards.total_revenue.toLocaleString() || "0"}`,
+      value: `₹${dashboardStats?.cards.total_revenue.toLocaleString() || "0"}`,
       icon: <CreditCard size={24} />,
     },
     {
@@ -83,7 +81,7 @@ const Dashboard: React.FC = () => {
   return (
     <div className="flex h-screen w-full bg-[#f8f4f1] overflow-hidden">
       {/* Sidebar */}
-      <Sidebar sidebarOpen={sidebarOpen} />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -91,12 +89,7 @@ const Dashboard: React.FC = () => {
           {/* Header */}
           <header className="flex justify-between items-center mb-8 gap-4">
             <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-[#261d1a] hover:text-[#013a67] transition-colors"
-              >
-                {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+
               <h1 className="text-3xl font-bold text-[#261d1a]">Dashboard</h1>
             </div>
             <div className="flex-1 max-w-md">

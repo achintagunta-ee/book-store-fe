@@ -98,6 +98,13 @@ const HomePage: React.FC = () => {
     categories,
     homeDataStatus,
   } = useSelector((state: RootState) => state.books);
+  const { userProfile } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if (userProfile?.role === "admin") {
+      navigate("/admin/dashboard");
+    }
+  }, [userProfile, navigate]);
 
   useEffect(() => {
     if (homeDataStatus === "idle") {

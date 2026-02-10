@@ -65,7 +65,7 @@ const BookCard: React.FC<{ book: Book; onAddToCart: (id: number) => void }> = ({
       </Link>
       <p className="font-body text-sm text-secondary-link">{book.author}</p>
       <p className="font-body text-base font-semibold text-text-main dark:text-text-main-dark mt-2">
-        ${book.price}
+        ₹{book.price}
       </p>
       <div className="mt-4 flex flex-col gap-2">
         <button
@@ -153,8 +153,8 @@ const Sidebar: React.FC<{
           className="w-full h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:appearance-none"
         />
         <div className="flex justify-between text-sm text-text-main/70 mt-2 font-body">
-          <span>$0</span>
-          <span>${localFilters.maxPrice}</span>
+          <span>₹0</span>
+          <span>₹{localFilters.maxPrice}</span>
         </div>
       </div>
 

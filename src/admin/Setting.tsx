@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import Sidebar from "./Sidebar";
-import { Menu, X } from "lucide-react";
+
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../redux/store/store";
 import {
@@ -42,6 +42,7 @@ const AdminSettings: React.FC = () => {
   const [adminUsername, setAdminUsername] = useState("");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string>("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
     dispatch(getGeneralSettingsThunk());
@@ -104,37 +105,35 @@ const AdminSettings: React.FC = () => {
       );
       toast.success("Social links updated successfully!");
     } else if (activeTab === "profile") {
-      // Handle Password Change
-      if (currentPassword && newPassword) {
-        try {
-          await dispatch(changeAdminPasswordThunk({
-            current_password: currentPassword,
-            new_password: newPassword
-          })).unwrap();
-          toast.success("Password changed successfully!");
-          setCurrentPassword("");
-          setNewPassword("");
-        } catch (error) {
-          toast.error(`Password change failed: ${error}`);
-          return; // Stop if password change fails
-        }
-      }
-
-      // Handle Profile Update
-      const formData = new FormData();
-      formData.append("first_name", adminFirstName);
-      formData.append("last_name", adminLastName);
-      formData.append("username", adminUsername);
-      if (profileImageFile) {
-        // sending 'profile_image' as the key for the file, as backends typically expect the field name, not the url key
-        formData.append("profile_image", profileImageFile);
-      }
-
+      setIsSavingProfile(true);
       try {
+        // Handle Password Change
+        if (currentPassword && newPassword) {
+            await dispatch(changeAdminPasswordThunk({
+              current_password: currentPassword,
+              new_password: newPassword
+            })).unwrap();
+            toast.success("Password changed successfully!");
+            setCurrentPassword("");
+            setNewPassword("");
+        }
+  
+        // Handle Profile Update
+        const formData = new FormData();
+        formData.append("first_name", adminFirstName);
+        formData.append("last_name", adminLastName);
+        formData.append("username", adminUsername);
+        if (profileImageFile) {
+          // sending 'profile_image' as the key for the file, as backends typically expect the field name, not the url key
+          formData.append("profile_image", profileImageFile);
+        }
+  
         await dispatch(updateAdminProfileThunk(formData)).unwrap();
         toast.success("Profile updated successfully!");
       } catch (error) {
-         toast.error(`Profile update failed: ${error}`);
+         toast.error(`Update failed: ${error}`);
+      } finally {
+        setIsSavingProfile(false);
       }
     } else {
       toast.success("Changes saved successfully!");
@@ -173,18 +172,13 @@ const AdminSettings: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full bg-[#f8f4f1] overflow-hidden">
-      <Sidebar sidebarOpen={sidebarOpen} />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <main className="flex-1 overflow-y-auto">
         <div className="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-40 py-5">
           <div className="max-w-[960px] mx-auto">
             {/* Header */}
             <div className="flex flex-wrap justify-between items-center gap-4 p-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden text-[#261d1a] hover:text-[#013a67] transition-colors"
-              >
-                {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
+
               <h1 className="text-[#333333] text-4xl font-bold">Settings</h1>
               <button
                 onClick={handleLogout}
@@ -474,9 +468,10 @@ const AdminSettings: React.FC = () => {
                 <div className="mt-8">
                   <button
                     onClick={handleSaveChanges}
-                    className="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-8 bg-[#B35E3F] text-white text-base font-bold leading-normal hover:opacity-90"
+                    disabled={isSavingProfile}
+                    className="flex min-w-[120px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-12 px-8 bg-[#B35E3F] text-white text-base font-bold leading-normal hover:opacity-90 disabled:opacity-50"
                   >
-                    <span className="truncate">Save Changes</span>
+                    <span className="truncate">{isSavingProfile ? "Saving..." : "Save Changes"}</span>
                   </button>
                 </div>
               </div>

@@ -108,8 +108,8 @@ const initialState: BookState = {
 // Admin Thunks
 export const fetchBooksAsync = createAsyncThunk(
   "books/fetchBooks",
-  async () => {
-    const response = await fetchBooksApi();
+  async (params: { page?: number; limit?: number; search?: string; category?: string } = {}) => {
+    const response = await fetchBooksApi(params);
     return response;
   }
 );
@@ -306,10 +306,12 @@ export const fetchDynamicSearchBooksAsync = createAsyncThunk(
     try {
       const response = await fetchDynamicSearchBooksApi(query);
       // Map response to Book interface as the API returns book_id instead of id
-      const mappedBooks: Book[] = (response as any[]).map((b) => ({
+      if (!response.results) return { books: [], total: 0 }; // Safety check
+      
+      const mappedBooks: Book[] = response.results.map((b: any) => ({
         id: b.book_id || b.id,
         title: b.title,
-        slug: b.slug || b.title.toLowerCase().replace(/\s+/g, "-"),
+        slug: b.slug || (b.title ? b.title.toLowerCase().replace(/\s+/g, "-") : ""),
         author: b.author,
         price: b.price,
         description: b.description || "",
@@ -323,7 +325,7 @@ export const fetchDynamicSearchBooksAsync = createAsyncThunk(
         publisher: b.publisher || null,
         published_date: b.published_date || null,
       }));
-      return mappedBooks;
+      return { books: mappedBooks, total: response.total_results };
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -335,10 +337,13 @@ export const fetchSearchSuggestionsAsync = createAsyncThunk(
   async (query: string, { rejectWithValue }) => {
     try {
       const response = await fetchDynamicSearchBooksApi(query);
-      const mappedBooks: Book[] = (response as any[]).map((b) => ({
+      
+      if (!response.results) return [];
+
+      const mappedBooks: Book[] = response.results.map((b: any) => ({
         id: b.book_id || b.id,
         title: b.title,
-        slug: b.slug || b.title.toLowerCase().replace(/\s+/g, "-"),
+        slug: b.slug || (b.title ? b.title.toLowerCase().replace(/\s+/g, "-") : ""),
         author: b.author,
         price: b.price,
         description: b.description || "",
@@ -481,6 +486,7 @@ export const bookSlice = createSlice({
         // Check if payload is the new paginated object structure
         if (action.payload && 'results' in action.payload && Array.isArray((action.payload as any).results)) {
             state.books = (action.payload as any).results;
+            state.totalBooks = (action.payload as any).total_items;
         } 
         // Fallback for direct array response (if API changes back or for other endpoints)
         else if (Array.isArray(action.payload)) {
@@ -608,7 +614,8 @@ export const bookSlice = createSlice({
       })
       .addCase(fetchDynamicSearchBooksAsync.fulfilled, (state, action) => {
         state.publicBooksStatus = "succeeded";
-        state.publicBooks = action.payload;
+        state.publicBooks = action.payload.books;
+        state.totalBooks = action.payload.total;
       })
       .addCase(fetchDynamicSearchBooksAsync.rejected, (state, action) => {
         state.publicBooksStatus = "failed";

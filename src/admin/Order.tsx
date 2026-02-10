@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { ChevronLeft, ChevronRight, Send, X, Menu, Eye, Calendar, Download, Truck, Bell, Plus, Trash2, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, X, Eye, Calendar, Download, Truck, Bell, Plus, Trash2, ChevronDown } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../redux/store/store";
@@ -8,7 +8,6 @@ import {
 	getAdminOrdersThunk, 
 	getAdminOrderDetailsThunk, 
 	notifyCustomerThunk, 
-	getAdminOrderInvoiceThunk, 
 	updateOrderStatusThunk,
 	addOrderTrackingThunk,
 	getAdminOrderNotificationsThunk,
@@ -213,10 +212,7 @@ const OrdersPage: React.FC = () => {
 		await dispatch(getAdminOrderDetailsThunk(orderId));
 		setShowDetailModal(true);
 	};
-	const handleViewInvoice = async (orderId: number) => {
-		await dispatch(getAdminOrderInvoiceThunk(orderId));
-		setShowInvoiceModal(true);
-	};
+	
 	
 	const handleDownloadInvoice = async (orderId: number) => {
 		try {
@@ -338,17 +334,12 @@ const OrdersPage: React.FC = () => {
 
 	return (
 		<div className="flex h-screen w-full bg-background-light overflow-hidden">
-			<Sidebar sidebarOpen={sidebarOpen} />
+			<Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
 			<main className="flex-1 overflow-y-auto">
 				<div className="px-10 py-5">
 					{/* Header */}
-					<button
-						onClick={() => setSidebarOpen(!sidebarOpen)}
-						className="lg:hidden text-[#261d1a] hover:text-[#013a67] transition-colors mb-4"
-					>
-						{sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-					</button>
+
 					<div className="flex flex-wrap justify-between gap-3 p-4">
 						<h1 className="text-card-border text-4xl font-black leading-tight tracking-tight">
 							Orders 
@@ -463,14 +454,15 @@ const OrdersPage: React.FC = () => {
 												Total
 											</th>
 											<th className="px-4 py-3 text-left text-card-border text-sm font-bold">
+												Mark as Paid
+											</th>
+											<th className="px-4 py-3 text-left text-card-border text-sm font-bold">
 												Status
 											</th>
 											<th className="px-4 py-3 text-left text-card-border text-sm font-bold">
 												Actions
 											</th>
-											<th className="px-4 py-3 text-left text-card-border text-sm font-bold">
-												Invoice
-											</th>
+
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-[#e2d8d4]">
@@ -493,8 +485,22 @@ const OrdersPage: React.FC = () => {
 														₹{order.total}
 													</td>
 													<td className="h-[72px] px-4 py-2">
+														<label className="relative inline-flex items-center cursor-pointer">
+															<input 
+																type="checkbox" 
+																className="sr-only peer"
+																checked={order.status.toLowerCase() === 'paid'}
+																onChange={(e) => {
+																	const newStatus = e.target.checked ? 'Paid' : 'Pending';
+																	handleStatusChange(order.order_id, newStatus);
+																}}
+															/>
+															<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#B35E3F] rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+														</label>
+													</td>
+													<td className="h-[72px] px-4 py-2">
 														<select
-															value={order.status}
+															value={order.status.toLowerCase()}
 															onChange={(e) => handleStatusChange(order.order_id, e.target.value)}
 															className={`inline-flex px-2 py-1 rounded-full text-xs font-medium border-none focus:ring-1 focus:ring-offset-1 cursor-pointer ${getStatusColor(
 																order.status
@@ -533,14 +539,7 @@ const OrdersPage: React.FC = () => {
 															</button>
 														</div>
 													</td>
-													<td className="h-[72px] px-4 py-2">
-														<button
-															onClick={() => handleViewInvoice(order.order_id)}
-															className="text-[#B35E3F] hover:text-card-border text-xs font-bold transition-colors underline mb-1 block"
-														>
-															View Invoice
-														</button>
-													</td>
+
 												</tr>
 											))
 										) : (
@@ -583,7 +582,7 @@ const OrdersPage: React.FC = () => {
 
 			{/* Tracking Modal */}
 			{showTrackingModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
 					<div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md m-4">
 						<div className="flex justify-between items-center mb-4">
 							<h2 className="text-2xl font-bold text-card-border">
@@ -635,7 +634,7 @@ const OrdersPage: React.FC = () => {
 
 			{/* Notifications Modal */}
 			{showNotificationsModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto pt-10 pb-10">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm overflow-y-auto pt-10 pb-10">
 					<div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl m-4 relative">
 						<button
 							onClick={() => setShowNotificationsModal(false)}
@@ -673,7 +672,7 @@ const OrdersPage: React.FC = () => {
 
 			{/* Notification Modal (Email) */}
 			{showNotifyModal && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
 					<div className="bg-background-light rounded-lg shadow-xl p-8 w-full max-w-md m-4">
 						<div className="flex justify-between items-center mb-4">
 							<h2 className="text-2xl font-bold text-card-border">
@@ -726,7 +725,7 @@ const OrdersPage: React.FC = () => {
 				</div>
 			)}
 			{showInvoiceModal && adminOrderInvoice && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto pt-10 pb-10">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm overflow-y-auto pt-10 pb-10">
 					<div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl m-4 relative">
 						<button
 							onClick={() => setShowInvoiceModal(false)}
@@ -808,7 +807,7 @@ const OrdersPage: React.FC = () => {
 			
 			{/* Detail Modal */}
 			{showDetailModal && adminOrderDetail && (
-				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto pt-10 pb-10">
+				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm overflow-y-auto pt-10 pb-10">
 					<div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-3xl m-4 relative">
 						<button
 							onClick={() => setShowDetailModal(false)}
@@ -885,7 +884,7 @@ const OrdersPage: React.FC = () => {
             
             {/* Offline Order Modal */}
             {showOfflineOrderModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 overflow-y-auto pt-10 pb-10">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm overflow-y-auto pt-10 pb-10">
                     <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl m-4 relative">
                         <button
                             onClick={() => setShowOfflineOrderModal(false)}

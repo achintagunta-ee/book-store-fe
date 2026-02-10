@@ -65,7 +65,7 @@ const OrderHistoryTable: React.FC<{
                 <tr key={order.order_id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">{order.order_id}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">{order.date}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">${order.total.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">₹{order.total.toFixed(2)}</td>
                   <td className="px-6 py-4 text-sm font-normal">
                     <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold font-body ${statusStyles[order.status] || "bg-gray-100 text-gray-800"}`}>
                       {order.status}
@@ -106,7 +106,7 @@ const OrderHistoryTable: React.FC<{
                  </div>
                  <div className="text-right">
                     <span className="text-xs text-gray-500 block">Total</span>
-                    <p className="text-sm font-bold text-gray-900">${order.total.toFixed(2)}</p>
+                    <p className="text-sm font-bold text-gray-900">₹{order.total.toFixed(2)}</p>
                  </div>
               </div>
 
@@ -154,7 +154,7 @@ const UserPaymentsTable: React.FC<{
                 <tr key={payment.payment_id} className="hover:bg-gray-50/50">
                   <td className="px-6 py-4 text-gray-600 text-sm font-body">#{payment.payment_id}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-body">{new Date(payment.created_at).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm font-body">${payment.amount.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body">₹{payment.amount.toFixed(2)}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-body capitalize">{payment.method}</td>
                   <td className="px-6 py-4 text-sm">
                     <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold font-body ${
@@ -193,7 +193,7 @@ const UserPaymentsTable: React.FC<{
                  <div className="text-right text-gray-900">{new Date(payment.created_at).toLocaleDateString()}</div>
                  
                  <div className="text-gray-500">Amount</div>
-                 <div className="text-right text-gray-900 font-bold">${payment.amount.toFixed(2)}</div>
+                 <div className="text-right text-gray-900 font-bold">₹{payment.amount.toFixed(2)}</div>
                  
                  <div className="text-gray-500">Method</div>
                  <div className="text-right text-gray-900 capitalize">{payment.method}</div>
@@ -764,23 +764,23 @@ const OrderDetailsModal: React.FC<{
           <div className="flex justify-between py-2">
             <span className="text-gray-600">Subtotal</span>
             <span className="font-semibold">
-              ${(order.order.subtotal || 0).toFixed(2)}
+              ₹{(order.order.subtotal || 0).toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between py-2">
             <span className="text-gray-600">Shipping</span>
             <span className="font-semibold">
-              ${(order.order.shipping || 0).toFixed(2)}
+              ₹{(order.order.shipping || 0).toFixed(2)}
             </span>
           </div>
           <div className="flex justify-between py-2">
             <span className="text-gray-600">Tax</span>
-            <span className="font-semibold">${(order.order.tax || 0).toFixed(2)}</span>
+            <span className="font-semibold">₹{(order.order.tax || 0).toFixed(2)}</span>
           </div>
           <div className="flex justify-between py-2 border-t border-gray-200 mt-2">
             <span className="text-lg font-bold">Total</span>
             <span className="text-lg font-bold text-primary">
-              ${(order.order.total || 0).toFixed(2)}
+              ₹{(order.order.total || 0).toFixed(2)}
             </span>
           </div>
 

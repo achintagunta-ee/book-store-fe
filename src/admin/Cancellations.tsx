@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, X, Menu, Ban, RefreshCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Ban, RefreshCcw } from "lucide-react";
 import Sidebar from "./Sidebar";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
@@ -13,6 +13,7 @@ import {
 } from "../redux/slice/authSlice";
 import type { CancellationRequestItem } from "../redux/utilis/authApi";
 import { Check } from "lucide-react";
+import ConfirmationModal from "./ConfirmationModal";
 
 const CancellationsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -38,6 +39,12 @@ const CancellationsPage: React.FC = () => {
 
   // Reject Form
   const [rejectReason, setRejectReason] = useState("");
+
+  const [approvingId, setApprovingId] = useState<number | null>(null);
+
+  // Confirmation Modal State
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [requestToApprove, setRequestToApprove] = useState<CancellationRequestItem | null>(null);
 
   useEffect(() => {
     dispatch(getCancellationStatsThunk());
@@ -71,15 +78,26 @@ const CancellationsPage: React.FC = () => {
     setShowRejectModal(true);
   };
 
-  const handleApprove = async (req: CancellationRequestItem) => {
-    if (!window.confirm("Are you sure you want to approve this cancellation request?")) return;
-    try {
-      await dispatch(approveCancellationThunk(req.request_id)).unwrap();
-      toast.success("Cancellation approved successfully");
-      dispatch(getCancellationStatsThunk());
-      dispatch(getAdminCancellationRequestsThunk({ page: currentPage, limit: 10, status: statusFilter === "All" ? "" : statusFilter }));
-    } catch (error: any) {
-      toast.error(error || "Failed to approve cancellation");
+  const handleApproveClick = (req: CancellationRequestItem) => {
+    setRequestToApprove(req);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmApprove = async () => {
+    if (requestToApprove) {
+        setApprovingId(requestToApprove.request_id);
+        try {
+            await dispatch(approveCancellationThunk(requestToApprove.request_id)).unwrap();
+            toast.success("Cancellation approved successfully");
+            dispatch(getCancellationStatsThunk());
+            dispatch(getAdminCancellationRequestsThunk({ page: currentPage, limit: 10, status: statusFilter === "All" ? "" : statusFilter }));
+        } catch (error: any) {
+            toast.error(error || "Failed to approve cancellation");
+        } finally {
+            setApprovingId(null);
+            setRequestToApprove(null);
+            setIsConfirmOpen(false);
+        }
     }
   };
 
@@ -149,17 +167,12 @@ const CancellationsPage: React.FC = () => {
 
   return (
     <div className="flex h-screen w-full bg-background-light overflow-hidden">
-      <Sidebar sidebarOpen={sidebarOpen} />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       <main className="flex-1 overflow-y-auto">
         <div className="px-10 py-5">
           {/* Header */}
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden text-[#261d1a] hover:text-[#013a67] transition-colors mb-4"
-          >
-            {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+
           
           <h1 className="text-card-border text-4xl font-black leading-tight tracking-tight mb-6">
             Cancellations & Refunds
@@ -244,11 +257,16 @@ const CancellationsPage: React.FC = () => {
                             {req.status === 'pending' || req.status === 'pending_review' ? (
                                 <div className="flex gap-2">
                                     <button 
-                                        onClick={() => handleApprove(req)}
-                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                                        onClick={() => handleApproveClick(req)}
+                                        disabled={approvingId === req.request_id}
+                                        className="p-1 text-blue-600 hover:bg-blue-50 rounded disabled:opacity-50"
                                         title="Approve Cancellation"
                                     >
-                                        <Check size={18} />
+                                        {approvingId === req.request_id ? (
+                                            <span className="text-xs">...</span>
+                                        ) : (
+                                            <Check size={18} />
+                                        )}
                                     </button>
                                     <button 
                                         onClick={() => handleOpenRefund(req)}
@@ -311,8 +329,16 @@ const CancellationsPage: React.FC = () => {
       </main>
 
       {/* Refund Modal */}
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmApprove}
+        title="Approve Cancellation"
+        message="Are you sure you want to approve this cancellation request? This will mark it as approved without creating a refund transaction."
+        isProcessing={approvingId !== null}
+        />
       {showRefundModal && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md m-4">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-[#261d1a]">Process Refund</h2>
@@ -408,7 +434,7 @@ const CancellationsPage: React.FC = () => {
 
       {/* Reject Modal */}
       {showRejectModal && selectedRequest && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md m-4">
                 <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-[#261d1a]">Reject Cancellation</h2>

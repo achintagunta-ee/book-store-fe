@@ -8,8 +8,9 @@ import {
   deleteCategoryAsync,
 } from "../redux/slice/bookSlice";
 import { toast, Toaster } from "react-hot-toast";
-import { Plus, Edit, Trash2, Menu } from "lucide-react";
+import { Plus, Edit, Trash2 } from "lucide-react";
 import Sidebar from "./Sidebar";
+import ConfirmationModal from "./ConfirmationModal";
 
 const CategoryManagement: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -17,7 +18,7 @@ const CategoryManagement: React.FC = () => {
     (state: RootState) => state.books
   );
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [currentCategory, setCurrentCategory] = useState<{
@@ -25,6 +26,11 @@ const CategoryManagement: React.FC = () => {
     name: string;
     description: string;
   }>({ id: null, name: "", description: "" });
+  
+  // Confirmation Modal State
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (categoryStatus === "idle") {
@@ -91,35 +97,53 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this category?")) {
-      await dispatch(deleteCategoryAsync(id)).unwrap();
-      toast.success("Category deleted successfully!");
+  const handleDeleteClick = (id: number) => {
+    setCategoryToDelete(id);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (categoryToDelete) {
+        setIsDeleting(true);
+        try {
+            await dispatch(deleteCategoryAsync(categoryToDelete)).unwrap();
+            toast.success("Category deleted successfully!");
+        } catch (e) {
+            toast.error("Failed to delete category");
+        } finally {
+            setIsDeleting(false);
+            setCategoryToDelete(null);
+            setIsConfirmOpen(false);
+        }
     }
   };
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar sidebarOpen={sidebarOpen} />
+    <div className="flex h-screen w-full bg-[#f8f4f1] overflow-hidden">
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Category"
+        message="Are you sure you want to delete this category? This action cannot be undone."
+        isProcessing={isDeleting}
+      />
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="flex justify-between items-center p-4 bg-white border-b">
-          <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <Menu size={24} />
-          </button>
-          <h1 className="text-xl font-semibold">Category Management</h1>
-          <div />
-        </header>
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100">
-          <div className="p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#f8f4f1] p-4 md:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
             <Toaster position="top-right" />
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-2xl font-bold">Categories</h1>
+              <div>
+                <h1 className="text-[#261d1a] text-4xl font-bold">Categories</h1>
+                <p className="text-[#261d1a]/70 text-base mt-2">Manage your book categories here.</p>
+              </div>
               <button
                 onClick={() => handleOpenModal()}
-                className="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-opacity-90"
+                className="flex items-center justify-center gap-2 rounded-lg h-10 px-5 bg-[#013a67] text-white font-bold hover:bg-[#013a67]/90 transition-colors"
               >
-                <Plus size={20} />
-                Add Category
+                <Plus size={18} />
+                <span>Add Category</span>
               </button>
             </div>
 
@@ -157,8 +181,9 @@ const CategoryManagement: React.FC = () => {
                           <Edit size={18} />
                         </button>
                         <button
-                          onClick={() => handleDelete(cat.id)}
-                          className="text-red-600 hover:text-red-900"
+                          onClick={() => handleDeleteClick(cat.id)}
+                          disabled={categoryStatus === "loading"}
+                          className="text-red-600 hover:text-red-900 disabled:opacity-30"
                         >
                           <Trash2 size={18} />
                         </button>
@@ -170,7 +195,7 @@ const CategoryManagement: React.FC = () => {
             </div>
 
             {isModalOpen && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
                 <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
                   <h2 className="text-xl font-bold mb-4">
                     {currentCategory.id ? "Edit" : "Add"} Category

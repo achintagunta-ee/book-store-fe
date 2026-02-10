@@ -204,8 +204,14 @@ export interface BooksResponse {
 }
 
 // Fetch all books
-export const fetchBooksApi = async () => {
-  return request<BooksResponse>("/admin/books/list");
+export const fetchBooksApi = async (params: { page?: number; limit?: number; search?: string; category?: string } = {}) => {
+  const query = new URLSearchParams();
+  if (params.page) query.append("page", String(params.page));
+  if (params.limit) query.append("limit", String(params.limit));
+  if (params.search) query.append("search", params.search); // Adjust if backend uses 'q' or 'title'
+  if (params.category) query.append("category_id", params.category);
+
+  return request<BooksResponse>(`/admin/books/list?${query.toString()}`);
 };
 
 // Create a new book (using FormData for file upload)
@@ -458,8 +464,16 @@ export const searchBooksApi = async (query: string) => {
 };
 
 // Dynamic Search API
+export interface DynamicSearchResponse {
+  query: string;
+  total_results: number;
+  page: number;
+  total_pages: number;
+  results: Book[];
+}
+
 export const fetchDynamicSearchBooksApi = async (query: string) => {
-  return request<Book[]>(`/books/dynamic-search?query=${query}`);
+  return request<DynamicSearchResponse>(`/books/dynamic-search?query=${query}`);
 };
 
 // Review APIs

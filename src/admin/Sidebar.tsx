@@ -10,6 +10,7 @@ import {
   Bell,
   XCircle,
   HelpCircle,
+  Menu,
 } from "lucide-react";
 import { Link, useMatch, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -19,7 +20,7 @@ import { logoutThunk } from "../redux/slice/authSlice";
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;
-  to: string;
+  to: string; 
 }
 
 const NavItem: React.FC<NavItemProps> = ({ icon, label, to }) => {
@@ -43,6 +44,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, to }) => {
 
 interface SidebarProps {
   sidebarOpen: boolean;
+  setSidebarOpen?: (open: boolean) => void;
 }
 
 const navItems = [
@@ -58,37 +60,59 @@ const navItems = [
   { icon: <XCircle size={20} />, label: "Cancellations", to: "/admin/cancellations" },
   { icon: <Bell size={20} />, label: "Notifications", to: "/admin/notifications" },
   { icon: <Package size={20} />, label: "Inventory", to: "/admin/inventory" },
-  { icon: <HelpCircle size={20} />, label: "Help Docs", to: "/admin/help" },
   { icon: <Settings size={20} />, label: "Settings", to: "/admin/settings" },
+  { icon: <HelpCircle size={20} />, label: "Help Docs", to: "/admin/help" }
+
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen }) => {
+const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const navigate = useNavigate();
-
+  const navigate = useNavigate()
   const handleLogout = async () => {
     await dispatch(logoutThunk());
     navigate("/login");
   };
 
   return (
+    <>
+      {/* Toggle Button for Closed State (Visible on all screens if setSidebarOpen is provided) */}
+      {!sidebarOpen && setSidebarOpen && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="fixed top-4 left-4 z-50 p-2 bg-white rounded-md shadow-md text-[#013a67] hover:bg-gray-100 transition-colors"
+        >
+          <Menu size={24} />
+        </button>
+      )}
+
     <div
       className={`${
         sidebarOpen ? "w-64" : "w-0"
-      } transition-all duration-300 bg-[#013a67] text-white flex flex-col overflow-hidden`}
+      } transition-all duration-300 bg-[#013a67] text-white flex flex-col overflow-hidden h-screen z-40 fixed lg:relative`}
     >
       <div className="flex flex-col flex-1 p-4">
-        <div className="flex items-center gap-3 mb-8 px-2">
-          <div
-            className="bg-center bg-no-repeat bg-cover rounded-full w-10 h-10 flex-shrink-0"
-            style={{
-              backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuCI2h7a_FRpSKGMSzil9yBpG3v5o_k5gTrG5IBzeg8V_vi__AX_y5rL-9T5hfRWKVnDfF6aKuaR7AYqWy9fOvOooQXHvDNB4CYvGogEybC4Vg2l4VWDMDAUGMaJ_xK0bYGbrodNd0MSPXHgz-JKBsp-fhXpk2AlQrkK2kIy4MsYmv93n80WhPXTTlHRQNkuHLaEy_xzNf0k55xEoy0Ayts70wbwJ4jtzx1yurIqsPZmrk_Z_EU9XEaUhI-JQSOAlAAZ9HecNS9jp1A")`,
-            }}
-          />
-          <div className="flex flex-col">
-            <h1 className="text-white text-lg font-bold">Hithabodha</h1>
-            <p className="text-gray-300 text-sm">Admin Panel</p>
-          </div>
+        <div className="flex items-center justify-between gap-3 mb-8 px-2">
+           <div className="flex items-center gap-3">
+              <div
+                className="bg-center bg-no-repeat bg-cover rounded-full w-10 h-10 flex-shrink-0"
+                style={{
+                  backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuCI2h7a_FRpSKGMSzil9yBpG3v5o_k5gTrG5IBzeg8V_vi__AX_y5rL-9T5hfRWKVnDfF6aKuaR7AYqWy9fOvOooQXHvDNB4CYvGogEybC4Vg2l4VWDMDAUGMaJ_xK0bYGbrodNd0MSPXHgz-JKBsp-fhXpk2AlQrkK2kIy4MsYmv93n80WhPXTTlHRQNkuHLaEy_xzNf0k55xEoy0Ayts70wbwJ4jtzx1yurIqsPZmrk_Z_EU9XEaUhI-JQSOAlAAZ9HecNS9jp1A")`,
+                }}
+              />
+              <div className="flex flex-col">
+                <h1 className="text-white text-lg font-bold">Hithabodha</h1>
+                <p className="text-gray-300 text-sm">Admin Panel</p>
+              </div>
+           </div>
+           {/* Toggle Button for Open State (Visible on all screens if setSidebarOpen is provided) */}
+           {setSidebarOpen && (
+             <button
+               onClick={() => setSidebarOpen(false)}
+               className="text-gray-300 hover:text-white transition-colors"
+             >
+               <Menu size={24} />
+             </button>
+           )}
         </div>
 
         <div className="flex flex-col gap-2 flex-1">
@@ -113,6 +137,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import Sidebar from "./Sidebar";
-import { Menu, X, Edit, Box } from "lucide-react";
+import { X, Edit, Box, Search } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../redux/store/store";
 import {
@@ -87,17 +87,12 @@ const InventoryDashboard: React.FC = () => {
 
 	return (
 		<div className="flex h-screen w-full bg-background-light overflow-hidden">
-			<Sidebar sidebarOpen={sidebarOpen} />
+			<Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 			<main className="flex-1 p-8 bg-[#f8f4f1] overflow-y-auto">
 				<div className="max-w-full">
 					{/* Header */}
 					<div className="flex justify-between items-start mb-6">
-						<button
-							onClick={() => setSidebarOpen(!sidebarOpen)}
-							className="lg:hidden text-[#261d1a] hover:text-[#013a67] transition-colors"
-						>
-							{sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-						</button>
+
 						<div>
 							<h1 className="text-[#5c2e2e] text-4xl font-bold mb-1">
 								Inventory
@@ -134,7 +129,7 @@ const InventoryDashboard: React.FC = () => {
 					<div className="mb-4">
 						<div className="flex h-12 w-full rounded-lg overflow-hidden border border-[#e2d8d4]">
 							<div className="flex items-center justify-center pl-4 bg-white text-[#8E5A4F]">
-								<span className="material-symbols-outlined">search</span>
+								<Search size={20} />
 							</div>
 							<input
 								type="text"
@@ -185,7 +180,7 @@ const InventoryDashboard: React.FC = () => {
 												{book.author}
 											</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-[#261d1a]">
-                                                ${book.price !== undefined ? book.price.toFixed(2) : '0.00'}
+                                                ₹{book.price !== undefined ? book.price.toFixed(2) : '0.00'}
                                             </td>
 											<td
 												className={`px-6 py-4 whitespace-nowrap font-semibold ${
@@ -287,7 +282,7 @@ const InventoryDashboard: React.FC = () => {
 
             {/* Edit Modal */}
             {editingBook && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
                          <button
                             onClick={() => setEditingBook(null)}

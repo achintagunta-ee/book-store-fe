@@ -78,7 +78,7 @@ const RelatedBookCard: React.FC<{ book: Book }> = ({ book }) => {
           {book.author}
         </p>
         <p className="text-sm font-bold text-primary">
-          ${book.price.toFixed(2)}
+          ₹{book.price.toFixed(2)}
         </p>
       </div>
     </div>
@@ -100,6 +100,7 @@ const ReviewForm: React.FC<{
   const [comment, setComment] = useState("");
   const [error, setError] = useState("");
   const [hoverRating, setHoverRating] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,11 +120,13 @@ const ReviewForm: React.FC<{
       comment,
     };
 
+    setIsSubmitting(true);
     try {
       await dispatch(createReviewAsync({ slug: bookSlug, reviewData })).unwrap();
       // On success
       setRating(0);
       setComment("");
+      toast.success("Review added successfully");
       onReviewSubmitted();
     } catch (err: any) {
       let errorMessage = err;
@@ -138,6 +141,8 @@ const ReviewForm: React.FC<{
         // ignore parsing error
       }
       setError(errorMessage || "Failed to submit review");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -201,9 +206,10 @@ const ReviewForm: React.FC<{
         <div className="flex flex-col sm:flex-row gap-3 pt-2">
           <button
             type="submit"
-            className="flex-1 rounded-lg bg-primary px-6 py-3.5 text-white font-bold text-sm tracking-wide shadow-md hover:bg-primary/90 hover:shadow-lg transition-all active:scale-[0.98]"
+            disabled={isSubmitting}
+            className="flex-1 rounded-lg bg-primary px-6 py-3.5 text-white font-bold text-sm tracking-wide shadow-md hover:bg-primary/90 hover:shadow-lg transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
           >
-            Submit Review
+            {isSubmitting ? "Submitting..." : "Submit Review"}
           </button>
           <button
             type="button"
@@ -236,6 +242,10 @@ const BookDetailPage: React.FC = () => {
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [isTogglingWishlist, setIsTogglingWishlist] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [reviewToDelete, setReviewToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const currentUserName = userProfile
     ? `${userProfile.first_name} ${userProfile.last_name}`.trim()
     : null;
@@ -310,10 +320,27 @@ const BookDetailPage: React.FC = () => {
   };
 
   const handleDeleteReview = (reviewId: number) => {
-    dispatch(deleteReviewAsync(reviewId));
+    setReviewToDelete(reviewId);
+    setDeleteModalOpen(true);
   };
 
-  const handleUpdateReview = () => {
+  const confirmDeleteReview = async () => {
+    if (reviewToDelete === null) return;
+    
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteReviewAsync(reviewToDelete)).unwrap();
+      toast.success("Review deleted successfully");
+      setDeleteModalOpen(false);
+      setReviewToDelete(null);
+    } catch (error) {
+      toast.error("Failed to delete review");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleUpdateReview = async () => {
     if (!editingReview) return;
 
     const reviewData: UpdateReviewData = {
@@ -321,11 +348,18 @@ const BookDetailPage: React.FC = () => {
       comment: editingReview.comment,
     };
 
-    dispatch(
-      updateReviewAsync({ reviewId: editingReview.id, reviewData })
-    ).finally(() => {
+    setIsUpdating(true);
+    try {
+      await dispatch(
+        updateReviewAsync({ reviewId: editingReview.id, reviewData })
+      ).unwrap();
       setEditingReview(null);
-    });
+      toast.success("Review updated successfully");
+    } catch (error) {
+      toast.error("Failed to update review");
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const handleBuyNow = async (e: React.MouseEvent) => {
@@ -585,7 +619,7 @@ const BookDetailPage: React.FC = () => {
                 </p>
               </div>
               <h1 className="pb-4 pt-6 font-display text-4xl font-bold leading-tight tracking-light text-primary">
-                ${bookData.price?.toFixed(2) || "0.00"}
+                ₹{bookData.price?.toFixed(2) || "0.00"}
               </h1>
               <div className="prose prose-lg mt-4 max-h-48 overflow-y-auto font-body text-text-main dark:text-text-light/90">
                 <p>{bookData.description}</p>
@@ -607,9 +641,8 @@ const BookDetailPage: React.FC = () => {
                 {bookData.is_ebook && (
                   <button 
                   onClick={handleBuyEbook}
-                  disabled={isEbookBuying}
                   className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-green-600 px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-green-700 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed">
-                  <span className="truncate">{isEbookBuying ? "Checking out..." : `Buy E-Book ($${bookData.ebook_price})`}</span>
+                  <span className="truncate">{isEbookBuying ? "Checking out..." : `Buy E-Book (₹${bookData.ebook_price})`}</span>
                 </button>
                 )}
                 <button
@@ -626,18 +659,7 @@ const BookDetailPage: React.FC = () => {
                   )}
                 </button>
               </div>
-              <div className="mt-8 border-t border-primary/20 pt-4 text-sm text-text-main/70 dark:text-text-light/70">
-                <p>
-                  <strong>Publisher:</strong> {bookData.publisher || "N/A"}
-                </p>
-                <p>
-                  <strong>Publication Date:</strong>{" "}
-                  {new Date(bookData.created_at).toLocaleDateString()}
-                </p>
-                <p>
-                  <strong>ISBN:</strong> {bookData.isbn || "N/A"}
-                </p>
-              </div>
+
             </div>
           </div>
 
@@ -717,9 +739,10 @@ const BookDetailPage: React.FC = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={handleUpdateReview}
-                          className="rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90"
+                          disabled={isUpdating}
+                          className="rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                          Save
+                          {isUpdating ? "Saving..." : "Save"}
                         </button>
                         <button
                           onClick={() => setEditingReview(null)}
@@ -801,6 +824,42 @@ const BookDetailPage: React.FC = () => {
           )}
         </main>
       </div>
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm transition-all duration-300">
+          <div className="w-full max-w-md scale-100 transform rounded-2xl bg-white p-6 shadow-2xl dark:bg-gray-800 transition-all duration-300">
+            <h3 className="mb-4 text-xl font-bold text-gray-900 dark:text-white">
+              Delete Review?
+            </h3>
+            <p className="mb-8 text-gray-600 dark:text-gray-300">
+              Are you sure you want to delete this review? This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteModalOpen(false)}
+                className="rounded-lg px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700 transition-colors"
+                disabled={isDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteReview}
+                className="rounded-lg bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md hover:bg-red-700 hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                disabled={isDeleting}
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Review"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

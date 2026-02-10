@@ -22,7 +22,28 @@ const LibraryPage: React.FC = () => {
         window.open(res.pdf_url, "_blank");
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to open book");
+      let errorMessage = "Failed to open book";
+      
+      const rawError = err?.message || err;
+      
+      if (typeof rawError === "string") {
+        try {
+          // Try to parse if it's a JSON string from backend
+          const parsed = JSON.parse(rawError);
+          if (parsed.detail) {
+            errorMessage = parsed.detail;
+          } else {
+            errorMessage = rawError;
+          }
+        } catch {
+          // Not JSON, just use the string
+          errorMessage = rawError;
+        }
+      } else if (typeof rawError.detail === "string") {
+         errorMessage = rawError.detail;
+      }
+
+      toast.error(errorMessage);
     }
   };
 

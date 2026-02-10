@@ -65,7 +65,7 @@ const OrderSummaryItem: React.FC<OrderSummaryItemProps> = ({ item }) => {
         </div>
       </div>
       <p className="font-bold text-text-light dark:text-text-dark">
-        ${(item.total || 0).toFixed(2)}
+        ₹{(item.total || 0).toFixed(2)}
       </p>
     </div>
   );
@@ -75,7 +75,6 @@ interface OrderSummaryProps {
   items: OrderItemType[];
   subtotal: number;
   shipping: number;
-  tax: number;
   total: number;
 }
 
@@ -83,7 +82,6 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   items,
   subtotal,
   shipping,
-  tax,
   total,
 }) => {
   return (
@@ -105,19 +103,16 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       <div className="mt-6 pt-4 border-t border-primary/20 space-y-2">
         <div className="flex justify-between text-text-light/70 ">
           <span>Subtotal</span>
-          <span>${(subtotal || 0).toFixed(2)}</span>
+          <span>₹{(subtotal || 0).toFixed(2)}</span>
         </div>
         <div className="flex justify-between text-text-light/70 ">
           <span>Shipping</span>
-          <span>${(shipping || 0).toFixed(2)}</span>
+          <span>₹{(shipping || 0).toFixed(2)}</span>
         </div>
-        <div className="flex justify-between text-text-light/70 ">
-          <span>Tax</span>
-          <span>${(tax || 0).toFixed(2)}</span>
-        </div>
+
         <div className="flex justify-between text-lg font-bold text-text-light dark:text-text-dark mt-2">
           <span>Total</span>
-          <span>${(total || 0).toFixed(2)}</span>
+          <span>₹{(total || 0).toFixed(2)}</span>
         </div>
       </div>
     </div>
@@ -725,7 +720,6 @@ const CheckoutPage: React.FC = () => {
             })),
             subtotal: cartState.summary.subtotal,
             shipping: cartState.summary.shipping,
-            tax: 0,
             total: cartState.summary.final_total,
         };
       }
@@ -741,7 +735,6 @@ const CheckoutPage: React.FC = () => {
         })),
         subtotal: addressSummary.summary.subtotal,
         shipping: addressSummary.summary.shipping,
-        tax: addressSummary.summary.tax,
         total: addressSummary.summary.total,
       };
   }
@@ -849,7 +842,6 @@ const CheckoutPage: React.FC = () => {
             items={summaryProps.items}
             subtotal={summaryProps.subtotal}
             shipping={summaryProps.shipping}
-            tax={summaryProps.tax}
             total={summaryProps.total}
           />
         ) : (

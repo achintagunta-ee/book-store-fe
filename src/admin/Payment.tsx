@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import Sidebar from "./Sidebar";
-import { Menu, X, Plus } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState, AppDispatch } from "../redux/store/store";
 import {
@@ -169,18 +169,13 @@ const PaymentsPage: React.FC = () => {
 
 	return (
 		<div className="flex h-screen w-full bg-background-light">
-			<Sidebar sidebarOpen={sidebarOpen} />{" "}
+			<Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />{" "}
 			{/* Pass sidebarOpen state to Sidebar */}
 			<main className="flex-1 px-10 py-8 overflow-y-auto">
 				<div className="flex flex-col max-w-full">
 					{/* Header */}
 					<div className="flex flex-wrap justify-between items-center gap-3 p-4">
-						<button
-							onClick={() => setSidebarOpen(!sidebarOpen)}
-							className="lg:hidden text-[#261d1a] hover:text-[#013a67] transition-colors"
-						>
-							{sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-						</button>
+
 						<h1 className="text-text-main text-4xl font-bold leading-tight tracking-tight min-w-72">
 							Payments
 						</h1>
@@ -404,7 +399,7 @@ const PaymentsPage: React.FC = () => {
 														{new Date(payment.date).toLocaleDateString()}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														${(payment.amount || 0).toFixed(2)}
+														₹{(payment.amount || 0).toFixed(2)}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-sm">
 														<div className="flex flex-col gap-1 items-start">
@@ -474,7 +469,7 @@ const PaymentsPage: React.FC = () => {
 			</main>
 			{/* Invoice Modal */}
 			{showInvoice && (
-				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+				<div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
 					<div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
 						<div className="flex justify-between items-center mb-6 border-b pb-4">
 							<h2 className="text-2xl font-bold text-text-main">Invoice Details</h2>
@@ -522,23 +517,23 @@ const PaymentsPage: React.FC = () => {
 												<tr key={idx}>
 													<td className="py-3 px-4 text-sm">{item.title}</td>
 													<td className="text-right py-3 px-4 text-sm text-gray-600">{item.quantity}</td>
-													<td className="text-right py-3 px-4 text-sm text-gray-600">${(item.price || 0).toFixed(2)}</td>
-													<td className="text-right py-3 px-4 text-sm font-medium">${(item.total || 0).toFixed(2)}</td>
+													<td className="text-right py-3 px-4 text-sm text-gray-600">₹{(item.price || 0).toFixed(2)}</td>
+													<td className="text-right py-3 px-4 text-sm font-medium">₹{(item.total || 0).toFixed(2)}</td>
 												</tr>
 											))}
 										</tbody>
 										<tfoot className="bg-gray-50">
 											<tr>
 												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Subtotal:</td>
-												<td className="text-right py-2 px-4 text-sm font-medium">${(invoice.summary.subtotal || 0).toFixed(2)}</td>
+												<td className="text-right py-2 px-4 text-sm font-medium">₹{(invoice.summary.subtotal || 0).toFixed(2)}</td>
 											</tr>
 											<tr>
 												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Shipping:</td>
-												<td className="text-right py-2 px-4 text-sm font-medium">${(invoice.summary.shipping || 0).toFixed(2)}</td>
+												<td className="text-right py-2 px-4 text-sm font-medium">₹{(invoice.summary.shipping || 0).toFixed(2)}</td>
 											</tr>
 											<tr className="border-t border-gray-200">
 												<td colSpan={3} className="text-right py-3 px-4 font-bold text-gray-900">Total:</td>
-												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">${(invoice.summary.total || 0).toFixed(2)}</td>
+												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">₹{(invoice.summary.total || 0).toFixed(2)}</td>
 											</tr>
 										</tfoot>
 									</table>
@@ -556,7 +551,7 @@ const PaymentsPage: React.FC = () => {
 
 			{/* Receipt Modal */}
 			{showReceipt && (
-				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+				<div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
 					<div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
 						<div className="flex justify-between items-center mb-6">
 							<h2 className="text-xl font-bold text-text-main">Payment Receipt</h2>
@@ -570,7 +565,7 @@ const PaymentsPage: React.FC = () => {
 							<div className="space-y-6">
 								<div className="p-6 bg-green-50 rounded-xl text-center border border-green-100">
 									<p className="text-4xl font-bold text-green-600 mb-1">
-                                        ${(receipt.amount || 0).toFixed(2)}
+                                        ₹{(receipt.amount || 0).toFixed(2)}
                                     </p>
 									<div className="inline-flex items-center gap-1 text-green-700 bg-green-100 px-2 py-0.5 rounded text-sm font-medium">
 										<svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
@@ -619,7 +614,7 @@ const PaymentsPage: React.FC = () => {
 			
 			{/* Create Payment Modal */}
 			{showCreateModal && (
-				<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+				<div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
 					<div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
 						<div className="flex justify-between items-center mb-6">
 							<h2 className="text-xl font-bold text-text-main">Record Offline Payment</h2>

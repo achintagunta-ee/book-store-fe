@@ -271,9 +271,9 @@ const OrderConfirmation: React.FC = () => {
                             {invoiceData.items.map((item: any, index: number) => (
                                 <tr key={index} className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors">
                                     <td className="py-4 px-4 font-medium text-[#333333] dark:text-[#F8F4F1]">{item.title}</td>
-                                    <td className="py-4 px-4 text-right text-[#333333]/80 dark:text-[#F8F4F1]/80">${item.price.toFixed(2)}</td>
+                                    <td className="py-4 px-4 text-right text-[#333333]/80 dark:text-[#F8F4F1]/80">₹{item.price.toFixed(2)}</td>
                                     <td className="py-4 px-4 text-center text-[#333333]/80 dark:text-[#F8F4F1]/80">{item.qty}</td>
-                                    <td className="py-4 px-4 text-right font-semibold text-[#333333] dark:text-[#F8F4F1]">${item.total.toFixed(2)}</td>
+                                    <td className="py-4 px-4 text-right font-semibold text-[#333333] dark:text-[#F8F4F1]">₹{item.total.toFixed(2)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -286,21 +286,16 @@ const OrderConfirmation: React.FC = () => {
                          {invoiceData.subtotal && (
                              <div className="flex justify-between text-sm text-[#333333]/70 dark:text-[#F8F4F1]/70">
                                 <span>Subtotal</span>
-                                <span>${invoiceData.subtotal.toFixed(2)}</span>
+                                <span>₹{invoiceData.subtotal.toFixed(2)}</span>
                             </div>
                         )}
-                        {invoiceData.tax && (
-                            <div className="flex justify-between text-sm text-[#333333]/70 dark:text-[#F8F4F1]/70">
-                                <span>Tax</span>
-                                <span>${invoiceData.tax.toFixed(2)}</span>
-                            </div>
-                        )}
+
                          {/* Divider */}
                         <div className="h-px bg-gray-200 dark:bg-gray-700 my-2"></div>
                         
                         <div className="flex justify-between items-center text-lg font-bold text-[#333333] dark:text-[#F8F4F1]">
                             <span>Total Amount</span>
-                            <span className="text-primary">${invoiceData.total.toFixed(2)}</span>
+                            <span className="text-primary">₹{invoiceData.total.toFixed(2)}</span>
                         </div>
                     </div>
                 </div>

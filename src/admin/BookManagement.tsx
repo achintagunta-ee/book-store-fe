@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Search,
   Plus,
   Edit,
   Trash2,
-  Menu,
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
-  X,
   Image as ImageIcon,
 } from "lucide-react";
 import BookImagesModal from "./BookImagesModal";
@@ -25,6 +23,8 @@ import {
 import type { Book } from "../redux/utilis/bookApi";
 import Sidebar from "./Sidebar";
 import { uploadEbookThunk } from "../redux/slice/authSlice";
+import ConfirmationModal from "./ConfirmationModal";
+
 
 const UploadEbookModal: React.FC<{
   isOpen: boolean;
@@ -65,7 +65,7 @@ const UploadEbookModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
         <h2 className="text-xl font-bold mb-4">Upload E-book for "{bookTitle}"</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -176,7 +176,7 @@ const BookModal: React.FC<{
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
         <h2 className="text-xl font-bold mb-4">
           {book?.id ? "Edit" : "Add"} Book
@@ -291,24 +291,29 @@ const BooksManagement: React.FC = () => {
   const [isImagesModalOpen, setIsImagesModalOpen] = useState(false);
   const [imagesBook, setImagesBook] = useState<Book | null>(null);
 
+  // Confirmation Modal State
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [bookToDelete, setBookToDelete] = useState<number | null>(null);
+
   const [currentPage, setCurrentPage] = useState(1);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [isSavingBook, setIsSavingBook] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchBooksAsync());
-    dispatch(fetchCategoriesAsync());
+    dispatch(fetchBooksAsync({ 
+      page: currentPage, 
+      limit: 10,
+      search: searchQuery,
+      category: selectedCategory 
+    }));
+  }, [dispatch, currentPage, searchQuery, selectedCategory]);
+
+  useEffect(() => {
+      dispatch(fetchCategoriesAsync());
   }, [dispatch]);
 
-  const filteredBooks = useMemo(() => {
-    return books
-      .filter((book) =>
-        book.title.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      .filter((book) =>
-        selectedCategory
-          ? book.category_id === parseInt(selectedCategory)
-          : true
-      );
-  }, [books, searchQuery, selectedCategory]);
+  // Client-side filtering removed in favor of server-side
+  const filteredBooks = books;
 
   const handleOpenModal = (book: Book | null = null) => {
     setCurrentBook(book);
@@ -321,6 +326,7 @@ const BooksManagement: React.FC = () => {
   };
 
   const handleSaveBook = async (formData: FormData) => {
+    setIsSavingBook(true);
     try {
       if (currentBook?.id) {
         await dispatch(
@@ -334,16 +340,34 @@ const BooksManagement: React.FC = () => {
       handleCloseModal();
     } catch (err: any) {
       toast.error(`Failed to save book: ${err.message || "Unknown error"}`);
+    } finally {
+      setIsSavingBook(false);
     }
   };
 
-  const handleDeleteBook = async (id: number) => {
-    if (window.confirm("Are you sure you want to delete this book?")) {
+  const handleDeleteClick = (id: number) => {
+    setBookToDelete(id);
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (bookToDelete) {
+      setDeletingId(bookToDelete);
       try {
-        await dispatch(deleteBookAsync(id)).unwrap();
+        await dispatch(deleteBookAsync(bookToDelete)).unwrap();
         toast.success("Book deleted successfully!");
+        dispatch(fetchBooksAsync({ 
+          page: currentPage, 
+          limit: 10,
+          search: searchQuery,
+          category: selectedCategory 
+        }));
       } catch (err: any) {
         toast.error(`Failed to delete book: ${err.message || "Unknown error"}`);
+      } finally {
+        setDeletingId(null);
+        setBookToDelete(null);
+        setIsConfirmOpen(false);
       }
     }
   };
@@ -357,7 +381,7 @@ const BooksManagement: React.FC = () => {
         onSave={handleSaveBook}
         book={currentBook}
         categories={categories}
-        isSaving={status === "loading"}
+        isSaving={isSavingBook}
       />
       <UploadEbookModal
         isOpen={isEbookModalOpen}
@@ -377,17 +401,19 @@ const BooksManagement: React.FC = () => {
         bookId={imagesBook?.id || null}
         bookTitle={imagesBook?.title}
       />
-      <Sidebar sidebarOpen={sidebarOpen} />
+      <ConfirmationModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Book"
+        message="Are you sure you want to delete this book? This action cannot be undone."
+        isProcessing={deletingId !== null}
+      />
+
+      <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
-          <header className="flex justify-between items-center mb-8 gap-4">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden text-[#261d1a] hover:text-[#013a67] transition-colors"
-            >
-              {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </header>
+
           <div className="flex flex-wrap justify-between gap-4 items-center mb-6">
             <div className="flex flex-col gap-2">
               <h1 className="text-[#261d1a] text-4xl font-bold">
@@ -498,7 +524,7 @@ const BooksManagement: React.FC = () => {
                           ?.name || "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
-                        ${(Number(book.price) || 0).toFixed(2)}
+                        ₹{(Number(book.price) || 0).toFixed(2)}
                       </td>
                       <td
                         className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
@@ -516,10 +542,15 @@ const BooksManagement: React.FC = () => {
                             <Edit size={20} />
                           </button>
                           <button
-                            onClick={() => handleDeleteBook(book.id)}
-                            className="text-[#5c2e2e] hover:text-red-600 transition-colors"
+                            onClick={() => handleDeleteClick(book.id)}
+                            disabled={deletingId === book.id}
+                            className="text-[#5c2e2e] hover:text-red-600 transition-colors disabled:opacity-50"
                           >
-                            <Trash2 size={20} />
+                            {deletingId === book.id ? (
+                                <span className="text-xs font-bold">...</span>
+                            ) : (
+                                <Trash2 size={20} />
+                            )}
                           </button>
                         </div>
                         <div className="flex items-center gap-4 mt-2">
@@ -551,30 +582,23 @@ const BooksManagement: React.FC = () => {
           </div>
 
           {/* Pagination */}
+            {/* Simple Pagination Logic - Enhance based on total pages from API */}
           <div className="flex items-center justify-center p-4 mt-4 gap-1">
-            <button className="flex w-10 h-10 items-center justify-center text-[#261d1a]/70 hover:text-[#013a67]">
+             <button 
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              className="flex w-10 h-10 items-center justify-center text-[#261d1a]/70 hover:text-[#013a67] disabled:opacity-50"
+             >
               <ChevronLeft size={20} />
             </button>
-            {[1, 2, 3].map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`text-sm font-bold flex w-10 h-10 items-center justify-center rounded-full transition-colors ${
-                  currentPage === page
-                    ? "text-white bg-[#013a67]"
-                    : "text-[#261d1a] hover:bg-[#013a67]/10"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <span className="text-sm flex w-10 h-10 items-center justify-center text-[#261d1a]">
-              ...
+            <span className="flex items-center justify-center px-4 font-bold text-[#261d1a]">
+              Page {currentPage}
             </span>
-            <button className="text-sm flex w-10 h-10 items-center justify-center text-[#261d1a] rounded-full hover:bg-[#013a67]/10">
-              10
-            </button>
-            <button className="flex w-10 h-10 items-center justify-center text-[#261d1a]/70 hover:text-[#013a67]">
+             <button 
+               // Assuming logic for disabling next if no more books, or simpler just let it fetch empty
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="flex w-10 h-10 items-center justify-center text-[#261d1a]/70 hover:text-[#013a67]"
+             >
               <ChevronRight size={20} />
             </button>
           </div>
@@ -585,3 +609,4 @@ const BooksManagement: React.FC = () => {
 };
 
 export default BooksManagement;
+

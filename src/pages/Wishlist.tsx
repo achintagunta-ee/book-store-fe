@@ -47,7 +47,7 @@ const BookCard: React.FC<{
         </Link>
         <p className="font-body text-sm text-secondary-link">{book.author}</p>
         <p className="font-body text-base font-semibold text-text-main dark:text-text-main-dark mt-2">
-          ${book.price.toFixed(2)}
+          ₹{book.price.toFixed(2)}
         </p>
         <div className="mt-4 flex flex-col gap-2">
           <button
