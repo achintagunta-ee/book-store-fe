@@ -497,7 +497,7 @@ const PaymentsPage: React.FC = () => {
 									<div>
 										<p className="text-xs uppercase text-gray-500 font-semibold mb-1">Status</p>
 										<p className="font-medium capitalize px-2 py-0.5 inline-block rounded bg-white border border-gray-200 text-sm">
-											{invoice.order_status}
+											{invoice.payment.status}
 										</p>
 									</div>
 								</div>
@@ -516,24 +516,16 @@ const PaymentsPage: React.FC = () => {
 											{invoice.items.map((item, idx) => (
 												<tr key={idx}>
 													<td className="py-3 px-4 text-sm">{item.title}</td>
-													<td className="text-right py-3 px-4 text-sm text-gray-600">{item.quantity}</td>
+													<td className="text-right py-3 px-4 text-sm text-gray-600">{item.qty}</td>
 													<td className="text-right py-3 px-4 text-sm text-gray-600">₹{(item.price || 0).toFixed(2)}</td>
 													<td className="text-right py-3 px-4 text-sm font-medium">₹{(item.total || 0).toFixed(2)}</td>
 												</tr>
 											))}
 										</tbody>
 										<tfoot className="bg-gray-50">
-											<tr>
-												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Subtotal:</td>
-												<td className="text-right py-2 px-4 text-sm font-medium">₹{(invoice.summary.subtotal || 0).toFixed(2)}</td>
-											</tr>
-											<tr>
-												<td colSpan={3} className="text-right py-2 px-4 text-sm font-medium text-gray-600">Shipping:</td>
-												<td className="text-right py-2 px-4 text-sm font-medium">₹{(invoice.summary.shipping || 0).toFixed(2)}</td>
-											</tr>
 											<tr className="border-t border-gray-200">
 												<td colSpan={3} className="text-right py-3 px-4 font-bold text-gray-900">Total:</td>
-												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">₹{(invoice.summary.total || 0).toFixed(2)}</td>
+												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">₹{(invoice.total || 0).toFixed(2)}</td>
 											</tr>
 										</tfoot>
 									</table>
