@@ -9,7 +9,7 @@ import {
   ChevronRight,
   ChevronLeft, // Added ChevronLeft for pagination
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchPublicBooksAsync,
@@ -292,6 +292,7 @@ const Pagination: React.FC<PaginationProps> = ({
 // Renamed BookListingPage to App and made it the default export
 const BookPage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
+  const [searchParams] = useSearchParams();
   const {
     publicBooks,
     publicBooksStatus,
@@ -310,6 +311,17 @@ const BookPage: React.FC = () => {
   const [sortOrder, setSortOrder] = useState("Relevance");
   const [currentPage, setCurrentPage] = useState(1);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  // Initialize filters from URL search params
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      setFilters(prev => ({
+        ...prev,
+        categories: [categoryParam]
+      }));
+    }
+  }, [searchParams]);
 
   // Fetch Categories on mount
   useEffect(() => {

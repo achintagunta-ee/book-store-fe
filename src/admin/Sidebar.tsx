@@ -11,6 +11,7 @@ import {
   XCircle,
   HelpCircle,
   Menu,
+  BarChart,
 } from "lucide-react";
 import { Link, useMatch, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -61,7 +62,8 @@ const navItems = [
   { icon: <Bell size={20} />, label: "Notifications", to: "/admin/notifications" },
   { icon: <Package size={20} />, label: "Inventory", to: "/admin/inventory" },
   { icon: <Settings size={20} />, label: "Settings", to: "/admin/settings" },
-  { icon: <HelpCircle size={20} />, label: "Help Docs", to: "/admin/help" }
+  { icon: <HelpCircle size={20} />, label: "Help Docs", to: "/admin/help" },
+  { icon: <BarChart size={20} />, label: "Analytics", to: "/admin/analytics" }
 
 ];
 

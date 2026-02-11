@@ -18,6 +18,7 @@ import OrdersPage from "./admin/Order";
 import InventoryDashboard from "./admin/Inventory";
 import AdminSettings from "./admin/Setting";
 import CategoryManagement from "./admin/CategoryManagement";
+import AnalyticsPage from "./admin/Analytics";
 import { hydrateFromStorage } from "./redux/slice/authSlice";
 import { type AppDispatch } from "./redux/store/store";
 import TrackOrderPage from "./pages/TrackOrder";
@@ -97,6 +98,7 @@ function App() {
           <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
           <Route path="/admin/cancellations" element={<CancellationsPage />} />
           <Route path="/admin/help" element={<HelpDocs />} />
+          <Route path="/admin/analytics" element={<AnalyticsPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>

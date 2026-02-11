@@ -1,4 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
+
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useRazorpay } from "react-razorpay";
 import { useDispatch, useSelector } from "react-redux";
@@ -249,6 +253,34 @@ const BookDetailPage: React.FC = () => {
   const currentUserName = userProfile
     ? `${userProfile.first_name} ${userProfile.last_name}`.trim()
     : null;
+
+  const sliderSettings = {
+    dots: false,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 5,
+    slidesToScroll: 1,
+    responsive: [
+      {
+        breakpoint: 1280,
+        settings: {
+          slidesToShow: 4,
+        },
+      },
+      {
+        breakpoint: 1024,
+        settings: {
+          slidesToShow: 3,
+        },
+      },
+      {
+        breakpoint: 640,
+        settings: {
+          slidesToShow: 2,
+        },
+      },
+    ],
+  };
 
   const {
     book: bookData,
@@ -690,106 +722,37 @@ const BookDetailPage: React.FC = () => {
                   key={review.id}
                   className="border-b border-primary/10 pb-6"
                 >
-                  {editingReview?.id === review.id ? (
-                    // Editing View
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium">
-                          Rating
-                        </label>
-                        <div className="flex">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <MdStar
-                              key={star}
-                              className={`cursor-pointer text-2xl ${
-                                star <= (editingReview?.rating || 0)
-                                  ? "text-secondary-link"
-                                  : "text-gray-300"
-                              }`}
-                              onClick={() => {
-                                if (editingReview) {
-                                  setEditingReview({
-                                    ...editingReview,
-                                    rating: star,
-                                  });
-                                }
-                              }}
-                            />
-                          ))}
-                        </div>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="mb-2 flex items-center">
+                        <p className="mr-4 font-bold">{review.user_name}</p>
+                        <StarRating rating={review.rating} />
                       </div>
-                      <div>
-                        <label
-                          htmlFor="comment"
-                          className="block text-sm font-medium"
-                        >
-                          Comment
-                        </label>
-                        <textarea
-                          id="comment"
-                          rows={3}
-                          value={editingReview?.comment || ""}
-                          onChange={(e) => {
-                            if (editingReview) {
-                              setEditingReview({
-                                ...editingReview,
-                                comment: e.target.value,
-                              });
-                            }
-                          }}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={handleUpdateReview}
-                          disabled={isUpdating}
-                          className="rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90 disabled:opacity-70 disabled:cursor-not-allowed"
-                        >
-                          {isUpdating ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          onClick={() => setEditingReview(null)}
-                          className="rounded-lg bg-gray-200 px-4 py-2 text-sm text-gray-800 hover:bg-gray-300"
-                        >
-                          Cancel
-                        </button>
-                      </div>
+                      <p className="text-text-main/90 dark:text-text-light/90">
+                        {review.comment}
+                      </p>
                     </div>
-                  ) : (
-                    // Default View
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="mb-2 flex items-center">
-                          <p className="mr-4 font-bold">{review.user_name}</p>
-                          <StarRating rating={review.rating} />
+                    {/* Show Edit/Delete buttons only if the user owns the review */}
+                    {currentUserName &&
+                      currentUserName === review.user_name && (
+                        <div className="flex flex-shrink-0 gap-2 pl-4">
+                          <button
+                            onClick={() => setEditingReview(review)}
+                            className="p-2 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                            title="Edit Review"
+                          >
+                            <MdEdit className="text-xl" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(review.id)}
+                            className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
+                            title="Delete Review"
+                          >
+                            <MdDelete className="text-xl" />
+                          </button>
                         </div>
-                        <p className="text-text-main/90 dark:text-text-light/90">
-                          {review.comment}
-                        </p>
-                      </div>
-                      {/* Show Edit/Delete buttons only if the user owns the review */}
-                      {currentUserName &&
-                        currentUserName === review.user_name && (
-                          <div className="flex flex-shrink-0 gap-2 pl-4">
-                            <button
-                              onClick={() => setEditingReview(review)}
-                              className="p-2 rounded-full text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                              title="Edit Review"
-                            >
-                              <MdEdit className="text-xl" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReview(review.id)}
-                              className="p-2 rounded-full text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors"
-                              title="Delete Review"
-                            >
-                              <MdDelete className="text-xl" />
-                            </button>
-                          </div>
-                        )}
-                    </div>
-                  )}
+                      )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -819,10 +782,14 @@ const BookDetailPage: React.FC = () => {
               <h2 className="mb-6 border-b border-primary/20 pb-4 font-display text-3xl font-bold">
                 Related Books
               </h2>
-              <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {related_books.map((book: Book) => (
-                  <RelatedBookCard key={book.id} book={book} />
-                ))}
+              <div className="mx-[-8px]">
+                <Slider {...sliderSettings}>
+                  {related_books.map((book: Book) => (
+                    <div key={book.id} className="px-2">
+                      <RelatedBookCard book={book} />
+                    </div>
+                  ))}
+                </Slider>
               </div>
             </div>
           )}
@@ -860,6 +827,91 @@ const BookDetailPage: React.FC = () => {
                   "Delete Review"
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Review Modal */}
+      {editingReview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm transition-all duration-300">
+          <div className="w-full max-w-lg scale-100 transform rounded-2xl bg-white p-8 shadow-2xl dark:bg-gray-800 transition-all duration-300">
+             <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold font-display text-gray-900 dark:text-white">
+                  Edit Review
+                </h3>
+                <button 
+                  onClick={() => setEditingReview(null)}
+                  className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+             </div>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Rating
+                </label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setEditingReview({ ...editingReview, rating: star })}
+                      className="focus:outline-none transition-transform hover:scale-110 active:scale-95"
+                    >
+                      <MdStar
+                        className={`text-4xl ${
+                          star <= editingReview.rating
+                            ? "text-yellow-400 drop-shadow-sm"
+                            : "text-gray-300 dark:text-gray-600"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">
+                  Review
+                </label>
+                <textarea
+                  rows={5}
+                  value={editingReview.comment}
+                  onChange={(e) =>
+                    setEditingReview({ ...editingReview, comment: e.target.value })
+                  }
+                  className="w-full rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 p-4 text-gray-900 dark:text-white placeholder-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none"
+                  placeholder="Share your thoughts..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setEditingReview(null)}
+                  className="px-6 py-3 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateReview}
+                  disabled={isUpdating}
+                  className="px-8 py-3 rounded-xl bg-primary text-sm font-bold text-white shadow-lg shadow-primary/30 hover:bg-primary/90 hover:shadow-xl hover:-translate-y-0.5 transition-all disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center gap-2"
+                >
+                  {isUpdating ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

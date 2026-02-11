@@ -166,7 +166,7 @@ const UserPaymentsTable: React.FC<{
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={() => onDownloadInvoice((payment.raw_id || payment.order_id) as number)} className="text-primary hover:underline font-bold text-sm">Invoice</button>
+                    <button onClick={() => onDownloadInvoice((payment.raw_id || payment.order_id) as number)} className="text-primary hover:underline font-bold text-sm">Download Invoice</button>
                   </td>
                 </tr>
               ))}
@@ -969,7 +969,7 @@ const ProfileInfo: React.FC<{ user: UserProfile }> = ({ user }) => {
         </div>
 
         <div className="p-4 rounded-lg bg-[#fbf9f8] border border-[#e6d8d1]">
-          <p className="text-sm text-gray-500 mb-1">Member Since</p>
+          <p className="text-sm text-gray-500 mb-1">Account Created</p>
           <p className="font-semibold text-[#333333]">
             {new Date(user.created_at).toLocaleDateString(undefined, {
               year: "numeric",
@@ -1079,9 +1079,7 @@ const UserProfilePage: React.FC = () => {
               >
                 <span className="truncate font-body">Edit Profile</span>
               </button>
-              <button className="flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary hover:bg-opacity-90 text-white text-sm font-semibold transition-colors flex-1 md:flex-auto">
-                <span className="truncate font-body">Change Password</span>
-              </button>
+
             </div>
           </div>
         </div>

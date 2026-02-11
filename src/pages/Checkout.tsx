@@ -644,8 +644,15 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ setStep, addressId, orderId, 
       <h2 className="text-text-light dark:text-text-dark text-2xl font-bold font-display leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
         Payment Method
       </h2>
-      <div className="px-4 py-6 bg-white dark:bg-primary/5 rounded-lg border border-primary/20 mx-4">
-        <div className="flex flex-col items-center text-center space-y-4">
+      <div className="px-4 py-6 bg-white dark:bg-primary/5 rounded-lg border border-primary/20 mx-4 flex flex-col sm:flex-row items-center gap-6">
+        <div className="flex-shrink-0 bg-white p-2 rounded">
+            <img 
+                src="https://upload.wikimedia.org/wikipedia/commons/8/89/Razorpay_logo.svg" 
+                alt="Razorpay" 
+                className="h-8 w-auto object-contain"
+            />
+        </div>
+        <div className="flex flex-col items-center sm:items-start text-center sm:text-left space-y-1">
            <p className="text-text-light dark:text-text-dark font-medium">
              Complete your order securely using Razorpay.
            </p>

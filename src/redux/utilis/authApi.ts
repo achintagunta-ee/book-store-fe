@@ -1935,3 +1935,52 @@ export interface EbookListResponse {
 export async function getEbookListApi() {
   return request<EbookListResponse>("/ebooks/admin/list");
 }
+
+// --- Admin Analytics APIs ---
+
+export interface AnalyticsOverviewResponse {
+  revenue: number;
+  orders: number;
+  avg_order_value: number;
+}
+
+export async function getAnalyticsOverviewApi() {
+  return request<AnalyticsOverviewResponse>("/admin/analytics/overview");
+}
+
+export interface RevenueChartItem {
+  date: string;
+  revenue: number;
+}
+
+export async function getRevenueChartApi() {
+  return request<RevenueChartItem[]>("/admin/analytics/revenue-chart");
+}
+
+export interface TopBookItem {
+  title: string;
+  sold: number;
+}
+
+export async function getTopBooksApi() {
+  return request<TopBookItem[]>("/admin/analytics/top-books");
+}
+
+export interface TopCustomerItem {
+  email: string;
+  spent: number;
+  orders: number;
+}
+
+export async function getTopCustomersApi() {
+  return request<TopCustomerItem[]>("/admin/analytics/top-customers");
+}
+
+export interface CategorySaleItem {
+  category: string;
+  sold: number;
+}
+
+export async function getCategorySalesApi() {
+  return request<CategorySaleItem[]>("/admin/analytics/category-sales");
+}

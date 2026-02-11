@@ -3,10 +3,12 @@ import { useDispatch, useSelector } from "react-redux";
 import { type AppDispatch, type RootState } from "../redux/store/store";
 import { getUserLibraryThunk, readEbookThunk } from "../redux/slice/authSlice";
 import { Toaster, toast } from "react-hot-toast";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ShoppingBag, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const LibraryPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
   const { userLibrary, userLibraryStatus, userLibraryError } = useSelector(
     (state: RootState) => state.auth
   );
@@ -69,8 +71,20 @@ const LibraryPage: React.FC = () => {
       <h1 className="text-3xl font-bold text-primary mb-8">My Library</h1>
 
       {userLibrary.length === 0 ? (
-        <div className="text-center py-10">
-          <p className="text-lg text-gray-600">Your library is empty.</p>
+        <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in-up">
+          <div className="bg-primary/5 p-8 rounded-full mb-6 ring-1 ring-primary/10">
+            <ShoppingBag size={64} className="text-primary/40" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3 font-display">Your Library is Empty</h2>
+          <p className="text-gray-500 mb-8 max-w-md mx-auto leading-relaxed">
+            Looks like you haven't purchased any e-books yet. Explore our collection to find your next great read.
+          </p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-8 py-3 bg-primary text-white rounded-lg font-bold shadow-lg shadow-primary/30 hover:bg-primary/90 hover:shadow-xl hover:-translate-y-0.5 transition-all flex items-center gap-2 group"
+          >
+            Browse Store <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

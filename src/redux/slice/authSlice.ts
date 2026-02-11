@@ -142,6 +142,16 @@ import {
   type EbookPurchaseItem,
   type EbookPaymentItem,
   type EbookListResponse,
+  getAnalyticsOverviewApi,
+  getRevenueChartApi,
+  getTopBooksApi,
+  getTopCustomersApi,
+  getCategorySalesApi,
+  type AnalyticsOverviewResponse,
+  type RevenueChartItem,
+  type TopBookItem,
+  type TopCustomerItem,
+  type CategorySaleItem,
 } from "../utilis/authApi";
 
 
@@ -343,6 +353,21 @@ interface AuthState {
   ebookList: EbookListResponse | null;
   ebookListStatus: "idle" | "loading" | "succeeded" | "failed";
   ebookListError: string | null;
+  analyticsOverview: AnalyticsOverviewResponse | null;
+  analyticsOverviewStatus: "idle" | "loading" | "succeeded" | "failed";
+  analyticsOverviewError: string | null;
+  revenueChart: RevenueChartItem[];
+  revenueChartStatus: "idle" | "loading" | "succeeded" | "failed";
+  revenueChartError: string | null;
+  topBooks: TopBookItem[];
+  topBooksStatus: "idle" | "loading" | "succeeded" | "failed";
+  topBooksError: string | null;
+  topCustomers: TopCustomerItem[];
+  topCustomersStatus: "idle" | "loading" | "succeeded" | "failed";
+  topCustomersError: string | null;
+  categorySales: CategorySaleItem[];
+  categorySalesStatus: "idle" | "loading" | "succeeded" | "failed";
+  categorySalesError: string | null;
 }
 
 const initialState: AuthState = {
@@ -487,6 +512,21 @@ const initialState: AuthState = {
   ebookList: null,
   ebookListStatus: "idle",
   ebookListError: null,
+  analyticsOverview: null,
+  analyticsOverviewStatus: "idle",
+  analyticsOverviewError: null,
+  revenueChart: [],
+  revenueChartStatus: "idle",
+  revenueChartError: null,
+  topBooks: [],
+  topBooksStatus: "idle",
+  topBooksError: null,
+  topCustomers: [],
+  topCustomersStatus: "idle",
+  topCustomersError: null,
+  categorySales: [],
+  categorySalesStatus: "idle",
+  categorySalesError: null,
 };
 
 export const loginThunk = createAsyncThunk(
@@ -723,6 +763,9 @@ export const trackOrderThunk = createAsyncThunk(
     try {
       return await trackOrderApi(orderId);
     } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to track order");
+      }
       return rejectWithValue("Failed to track order");
     }
   }
@@ -1915,6 +1958,79 @@ export const getEbookListThunk = createAsyncThunk(
 );
 
 
+
+export const getAnalyticsOverviewThunk = createAsyncThunk(
+  "admin/getAnalyticsOverview",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getAnalyticsOverviewApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(
+          error.message || "Failed to fetch analytics overview"
+        );
+      }
+      return rejectWithValue("Failed to fetch analytics overview");
+    }
+  }
+);
+
+export const getRevenueChartThunk = createAsyncThunk(
+  "admin/getRevenueChart",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getRevenueChartApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch revenue chart");
+      }
+      return rejectWithValue("Failed to fetch revenue chart");
+    }
+  }
+);
+
+export const getTopBooksThunk = createAsyncThunk(
+  "admin/getTopBooks",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getTopBooksApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch top books");
+      }
+      return rejectWithValue("Failed to fetch top books");
+    }
+  }
+);
+
+export const getTopCustomersThunk = createAsyncThunk(
+  "admin/getTopCustomers",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getTopCustomersApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch top customers");
+      }
+      return rejectWithValue("Failed to fetch top customers");
+    }
+  }
+);
+
+export const getCategorySalesThunk = createAsyncThunk(
+  "admin/getCategorySales",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getCategorySalesApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to fetch category sales");
+      }
+      return rejectWithValue("Failed to fetch category sales");
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -2689,8 +2805,96 @@ const authSlice = createSlice({
       .addCase(getEbookListThunk.rejected, (state, action) => {
         state.ebookListStatus = "failed";
         state.ebookListError = action.payload as string;
-      });
+      })
+      
+      // Analytics Thunks
+      .addCase(getAnalyticsOverviewThunk.pending, (state) => {
+        state.analyticsOverviewStatus = "loading";
+        state.analyticsOverviewError = null;
+      })
+      .addCase(getAnalyticsOverviewThunk.fulfilled, (state, action) => {
+        state.analyticsOverviewStatus = "succeeded";
+        state.analyticsOverview = action.payload;
+      })
+      .addCase(getAnalyticsOverviewThunk.rejected, (state, action) => {
+        state.analyticsOverviewStatus = "failed";
+        state.analyticsOverviewError = action.payload as string;
+      })
 
+      .addCase(getRevenueChartThunk.pending, (state) => {
+        state.revenueChartStatus = "loading";
+        state.revenueChartError = null;
+      })
+      .addCase(getRevenueChartThunk.fulfilled, (state, action) => {
+        state.revenueChartStatus = "succeeded";
+        state.revenueChart = action.payload;
+      })
+      .addCase(getRevenueChartThunk.rejected, (state, action) => {
+        state.revenueChartStatus = "failed";
+        state.revenueChartError = action.payload as string;
+      })
+
+      .addCase(getTopBooksThunk.pending, (state) => {
+        state.topBooksStatus = "loading";
+        state.topBooksError = null;
+      })
+      .addCase(getTopBooksThunk.fulfilled, (state, action) => {
+        state.topBooksStatus = "succeeded";
+        state.topBooks = action.payload;
+      })
+      .addCase(getTopBooksThunk.rejected, (state, action) => {
+        state.topBooksStatus = "failed";
+        state.topBooksError = action.payload as string;
+      })
+
+      .addCase(getTopCustomersThunk.pending, (state) => {
+        state.topCustomersStatus = "loading";
+        state.topCustomersError = null;
+      })
+      .addCase(getTopCustomersThunk.fulfilled, (state, action) => {
+        state.topCustomersStatus = "succeeded";
+        state.topCustomers = action.payload;
+      })
+      .addCase(getTopCustomersThunk.rejected, (state, action) => {
+        state.topCustomersStatus = "failed";
+        state.topCustomersError = action.payload as string;
+      })
+
+      .addCase(getCategorySalesThunk.pending, (state) => {
+        state.categorySalesStatus = "loading";
+        state.categorySalesError = null;
+      })
+      .addCase(getCategorySalesThunk.fulfilled, (state, action) => {
+        state.categorySalesStatus = "succeeded";
+        state.categorySales = action.payload;
+      })
+      .addCase(getCategorySalesThunk.rejected, (state, action) => {
+        state.categorySalesStatus = "failed";
+        state.categorySalesError = action.payload as string;
+      })
+      .addMatcher(
+        (action): action is { type: string; payload?: any; error?: any } =>
+          action.type.endsWith("/rejected"),
+        (state, action) => {
+          // Check if payload is "Unauthorized" string OR if it's an Error object with that message
+          const payload = action.payload;
+          const isUnauthorized =
+            payload === "Unauthorized" ||
+            (payload &&
+              typeof payload === "object" &&
+              (payload as any).message === "Unauthorized") ||
+            (action.error && action.error.message === "Unauthorized");
+
+          if (isUnauthorized) {
+            clearTokensAndProfile();
+            state.accessToken = null;
+            state.refreshToken = null;
+            state.userProfile = null;
+            state.status = "idle";
+            state.profileStatus = "idle";
+          }
+        }
+      );
   },
 });
 export const {

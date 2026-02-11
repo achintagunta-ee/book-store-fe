@@ -3,7 +3,9 @@ import { useDispatch } from "react-redux";
 import { trackOrderThunk, verifyOrderStatusThunk } from "../redux/slice/authSlice";
 import { type AppDispatch } from "../redux/store/store";
 import { type TrackOrderResponse } from "../redux/utilis/authApi";
-import { Search, Package, Calendar, Clock, AlertCircle } from "lucide-react";
+import { Search, Package, Calendar, Clock } from "lucide-react";
+
+import { Toaster, toast } from "react-hot-toast";
 
 const TrackOrderPage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -12,7 +14,7 @@ const TrackOrderPage: React.FC = () => {
     "idle" | "loading" | "succeeded" | "failed"
   >("idle");
   const [orderData, setOrderData] = useState<TrackOrderResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null); // Removed error state as it's handled by toast
 
   const handleTrackOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,13 +25,15 @@ const TrackOrderPage: React.FC = () => {
     const numericId = parseInt(cleanOrderId, 10);
 
     if (isNaN(numericId)) {
-      setError("Please enter a valid numeric Order ID (e.g., 12 or #12).");
+      const msg = "Please enter a valid numeric Order ID (e.g., 12 or #12).";
+      // setError(msg);
+      toast.error(msg);
       setStatus("failed");
       return;
     }
 
     setStatus("loading");
-    setError(null);
+    // setError(null);
     setOrderData(null);
 
     try {
@@ -48,17 +52,35 @@ const TrackOrderPage: React.FC = () => {
 
       setOrderData(result);
       setStatus("succeeded");
-    } catch (err) {
-      setError(
-        (err as string) ||
-          "Failed to track order. Please check the ID and try again."
-      );
+    } catch (err: any) {
+      let errorMessage = "Failed to track order. Please check the ID and try again.";
+      
+      if (typeof err === "string") {
+          try {
+              if (err.trim().startsWith('{')) {
+                  const parsed = JSON.parse(err);
+                  if (parsed.detail) errorMessage = parsed.detail;
+                  else if (parsed.message) errorMessage = parsed.message;
+                  else errorMessage = err;
+              } else {
+                  errorMessage = err;
+              }
+          } catch {
+              errorMessage = err;
+          }
+      } else if (err?.message) {
+          errorMessage = err.message;
+      }
+
+      // setError(errorMessage);
+      toast.error(errorMessage);
       setStatus("failed");
     }
   };
 
   return (
     <div className="flex min-h-screen flex-col bg-background-light font-body text-text-light">
+      <Toaster position="top-right" />
       <div className="flex flex-1 justify-center px-4 py-10 md:px-10 lg:px-20">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
@@ -95,12 +117,7 @@ const TrackOrderPage: React.FC = () => {
             </button>
           </form>
 
-          {status === "failed" && (
-            <div className="mb-6 flex items-start gap-3 rounded-lg bg-red-50 p-4 text-red-600 border border-red-100">
-              <AlertCircle className="h-5 w-5 shrink-0" />
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
+{/* Error message removed as it's now handled by toast */}
 
           {status === "succeeded" && orderData && (
             <div className="rounded-lg bg-white p-6 shadow-[0_4px_12px_rgba(0,0,0,0.05)] border border-primary/10">

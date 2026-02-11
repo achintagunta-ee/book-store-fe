@@ -127,8 +127,11 @@ const LoginPage: React.FC = () => {
     }
   };
 
+  const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
+
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsForgotPasswordLoading(true);
     try {
       if (forgotPasswordStep === "email") {
         await dispatch(forgotPasswordThunk(formData.forgot_email)).unwrap();
@@ -138,6 +141,7 @@ const LoginPage: React.FC = () => {
       if (formData.otp.length !== 6) {
           // You might set a validation error here instead of toast
           //But for now just returning as requested to remove toast
+          setIsForgotPasswordLoading(false);
           return;
         }
         await dispatch(
@@ -153,6 +157,8 @@ const LoginPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error(err);
+    } finally {
+      setIsForgotPasswordLoading(false);
     }
   };
 
@@ -543,9 +549,14 @@ const LoginPage: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90"
+                  disabled={isForgotPasswordLoading}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-white hover:bg-opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {forgotPasswordStep === "email"
+                  {isForgotPasswordLoading
+                    ? forgotPasswordStep === "email"
+                      ? "Sending..."
+                      : "Resetting..."
+                    : forgotPasswordStep === "email"
                     ? "Send OTP"
                     : "Reset Password"}
                 </button>

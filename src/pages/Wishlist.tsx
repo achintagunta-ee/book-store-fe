@@ -1,17 +1,12 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import Slider, { type Settings } from "react-slick";
+import { Link } from "react-router-dom";
 import {
   getWishlistThunk,
   removeFromWishlistThunk,
 } from "../redux/slice/authSlice";
 import { addToCartAsync } from "../redux/slice/cartSlice";
 import { Toaster, toast } from "react-hot-toast";
-
-// Import slick-carousel styles
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
-import { Link } from "react-router-dom";
 
 // --- Type Definition ---
 interface Book {
@@ -122,49 +117,7 @@ const WishlistPage: React.FC = () => {
     imageUrl: item.cover_image_url || "",
   }));
 
-  // Settings for the Slick Carousel
-  const sliderSettings: Settings = {
-    dots: true,
-    // MODIFIED: Changed from 5 to 4
-    infinite: books.length > 4, // Only loop if there are more slides than visible
-    speed: 500,
-    // MODIFIED: Changed from 5 to 4
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    responsive: [
-      {
-        breakpoint: 1280, // xl
-        settings: {
-          // MODIFIED: Changed from 5 to 4
-          slidesToShow: 4,
-        },
-      },
-      {
-        breakpoint: 1024, // lg
-        settings: {
-          slidesToShow: 4, // This breakpoint already showed 4
-        },
-      },
-      {
-        breakpoint: 768, // md
-        settings: {
-          slidesToShow: 3,
-        },
-      },
-      {
-        breakpoint: 640, // sm
-        settings: {
-          slidesToShow: 2,
-        },
-      },
-      {
-        breakpoint: 480,
-        settings: {
-          slidesToShow: 1,
-        },
-      },
-    ],
-  };
+
 
   return (
     <main className="flex-1 px-4 sm:px-6 md:px-10 py-10">
@@ -178,17 +131,16 @@ const WishlistPage: React.FC = () => {
       {books.length === 0 ? (
         <EmptyWishlist />
       ) : (
-        <Slider {...sliderSettings}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {books.map((book) => (
-            <div key={book.id} className="py-2 px-4">
-              <BookCard
-                book={book}
-                onRemove={handleRemove}
-                onAddToCart={handleAddToCart}
-              />
-            </div>
+            <BookCard
+              key={book.id}
+              book={book}
+              onRemove={handleRemove}
+              onAddToCart={handleAddToCart}
+            />
           ))}
-        </Slider>
+        </div>
       )}
     </main>
   );
