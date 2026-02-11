@@ -574,24 +574,28 @@ const BookDetailPage: React.FC = () => {
         <main className="flex-grow px-4 py-5 sm:px-8 md:px-20 lg:px-40">
           {/* Breadcrumbs */}
           <div className="flex flex-wrap items-center gap-2 p-4">
-            <a
+            <Link
               className="text-sm font-medium leading-normal text-primary/80 hover:text-primary dark:text-text-light/60"
-              href="#"
+              to="/"
             >
               Home
-            </a>
+            </Link>
             <span className="text-sm font-medium leading-normal text-primary/80 dark:text-text-light/60">
               /
             </span>
-            <a
-              className="text-sm font-medium leading-normal text-primary/80 hover:text-primary dark:text-text-light/60"
-              href="#"
-            >
-              {categoryName}
-            </a>
-            <span className="text-sm font-medium leading-normal text-primary/80 dark:text-text-light/60">
-              /
-            </span>
+            {categoryName && (
+              <>
+                <Link
+                  className="text-sm font-medium leading-normal text-primary/80 hover:text-primary dark:text-text-light/60"
+                  to="#"
+                >
+                  {categoryName}
+                </Link>
+                <span className="text-sm font-medium leading-normal text-primary/80 dark:text-text-light/60">
+                  /
+                </span>
+              </>
+            )}
             <span className="text-sm font-medium leading-normal text-text-main dark:text-text-light">
               {bookData.title}
             </span>

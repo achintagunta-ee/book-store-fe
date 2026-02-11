@@ -86,23 +86,33 @@ const OrderConfirmation: React.FC = () => {
       
       const response = await dispatch(action).unwrap();
       
-      let formattedData: any = response;
+      let formattedData: any;
+      const apiResponse = response as any;
+
       // Check if it's the guest response structure (has 'guest' property or 'summary' object)
-      if ('guest' in response && 'summary' in response) {
+      if ('guest' in apiResponse && 'summary' in apiResponse) {
           formattedData = {
-              ...response,
-              txn_id: response.payment.txn_id,
-              payment_status: response.payment.status,
-              // Map summary fields to top level if needed, or UI might need check. 
-              // OrderConfirmation expects top level subtotal, tax, total.
-              subtotal: response.summary.subtotal,
-              tax: response.summary.tax,
-              total: response.summary.total,
-              items: response.items.map((item: any) => ({
+              ...apiResponse,
+              txn_id: apiResponse.payment.txn_id,
+              payment_status: apiResponse.payment.status,
+              subtotal: apiResponse.summary.subtotal,
+              tax: apiResponse.summary.tax,
+              total: apiResponse.summary.total,
+              items: apiResponse.items.map((item: any) => ({
                   ...item,
                   qty: item.quantity
               }))
           };
+      } else {
+        // Logged-in user response structure (from ViewInvoiceResponse)
+        formattedData = {
+            ...apiResponse,
+             txn_id: apiResponse.payment?.txn_id, // Access from payment object
+             payment_status: apiResponse.payment?.status, // Access from payment object
+             // Calculate subtotal if not present (API gives total)
+             subtotal: apiResponse.total, 
+             items: apiResponse.items
+        };
       }
       
       setInvoiceData(formattedData);

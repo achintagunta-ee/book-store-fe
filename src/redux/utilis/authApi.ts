@@ -109,6 +109,8 @@ export interface UserProfile {
   profile_image_url?: string;
 }
 
+// 12. Get Current User Info
+// Endpoint: GET /users/me
 export async function getCurrentUserApi() {
   return request<UserProfile>("/users/me");
 }
@@ -670,7 +672,6 @@ export interface ViewInvoiceResponse {
   invoice_id: string;
   order_id: number;
   customer: {
-    id: number;
     name: string;
     email: string;
   };
@@ -679,15 +680,16 @@ export interface ViewInvoiceResponse {
     method: string;
     status: string;
     amount: number;
+    payment_id: number;
   };
-  order_status: string;
   date: string;
-  items: InvoiceItem[];
-  summary: {
-    subtotal: number;
-    shipping: number;
+  total: number;
+  items: {
+    title: string;
+    price: number;
+    qty: number;
     total: number;
-  };
+  }[];
 }
 
 export async function getInvoiceApi(orderId: number) {

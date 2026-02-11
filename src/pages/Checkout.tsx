@@ -474,7 +474,7 @@ const ReviewStep: React.FC<StepProps> = ({
             onClick={handlePlaceOrder}
             className="w-full max-w-md mx-auto flex cursor-pointer items-center justify-center overflow-hidden rounded-lg h-14 bg-primary text-white gap-2 text-lg font-bold leading-normal tracking-[0.015em] shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-shadow duration-300"
           >
-            Place Order
+            Proceed to payment
           </button>
         </div>
       </div>
@@ -705,25 +705,10 @@ const CheckoutPage: React.FC = () => {
   }, [dispatch]);
 
   // Map address summary to order summary props
-  // For guest, we use cartState
+  // For guest OR fallback, we use cartState
   let summaryProps = null; 
-  
-  if (isGuest) {
-      if (cartState.items.length > 0 || cartState.summary.final_total > 0) {
-        summaryProps = {
-            items: cartState.items.map((item) => ({
-                book_title: item.book_name,
-                price: item.effective_price,
-                quantity: item.quantity,
-                total: item.effective_price * item.quantity,
-                imageUrl: item.cover_image_url
-            })),
-            subtotal: cartState.summary.subtotal,
-            shipping: cartState.summary.shipping,
-            total: cartState.summary.final_total,
-        };
-      }
-  } else if (addressSummary?.summary) {
+
+  if (!isGuest && addressSummary?.summary) {
       summaryProps = {
         items: addressSummary.summary.items.map((item) => ({
           book_title: item.book_title,
@@ -737,6 +722,22 @@ const CheckoutPage: React.FC = () => {
         shipping: addressSummary.summary.shipping,
         total: addressSummary.summary.total,
       };
+  }
+  
+  // Fallback to cartState if addressSummary is not ready (and we have cart data)
+  if (!summaryProps && (cartState.items.length > 0 || cartState.summary.final_total > 0)) {
+       summaryProps = {
+            items: cartState.items.map((item) => ({
+                book_title: item.book_name,
+                price: item.effective_price,
+                quantity: item.quantity,
+                total: item.effective_price * item.quantity,
+                imageUrl: item.cover_image_url
+            })),
+            subtotal: cartState.summary.subtotal,
+            shipping: cartState.summary.shipping,
+            total: cartState.summary.final_total,
+        };
   }
 
   const renderStep = () => {

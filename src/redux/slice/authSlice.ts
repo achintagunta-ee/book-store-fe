@@ -2108,6 +2108,9 @@ const authSlice = createSlice({
         );
         state.wishlistCount = Math.max(0, state.wishlistCount - 1);
       })
+      .addCase(addToWishlistThunk.fulfilled, (state) => {
+        state.wishlistCount += 1;
+      })
       .addCase(getWishlistCountThunk.fulfilled, (state, action) => {
         state.wishlistCount = action.payload.count;
       })

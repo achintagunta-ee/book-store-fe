@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
+import { User } from "lucide-react";
 import { type RootState, type AppDispatch } from "../redux/store/store";
 import {
   updateUserProfileThunk,
+  getCurrentUserThunk,
   getOrderHistoryThunk,
   getOrderDetailsThunk,
   getUserPaymentsThunk,
@@ -386,6 +388,46 @@ const AddressModal: React.FC<{
   );
 };
 
+const DeleteAddressModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  isDeleting: boolean;
+}> = ({ isOpen, onClose, onConfirm, isDeleting }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+        <h3 className="mb-4 text-2xl font-bold text-[#333333]">
+          Delete Address
+        </h3>
+        <p className="mb-6 text-gray-600">
+          Are you sure you want to delete this address? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isDeleting}
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {isDeleting ? "Deleting..." : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AddressList: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const { addresses, addressStatus } = useSelector(
@@ -395,6 +437,9 @@ const AddressList: React.FC = () => {
   const [editingAddress, setEditingAddress] = useState<AddressItem | undefined>(
     undefined
   );
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (addressStatus === "idle") {
@@ -402,18 +447,27 @@ const AddressList: React.FC = () => {
     }
   }, [addressStatus, dispatch]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = (id: number) => {
     if (!id) {
       toast.error("Invalid address ID");
       return;
     }
-    if (window.confirm("Are you sure you want to delete this address?")) {
-      try {
-        await dispatch(deleteAddressThunk(id)).unwrap();
-        toast.success("Address deleted");
-      } catch (err: any) {
-        toast.error(err || "Failed to delete");
-      }
+    setAddressToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!addressToDelete) return;
+    setIsDeleting(true);
+    try {
+      await dispatch(deleteAddressThunk(addressToDelete)).unwrap();
+      toast.success("Address deleted");
+      setIsDeleteModalOpen(false);
+      setAddressToDelete(null);
+    } catch (err: any) {
+      toast.error(err || "Failed to delete");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -475,6 +529,12 @@ const AddressList: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         address={editingAddress}
+      />
+      <DeleteAddressModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        isDeleting={isDeleting}
       />
     </section>
   );
@@ -760,6 +820,23 @@ const OrderDetailsModal: React.FC<{
             </div>
         )}
 
+        <div className="mb-6">
+          <h4 className="font-bold text-lg mb-3">Items</h4>
+          <div className="space-y-3">
+            {order.items?.map((item: any) => (
+              <div key={item.id} className="flex justify-between items-center text-sm">
+                <div>
+                   <p className="font-medium text-gray-800">{item.book_title}</p>
+                   <p className="text-gray-500">Qty: {item.quantity}</p>
+                </div>
+                <p className="font-semibold text-gray-800">
+                  ₹{((item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="border-t border-gray-200 pt-4">
           <div className="flex justify-between py-2">
             <span className="text-gray-600">Subtotal</span>
@@ -773,18 +850,12 @@ const OrderDetailsModal: React.FC<{
               ₹{(order.order.shipping || 0).toFixed(2)}
             </span>
           </div>
-          <div className="flex justify-between py-2">
-            <span className="text-gray-600">Tax</span>
-            <span className="font-semibold">₹{(order.order.tax || 0).toFixed(2)}</span>
-          </div>
           <div className="flex justify-between py-2 border-t border-gray-200 mt-2">
             <span className="text-lg font-bold">Total</span>
             <span className="text-lg font-bold text-primary">
               ₹{(order.order.total || 0).toFixed(2)}
             </span>
           </div>
-
-
         </div>
 
         {order.order.status.toLowerCase() === 'pending' && (
@@ -896,10 +967,7 @@ const ProfileInfo: React.FC<{ user: UserProfile }> = ({ user }) => {
           <p className="text-sm text-gray-500 mb-1">Role</p>
           <p className="font-semibold text-[#333333] capitalize">{user.role}</p>
         </div>
-        <div className="p-4 rounded-lg bg-[#fbf9f8] border border-[#e6d8d1]">
-          <p className="text-sm text-gray-500 mb-1">Client</p>
-          <p className="font-semibold text-[#333333]">{user.client}</p>
-        </div>
+
         <div className="p-4 rounded-lg bg-[#fbf9f8] border border-[#e6d8d1]">
           <p className="text-sm text-gray-500 mb-1">Member Since</p>
           <p className="font-semibold text-[#333333]">
@@ -928,11 +996,16 @@ const UserProfilePage: React.FC = () => {
   >("profile");
 
   useEffect(() => {
-    // If there's no user profile, they shouldn't be here. Redirect to login.
-    if (!userProfile) {
+    dispatch(getCurrentUserThunk());
+  }, [dispatch]);
+
+  const { profileStatus } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if (!userProfile && profileStatus === "failed") {
       navigate("/login");
     }
-  }, [userProfile, navigate]);
+  }, [userProfile, profileStatus, navigate]);
 
   useEffect(() => {
     if (activeTab === "orders") {
@@ -977,16 +1050,19 @@ const UserProfilePage: React.FC = () => {
         <div className="p-4">
           <div className="flex w-full flex-col gap-6 md:flex-row md:justify-between md:items-center">
             <div className="flex flex-col md:flex-row gap-6 items-center text-center md:text-left">
-              <div
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32 shadow-sm"
-                style={{
-                  backgroundImage: `url("${
-                    userProfile.profile_image_url ||
-                    userProfile.profile_image ||
-                    "https://cdn.usegalileo.ai/sdxl10/68579698-0cfa-4680-a292-0b819f390076.png"
-                  }")`,
-                }}
-              ></div>
+              <div className="flex shrink-0 h-32 w-32 items-center justify-center rounded-full bg-gray-100 border border-gray-200 shadow-sm overflow-hidden">
+                {userProfile.profile_image_url || userProfile.profile_image ? (
+                  <img
+                    src={
+                      (userProfile.profile_image_url || userProfile.profile_image) ?? undefined
+                    }
+                    alt="Profile"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <User className="h-16 w-16 text-gray-400" />
+                )}
+              </div>
               <div className="flex flex-col justify-center">
                 <h1 className="text-[#333333] text-3xl font-bold leading-tight tracking-[-0.015em] font-display">
                   {userProfile.first_name} {userProfile.last_name}

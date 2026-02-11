@@ -12,6 +12,8 @@ import {
   getCurrentUserThunk,
 } from "../redux/slice/authSlice";
 
+import { toast, Toaster } from "react-hot-toast";
+
 const LoginPage: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -99,7 +101,7 @@ const LoginPage: React.FC = () => {
            return;
         }
         await dispatch(registerThunk(formData)).unwrap();
-        // toast.success("Registration successful!");
+        toast.success("Registration successful!");
         setIsRegistering(false); // Switch back to login form
         setFormData({
           // Reset form fields
@@ -156,6 +158,7 @@ const LoginPage: React.FC = () => {
 
   return (
     <div className="relative flex min-h-screen w-full flex-col items-center justify-center bg-background-light p-4 font-body  lg:p-8">
+      <Toaster position="top-center" />
       <div className="flex w-full max-w-5xl flex-col shadow-soft md:flex-row">
         {/* Left Panel: Image */}
         <div className="w-full md:w-1/2">

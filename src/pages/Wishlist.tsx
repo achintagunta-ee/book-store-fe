@@ -68,20 +68,20 @@ const BookCard: React.FC<{
   );
 };
 
+import { MdFavoriteBorder } from "react-icons/md";
+
 // --- Empty State Sub-Component ---
 const EmptyWishlist: React.FC = () => {
   return (
-    <div className="text-center py-20">
-      <span className="material-symbols-outlined text-6xl text-secondary-link/50">
-        favorite
-      </span>
+    <div className="text-center py-20 flex flex-col items-center">
+      <MdFavoriteBorder className="text-6xl text-yellow-300" />
       <h2 className="font-display text-2xl font-bold mt-4">
         Your wishlist is empty
       </h2>
       <p className="mt-2 text-secondary-link">
         Explore our collection and find your next great read!
       </p>
-      <Link to="/books">
+      <Link to="/">
         <button className="mt-6 flex mx-auto items-center justify-center rounded-lg h-12 px-6 bg-primary text-white font-body text-base font-semibold tracking-wide hover:bg-primary/90 transition-colors">
           Go to Shop
         </button>
@@ -99,8 +99,13 @@ const WishlistPage: React.FC = () => {
     dispatch(getWishlistThunk());
   }, [dispatch]);
 
-  const handleRemove = (id: string) => {
-    dispatch(removeFromWishlistThunk(parseInt(id)));
+  const handleRemove = async (id: string) => {
+    try {
+      await dispatch(removeFromWishlistThunk(parseInt(id))).unwrap();
+      toast.success("Removed from wishlist");
+    } catch (error) {
+      toast.error("Failed to remove from wishlist");
+    }
   };
 
   const handleAddToCart = (id: string) => {
@@ -165,7 +170,7 @@ const WishlistPage: React.FC = () => {
     <main className="flex-1 px-4 sm:px-6 md:px-10 py-10">
       <Toaster position="top-right" />
       <div className="flex flex-wrap justify-between items-center gap-4 pb-8">
-        <h1 className="font-display text-4xl lg:text-5xl font-bold tracking-tight text-text-main dark:text-text-main-dark">
+        <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-text-main dark:text-text-main-dark">
           My Wishlist
         </h1>
       </div>
