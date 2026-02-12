@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { Toaster } from "react-hot-toast";
+import BookCard from "../components/BookCard";
 import {
   fetchHomeDataAsync,
 } from "../redux/slice/bookSlice";
 import { type RootState, type AppDispatch } from "../redux/store/store";
 import { type Book as ApiBook } from "../redux/utilis/bookApi";
 import { Link, useNavigate } from "react-router-dom";
-import { addToCartAsync } from "../redux/slice/cartSlice";
-import { Toaster, toast } from "react-hot-toast";
+
 
 interface Book {
   id: number;
@@ -18,45 +19,7 @@ interface Book {
   price: number;
 }
 
-const BookCard: React.FC<{ book: Book }> = ({ book }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  return (
-    <div className="group relative flex h-full min-w-[240px] w-[240px] flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-gray-100 dark:border-gray-700">
-      <Link to={`/book/detail/${book.slug}`} className="relative h-[250px] w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
-         <img 
-            src={book.imageUrl || "https://via.placeholder.com/400x600.png?text=No+Image"} 
-            alt={book.title}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-         />
-         {/* Price Tag Overlay */}
-         <div className="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-gray-900 shadow-sm backdrop-blur-sm dark:bg-black/80 dark:text-white">
-            ₹{book.price}
-         </div>
-      </Link>
-      <div className="flex flex-1 flex-col justify-between p-4">
-        <div>
-          <Link to={`/book/detail/${book.slug}`}>
-            <h3 className="line-clamp-2 text-base font-bold text-gray-900 hover:text-primary dark:text-white transition-colors" title={book.title}>
-              {book.title}
-            </h3>
-          </Link>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {book.author}
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            dispatch(addToCartAsync({ book_id: book.id, quantity: 1, book }));
-            toast.success("Added to cart");
-          }}
-          className="mt-4 flex w-full items-center justify-center rounded-lg bg-primary/10 py-2 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-95"
-        >
-          Add to Cart
-        </button>
-      </div>
-    </div>
-  );
-};
+
 
 const BookSection: React.FC<{ title: string; books: Book[] }> = ({
   title,
@@ -77,7 +40,16 @@ const BookSection: React.FC<{ title: string; books: Book[] }> = ({
             <div className="flex gap-4 md:gap-6 pr-4 md:pr-0">
                 {books.map((book) => (
                 <div key={book.id} className="snap-start">
-                    <BookCard book={book} />
+                    <BookCard 
+                      id={book.id}
+                      title={book.title}
+                      author={book.author}
+                      imageUrl={book.imageUrl}
+                      slug={book.slug}
+                      price={book.price}
+                      originalBook={book}
+                      className="min-w-[240px] w-[240px]"
+                    />
                 </div>
                 ))}
             </div>

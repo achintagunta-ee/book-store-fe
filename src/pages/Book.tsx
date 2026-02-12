@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import BookCard from "../components/BookCard";
 
 // --- Icon Imports ---
 import {
@@ -9,14 +10,14 @@ import {
   ChevronRight,
   ChevronLeft, // Added ChevronLeft for pagination
 } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchPublicBooksAsync,
   fetchPublicCategoriesAsync,
 } from "../redux/slice/bookSlice";
-import { addToCartAsync } from "../redux/slice/cartSlice";
-import { Toaster, toast } from "react-hot-toast";
+
+import { Toaster } from "react-hot-toast";
 import { type RootState, type AppDispatch } from "../redux/store/store";
 import { type Book as ApiBook, type Category } from "../redux/utilis/bookApi";
 
@@ -44,40 +45,7 @@ const BOOKS_PER_PAGE = 8;
 
 // --- Placeholder Components (to be implemented or imported) ---
 
-const BookCard: React.FC<{ book: Book; onAddToCart: (id: number) => void }> = ({
-  book,
-  onAddToCart,
-}) => (
-  <div className="flex flex-col gap-4 rounded-lg bg-background-light shadow-soft hover:shadow-lift transition-shadow duration-300 group ">
-    <Link to={`/book/detail/${book.slug}`}>
-      <div
-        className="w-full bg-center bg-no-repeat h-[250px] bg-cover rounded-t-lg"
-        role="img"
-        aria-label={`Book cover for ${book.title} by ${book.author}`}
-        style={{ backgroundImage: `url("${book.imageUrl}")` }}
-      ></div>
-    </Link>
-    <div className="p-4 pt-0 flex flex-col flex-grow">
-      <Link to={`/book/detail/${book.slug}`}>
-        <h3 className="font-display text-lg font-bold leading-tight text-text-main dark:text-text-main-dark hover:text-primary transition-colors">
-          {book.title}
-        </h3>
-      </Link>
-      <p className="font-body text-sm text-secondary-link">{book.author}</p>
-      <p className="font-body text-base font-semibold text-text-main dark:text-text-main-dark mt-2">
-        ₹{book.price}
-      </p>
-      <div className="mt-4 flex flex-col gap-2">
-        <button
-          onClick={() => onAddToCart(book.id)}
-          className="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-primary text-white font-body text-sm font-semibold tracking-wide hover:bg-primary/90 transition-colors"
-        >
-          Add to Cart
-        </button>
-      </div>
-    </div>
-  </div>
-);
+
 
 // --- START OF UPDATED DUMMY LAYOUT ---
 const Sidebar: React.FC<{
@@ -419,11 +387,7 @@ const BookPage: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleAddToCart = (id: number) => {
-    const book = allBooksData.find(b => b.id === id);
-    dispatch(addToCartAsync({ book_id: id, quantity: 1, book }));
-    toast.success("Added to cart");
-  };
+
 
   if (publicBooksStatus === "loading" && currentPage === 1 && publicBooks.length === 0) {
      // Only show full loader on initial load or if we have no data
@@ -559,8 +523,14 @@ const BookPage: React.FC = () => {
                   {allBooksData.map((book) => (
                     <BookCard
                       key={book.id}
-                      book={book}
-                      onAddToCart={handleAddToCart}
+                      id={book.id}
+                      title={book.title}
+                      author={book.author}
+                      imageUrl={book.imageUrl}
+                      slug={book.slug}
+                      price={book.price}
+                      originalBook={book}
+                      className="w-full"
                     />
                   ))}
                 </div>

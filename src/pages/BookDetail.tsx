@@ -1,7 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import Slider from "react-slick";
-import "slick-carousel/slick/slick.css";
-import "slick-carousel/slick/slick-theme.css";
+
 
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { useRazorpay } from "react-razorpay";
@@ -59,35 +57,10 @@ const StarRating: React.FC<{ rating: number; className?: string }> = ({
   </div>
 );
 
-const RelatedBookCard: React.FC<{ book: Book }> = ({ book }) => {
-  const imageUrl = book.cover_image_url || "https://via.placeholder.com/400x600.png?text=No+Image";
+import BookCard from "../components/BookCard";
 
-  return (
-    <div className="group relative">
-      <div className="aspect-[2/3] w-full overflow-hidden rounded-lg bg-gray-200">
-        <img
-          src={imageUrl}
-          alt={book.title}
-          className="h-full w-full object-cover object-center group-hover:opacity-75"
-        />
-      </div>
-      <div className="mt-4">
-        <h3 className="text-md font-medium text-gray-900 dark:text-text-light">
-          <Link to={`/book/detail/${book.slug}`}>
-            <span aria-hidden="true" className="absolute inset-0" />
-            {book.title}
-          </Link>
-        </h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-text-light/70">
-          {book.author}
-        </p>
-        <p className="text-sm font-bold text-primary">
-          ₹{book.price.toFixed(2)}
-        </p>
-      </div>
-    </div>
-  );
-};
+
+
 
 const ReviewForm: React.FC<{
   bookSlug: string;
@@ -254,33 +227,7 @@ const BookDetailPage: React.FC = () => {
     ? `${userProfile.first_name} ${userProfile.last_name}`.trim()
     : null;
 
-  const sliderSettings = {
-    dots: false,
-    infinite: false,
-    speed: 500,
-    slidesToShow: 5,
-    slidesToScroll: 1,
-    responsive: [
-      {
-        breakpoint: 1280,
-        settings: {
-          slidesToShow: 4,
-        },
-      },
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 3,
-        },
-      },
-      {
-        breakpoint: 640,
-        settings: {
-          slidesToShow: 2,
-        },
-      },
-    ],
-  };
+
 
   const {
     book: bookData,
@@ -782,14 +729,25 @@ const BookDetailPage: React.FC = () => {
               <h2 className="mb-6 border-b border-primary/20 pb-4 font-display text-3xl font-bold">
                 Related Books
               </h2>
-              <div className="mx-[-8px]">
-                <Slider {...sliderSettings}>
-                  {related_books.map((book: Book) => (
-                    <div key={book.id} className="px-2">
-                      <RelatedBookCard book={book} />
-                    </div>
-                  ))}
-                </Slider>
+              <div className="relative group/slider">
+                  <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pl-4 md:pl-0 -mx-4 md:mx-0 snap-x snap-mandatory">
+                      <div className="flex gap-4 md:gap-6 pr-4 md:pr-0">
+                          {related_books.map((book: Book) => (
+                          <div key={book.id} className="snap-start">
+                              <BookCard 
+                                id={book.id}
+                                title={book.title}
+                                author={book.author}
+                                imageUrl={book.cover_image_url || "https://via.placeholder.com/400x600.png?text=No+Image"}
+                                slug={book.slug}
+                                price={book.price}
+                                originalBook={book}
+                                className="min-w-[240px] w-[240px]"
+                              />
+                          </div>
+                          ))}
+                      </div>
+                  </div>
               </div>
             </div>
           )}

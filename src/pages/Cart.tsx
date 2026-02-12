@@ -53,7 +53,7 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
   };
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-6 p-6 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-4 sm:p-6 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-700/30">
       {/* Image & Main Info */}
       <div className="flex items-start gap-5 flex-grow">
         {item.slug ? (
@@ -75,12 +75,12 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
         <div className="flex flex-col gap-1 py-1">
           {item.slug ? (
             <Link to={`/book/detail/${item.slug}`}>
-                <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark line-clamp-2 hover:text-primary transition-colors">
+                <h3 className="text-base sm:text-lg font-bold text-text-main dark:text-text-main-dark line-clamp-2 hover:text-primary transition-colors">
                 {item.book_name}
                 </h3>
             </Link>
           ) : (
-            <h3 className="text-lg font-bold text-text-main dark:text-text-main-dark line-clamp-2">
+            <h3 className="text-base sm:text-lg font-bold text-text-main dark:text-text-main-dark line-clamp-2">
               {item.book_name}
             </h3>
           )}
@@ -228,24 +228,25 @@ const CartPage: React.FC = () => {
 
   return (
     <main
-      className={`flex-1 container mx-auto px-4 py-12 transition-opacity duration-300 min-h-screen ${
+      className={`flex-1 container mx-auto px-4 py-6 md:py-12 transition-opacity duration-300 min-h-screen ${
         status === "loading" ? "opacity-70" : "opacity-100"
       }`}
     >
-      <div className="flex flex-col md:flex-row justify-between items-end gap-4 mb-8 border-b border-gray-200 pb-6">
+      <div className="flex flex-row items-center justify-between gap-4 mb-6 md:mb-8 border-b border-gray-200 pb-4 md:pb-6">
         <div>
-          <h1 className="text-4xl font-bold font-display text-text-main dark:text-text-main-dark">
+          <h1 className="text-2xl md:text-4xl font-bold font-display text-text-main dark:text-text-main-dark">
             Your Cart
           </h1>
-          <p className="text-text-main/60 mt-1 dark:text-text-light/60">
+          <p className="text-sm md:text-base text-text-main/60 mt-1 dark:text-text-light/60">
             {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your bag
           </p>
         </div>
         {cartItems.length > 0 && (
           <button
             onClick={() => dispatch(clearCartAsync())}
-            className="group flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 shadow-sm transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-700 hover:shadow active:scale-95 dark:border-red-900/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
+            className="group shrink-0 flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 md:px-4 md:py-2.5 text-xs md:text-sm font-bold text-red-600 shadow-sm transition-all hover:border-red-300 hover:bg-red-50 hover:text-red-700 hover:shadow active:scale-95 dark:border-red-900/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-900/20"
           >
+            {/* Mobile: Icon only or simplified text? keeping text as requested */}
             <span>Clear Cart</span>
           </button>
         )}

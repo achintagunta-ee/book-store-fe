@@ -337,11 +337,11 @@ const OrdersPage: React.FC = () => {
 			<Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
 			<main className="flex-1 overflow-y-auto">
-				<div className="px-10 py-5">
+				<div className="px-4 md:px-10 py-5">
 					{/* Header */}
 
 					<div className="flex flex-wrap justify-between gap-3 p-4">
-						<h1 className="text-card-border text-4xl font-black leading-tight tracking-tight">
+						<h1 className="text-card-border text-2xl md:text-4xl font-black leading-tight tracking-tight">
 							Orders 
 						</h1>
 						<button

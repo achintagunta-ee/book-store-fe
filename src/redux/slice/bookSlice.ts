@@ -547,7 +547,13 @@ export const bookSlice = createSlice({
       })
       .addCase(fetchPublicBooksAsync.fulfilled, (state, action) => {
         state.publicBooksStatus = "succeeded";
-        state.publicBooks = action.payload.results;
+        // Check if payload is the new structure with 'books'
+        if ('books' in action.payload) {
+             state.publicBooks = (action.payload as any).books;
+        } else {
+             // Fallback or explicit check
+             state.publicBooks = (action.payload as any).results || []; 
+        }
         state.totalBooks = action.payload.total_items;
       })
       .addCase(fetchPublicBooksAsync.rejected, (state, action) => {
@@ -579,7 +585,8 @@ export const bookSlice = createSlice({
       })
       .addCase(filterBooksAsync.fulfilled, (state, action) => {
         state.publicBooksStatus = "succeeded";
-        state.publicBooks = action.payload;
+        state.publicBooks = action.payload.books;
+        state.totalBooks = action.payload.total_items;
       })
       .addCase(fetchFeaturedBooksAsync.pending, (state) => {
         state.featuredBooksStatus = "loading";

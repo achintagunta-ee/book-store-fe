@@ -87,6 +87,14 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         </button>
       )}
 
+      {/* Mobile Backdrop */}
+      {sidebarOpen && setSidebarOpen && (
+        <div 
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
     <div
       className={`${
         sidebarOpen ? "w-64" : "w-0"

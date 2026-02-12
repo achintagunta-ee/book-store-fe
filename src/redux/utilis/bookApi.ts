@@ -81,6 +81,20 @@ export interface FilterParams {
   sort?: string;
 }
 
+export interface FilterResponse {
+  filters: {
+    category_id: number | null;
+    author: string | null;
+    min_price: number | null;
+    max_price: number | null;
+    rating: number | null;
+  };
+  total_items: number;
+  page: number;
+  total_pages: number;
+  books: Book[];
+}
+
 export interface CreateCategoryData {
   name: string;
   description: string;
@@ -361,7 +375,7 @@ export const fetchPublicBooksApi = async (params: FilterParams = {}) => {
   // Append other filter params as needed if the backend supports them on /books/
   // Based on user request, the endpoint is /books
   
-  return request<PaginatedBookResponse>(`/books?${query.toString()}`);
+  return request<FilterResponse>(`/books/filter?${query.toString()}`);
 };
 
 // Fetch a single book by ID
@@ -416,6 +430,7 @@ export const searchCategoryByNameApi = async (name: string) => {
 export const filterBooksApi = async (params: FilterParams) => {
   const query = new URLSearchParams();
   if (params.category) query.append("category", params.category);
+  if (params.category_id) query.append("category_id", String(params.category_id));
   if (params.author) query.append("author", params.author);
   if (params.price_min !== undefined)
     query.append("min_price", String(params.price_min));
@@ -424,7 +439,7 @@ export const filterBooksApi = async (params: FilterParams) => {
   if (params.rating_min !== undefined)
     query.append("rating", String(params.rating_min));
 
-  return request<Book[]>(`/books/filter?${query.toString()}`);
+  return request<FilterResponse>(`/books/filter?${query.toString()}`);
 };
 
 // Get Featured Books

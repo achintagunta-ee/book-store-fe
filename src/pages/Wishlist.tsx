@@ -5,63 +5,20 @@ import {
   getWishlistThunk,
   removeFromWishlistThunk,
 } from "../redux/slice/authSlice";
-import { addToCartAsync } from "../redux/slice/cartSlice";
+
 import { Toaster, toast } from "react-hot-toast";
+
+import BookCard from "../components/BookCard";
 
 // --- Type Definition ---
 interface Book {
-  id: string;
+  id: number;
   slug: string;
   title: string;
   author: string;
   price: number;
   imageUrl: string;
 }
-
-// --- Book Card Sub-Component ---
-const BookCard: React.FC<{
-  book: Book;
-  onRemove: (id: string) => void;
-  onAddToCart: (id: string) => void;
-}> = ({ book, onRemove, onAddToCart }) => {
-  return (
-    <div className="flex flex-col gap-4 rounded-lg bg-background-light  shadow-soft hover:shadow-lift transition-shadow duration-300 group">
-      <Link to={`/book/detail/${book.slug}`}>
-        <div
-          className="w-full bg-center bg-no-repeat h-[250px] bg-cover rounded-t-lg"
-          role="img"
-          aria-label={`Book cover for ${book.title} by ${book.author}`}
-          style={{ backgroundImage: `url("${book.imageUrl}")` }}
-        ></div>
-      </Link>
-      <div className="p-4 pt-0 flex flex-col flex-grow">
-        <Link to={`/book/detail/${book.slug}`}>
-          <h3 className="font-display text-lg font-bold leading-tight text-text-main dark:text-text-main-dark hover:text-primary transition-colors">
-            {book.title}
-          </h3>
-        </Link>
-        <p className="font-body text-sm text-secondary-link">{book.author}</p>
-        <p className="font-body text-base font-semibold text-text-main dark:text-text-main-dark mt-2">
-          ₹{book.price.toFixed(2)}
-        </p>
-        <div className="mt-4 flex flex-col gap-2">
-          <button
-            onClick={() => onAddToCart(book.id)}
-            className="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-primary text-white font-body text-sm font-semibold tracking-wide hover:bg-primary/90 transition-colors"
-          >
-            Add to Cart
-          </button>
-          <button
-            onClick={() => onRemove(book.id)}
-            className="w-full flex items-center justify-center rounded-lg h-10 px-4 text-secondary-link font-body text-sm font-semibold hover:bg-primary/10 transition-colors"
-          >
-            Remove
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 import { MdFavoriteBorder } from "react-icons/md";
 
@@ -94,22 +51,19 @@ const WishlistPage: React.FC = () => {
     dispatch(getWishlistThunk());
   }, [dispatch]);
 
-  const handleRemove = async (id: string) => {
+  const handleRemove = async (id: number) => {
     try {
-      await dispatch(removeFromWishlistThunk(parseInt(id))).unwrap();
+      await dispatch(removeFromWishlistThunk(id)).unwrap();
       toast.success("Removed from wishlist");
     } catch (error) {
       toast.error("Failed to remove from wishlist");
     }
   };
 
-  const handleAddToCart = (id: string) => {
-    dispatch(addToCartAsync({ book_id: parseInt(id), quantity: 1 }));
-    toast.success("Added to cart");
-  };
+
 
   const books: Book[] = (wishlist || []).map((item: any) => ({
-    id: item.book_id.toString(),
+    id: item.book_id || item.id,
     slug: item.slug,
     title: item.title,
     author: item.author,
@@ -135,9 +89,14 @@ const WishlistPage: React.FC = () => {
           {books.map((book) => (
             <BookCard
               key={book.id}
-              book={book}
+              id={book.id}
+              title={book.title}
+              author={book.author}
+              imageUrl={book.imageUrl}
+              slug={book.slug}
+              price={book.price}
               onRemove={handleRemove}
-              onAddToCart={handleAddToCart}
+              originalBook={book}
             />
           ))}
         </div>

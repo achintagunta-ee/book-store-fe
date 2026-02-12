@@ -3,6 +3,8 @@ import HomePage from "./pages/HomePage";
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import LoginPage from "./pages/Login";
+import ForgotPasswordPage from "./pages/ForgotPassword";
+import ResetPasswordPage from "./pages/ResetPassword";
 import BookPage from "./pages/Book";
 import BookDetailPage from "./pages/BookDetail";
 import CartPage from "./pages/Cart";
@@ -72,6 +74,8 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:code" element={<ResetPasswordPage />} />
           <Route path="/track-order" element={<TrackOrderPage />} />
           <Route path="/books" element={<BookPage />} />
           <Route path="/book/detail/:slug" element={<BookDetailPage />} />

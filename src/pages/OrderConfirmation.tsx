@@ -142,12 +142,12 @@ const OrderConfirmation: React.FC = () => {
                 {trackingInfo && (
                   <div className="">
                     <h3 className="text-[#333333] dark:text-[#F8F4F1] text-lg font-bold mb-4">
-                      Tracking Information
+                      Order Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
                         <p className="text-[#333333]/60 dark:text-[#F8F4F1]/60 text-sm font-normal leading-normal">
-                          Tracking ID
+                          Order ID
                         </p>
                         <p className="text-[#333333] dark:text-[#F8F4F1] text-base font-medium leading-normal">
                           {trackingInfo.order_id}

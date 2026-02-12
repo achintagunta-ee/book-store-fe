@@ -40,6 +40,9 @@ const OrderHistoryTable: React.FC<{
     Shipped: "bg-shipped",
     Delivered: "bg-delivered",
     pending: "bg-yellow-100 text-yellow-800",
+    paid: "bg-green-100 text-green-800",
+    processing: "bg-blue-100 text-blue-800",
+    cancelled: "bg-red-100 text-red-800",
   };
 
   const safeOrders = Array.isArray(orders) ? orders : [];
@@ -51,36 +54,79 @@ const OrderHistoryTable: React.FC<{
       </h2>
       <div className="px-4 py-3">
         {/* Desktop Table */}
-        <div className="hidden md:block overflow-hidden rounded-xl border border-[#e6d8d1] bg-[#fbf9f8] shadow-sm">
+        <div className="hidden md:block overflow-hidden rounded-xl border border-[#e6d8d1] bg-[#fbf9f8] shadow-sm overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-[#f3ebe8]">
               <tr>
-                <th className="px-6 py-4 text-left text-[#333333] w-[150px] text-sm font-semibold leading-normal font-body">Order ID</th>
-                <th className="px-6 py-4 text-left text-[#333333] w-[200px] text-sm font-semibold leading-normal font-body">Date</th>
-                <th className="px-6 py-4 text-left text-[#333333] w-[150px] text-sm font-semibold leading-normal font-body">Total</th>
-                <th className="px-6 py-4 text-left text-[#333333] w-[120px] text-sm font-semibold leading-normal font-body">Status</th>
-                <th className="px-6 py-4 text-left text-[#333333] w-[150px] text-sm font-semibold leading-normal font-body"></th>
+                <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Order ID</th>
+                <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Date</th>
+                <th className="px-4 py-4 text-left text-[#333333] w-auto text-sm font-semibold leading-normal font-body">Book Title</th>
+                <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Price</th>
+                <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Qty</th>
+                <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Total</th>
+                <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Status</th>
+                <th className="px-4 py-4 text-right text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e6d8d1]">
               {safeOrders.map((order) => (
                 <tr key={order.order_id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">{order.order_id}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">{order.date}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm font-normal font-body">₹{order.total.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-sm font-normal">
-                    <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold font-body ${statusStyles[order.status] || "bg-gray-100 text-gray-800"}`}>
+                  <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">{order.order_id}</td>
+                  <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">{order.date}</td>
+                  
+                  {/* Book Titles */}
+                  <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">
+                    <div className="flex flex-col gap-2">
+                      {order.items?.map((item, idx) => (
+                        <div key={idx} className="h-6 flex items-center">
+                           <span className="truncate max-w-[300px]" title={item.book_title}>{item.book_title}</span>
+                        </div>
+                      ))}
+                      {(!order.items || order.items.length === 0) && <div className="h-6 flex items-center"><span className="text-gray-400 italic">No items</span></div>}
+                    </div>
+                  </td>
+
+                  {/* Prices */}
+                  <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">
+                    <div className="flex flex-col gap-2">
+                       {order.items?.map((item, idx) => (
+                          <div key={idx} className="h-6 flex items-center">
+                             <span>₹{item.price.toFixed(2)}</span>
+                          </div>
+                       ))}
+                    </div>
+                  </td>
+
+                  {/* Quantity */}
+                  <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">
+                    <div className="flex flex-col gap-2">
+                       {order.items?.map((item, idx) => (
+                          <div key={idx} className="h-6 flex items-center pl-2">
+                             <span>{item.quantity}</span>
+                          </div>
+                       ))}
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-4 text-gray-600 text-sm font-bold font-body align-top">₹{order.total.toFixed(2)}</td>
+                  <td className="px-4 py-4 text-sm font-normal align-top">
+                    <span className={`inline-flex items-center justify-center rounded-full h-7 px-3 text-xs font-bold font-body capitalize ${statusStyles[order.status.toLowerCase()] || "bg-gray-100 text-gray-800"}`}>
                       {order.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button className="text-primary font-bold text-sm hover:underline" onClick={() => onViewDetails(order.raw_id)}>View Details</button>
+                  <td className="px-4 py-4 text-right align-top">
+                    <button 
+                      className="px-3 py-1.5 border border-primary text-primary text-xs font-bold rounded hover:bg-primary hover:text-white transition-colors"
+                      onClick={() => onViewDetails(order.raw_id)}
+                    >
+                      View Details
+                    </button>
                   </td>
                 </tr>
               ))}
               {safeOrders.length === 0 && (
                 <tr>
-                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No orders found.</td>
+                   <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No orders found.</td>
                 </tr>
               )}
             </tbody>
@@ -96,7 +142,7 @@ const OrderHistoryTable: React.FC<{
                     <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Order ID</span>
                     <p className="font-bold text-[#333333]">{order.order_id}</p>
                  </div>
-                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusStyles[order.status] || "bg-gray-100 text-gray-800"}`}>
+                 <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${statusStyles[order.status.toLowerCase()] || "bg-gray-100 text-gray-800"}`}>
                     {order.status}
                  </span>
               </div>
@@ -111,6 +157,26 @@ const OrderHistoryTable: React.FC<{
                     <p className="text-sm font-bold text-gray-900">₹{order.total.toFixed(2)}</p>
                  </div>
               </div>
+
+               {/* Mobile Items List */}
+               <div className="border-t border-[#e6d8d1] pt-3 mt-1">
+                  <span className="text-xs text-gray-500 block mb-2 font-semibold uppercase tracking-wider">Order Items</span>
+                  <div className="flex flex-col gap-2 bg-white/50 p-2 rounded-lg border border-gray-100">
+                    <div className="grid grid-cols-12 text-xs font-semibold text-gray-500 mb-1 border-b border-gray-100 pb-1">
+                       <div className="col-span-6">Title</div>
+                       <div className="col-span-3 text-right">Price</div>
+                       <div className="col-span-3 text-right">Qty</div>
+                    </div>
+                    {order.items?.map((item, idx) => (
+                       <div key={idx} className="grid grid-cols-12 text-sm items-center">
+                          <div className="col-span-6 truncate pr-1" title={item.book_title}>{item.book_title}</div>
+                          <div className="col-span-3 text-right text-xs">₹{item.price}</div>
+                          <div className="col-span-3 text-right text-xs">x{item.quantity}</div>
+                       </div>
+                    ))}
+                    {(!order.items || order.items.length === 0) && <span className="text-gray-400 italic text-xs">No items details available</span>}
+                  </div>
+               </div>
 
               <button 
                 onClick={() => onViewDetails(order.raw_id)}
@@ -294,13 +360,13 @@ const AddressModal: React.FC<{
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:p-6">
+      <div className="w-full max-w-md rounded-lg bg-white p-5 md:p-8 shadow-lg max-h-[90vh] overflow-y-auto">
         <h3 className="mb-4 text-2xl font-bold text-[#333333]">
           {address ? "Edit Address" : "Add Address"}
         </h3>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
               name="first_name"
@@ -338,7 +404,7 @@ const AddressModal: React.FC<{
             className="h-12 w-full rounded-lg border border-black/10 p-4"
             required
           />
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
               name="city"
@@ -397,8 +463,8 @@ const DeleteAddressModal: React.FC<{
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:p-6">
+      <div className="w-full max-w-md rounded-lg bg-white p-5 md:p-8 shadow-lg">
         <h3 className="mb-4 text-2xl font-bold text-[#333333]">
           Delete Address
         </h3>
@@ -594,8 +660,8 @@ const EditProfileModal: React.FC<{
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:p-6">
+      <div className="w-full max-w-md rounded-lg bg-white p-5 md:p-8 shadow-lg">
         <h3 className="mb-4 text-2xl font-bold text-text-main">Edit Profile</h3>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -766,8 +832,8 @@ const OrderDetailsModal: React.FC<{
   const hasRequest = !!cancellationStatus?.request_id;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-lg max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:p-6">
+      <div className="w-full max-w-2xl rounded-lg bg-white p-5 md:p-8 shadow-lg max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold text-[#333333]">
             Order Details #{order.order.id}
@@ -1046,8 +1112,8 @@ const UserProfilePage: React.FC = () => {
 
   return (
     <>
-      <main className="flex-grow mt-8 p-5">
-        <div className="p-4">
+      <main className="flex-grow mt-4 md:mt-8 p-3 md:p-5">
+        <div className="p-2 md:p-4">
           <div className="flex w-full flex-col gap-6 md:flex-row md:justify-between md:items-center">
             <div className="flex flex-col md:flex-row gap-6 items-center text-center md:text-left">
               <div className="flex shrink-0 h-32 w-32 items-center justify-center rounded-full bg-gray-100 border border-gray-200 shadow-sm overflow-hidden">
@@ -1064,7 +1130,7 @@ const UserProfilePage: React.FC = () => {
                 )}
               </div>
               <div className="flex flex-col justify-center">
-                <h1 className="text-[#333333] text-3xl font-bold leading-tight tracking-[-0.015em] font-display">
+                <h1 className="text-[#333333] text-2xl md:text-3xl font-bold leading-tight tracking-[-0.015em] font-display">
                   {userProfile.first_name} {userProfile.last_name}
                 </h1>
                 <p className="text-gray-500 text-base font-normal leading-normal font-body break-all">
@@ -1085,7 +1151,7 @@ const UserProfilePage: React.FC = () => {
         </div>
         <div className="mt-8">
           <div className="pb-3">
-            <div className="flex border-b border-[#e6d8d1] px-4 gap-4 md:gap-8 overflow-x-auto no-scrollbar whitespace-nowrap">
+            <div className="flex border-b border-[#e6d8d1] px-2 md:px-4 gap-4 md:gap-8 overflow-x-auto no-scrollbar whitespace-nowrap">
               <button
                 onClick={() => setActiveTab("profile")}
                 className={`flex flex-col items-center justify-center border-b-[3px] pb-[13px] pt-4 transition-colors px-2 md:px-0 ${

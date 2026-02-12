@@ -810,7 +810,7 @@ const CheckoutPage: React.FC = () => {
   return (
     <main className="flex-1 mt-8 px-0 sm:px-10">
       <div className="flex flex-wrap justify-between gap-3 p-4">
-        <p className="text-text-light dark:text-text-dark text-4xl lg:text-5xl font-black font-display leading-tight tracking-[-0.033em] min-w-72">
+        <p className="text-text-light dark:text-text-dark text-3xl lg:text-5xl font-black font-display leading-tight tracking-[-0.033em] min-w-72">
           {isGuest ? "Guest Checkout" : "Checkout"}
         </p>
       </div>

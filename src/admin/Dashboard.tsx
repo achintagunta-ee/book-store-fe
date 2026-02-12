@@ -85,12 +85,12 @@ const Dashboard: React.FC = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex flex-col p-8 overflow-y-auto w-full">
+        <div className="flex flex-col p-4 md:p-8 overflow-y-auto w-full">
           {/* Header */}
           <header className="flex justify-between items-center mb-8 gap-4">
             <div className="flex items-center gap-4">
 
-              <h1 className="text-3xl font-bold text-[#261d1a]">Dashboard</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-[#261d1a]">Dashboard</h1>
             </div>
             <div className="flex-1 max-w-md">
               <div className="flex items-stretch rounded-lg h-12 shadow-sm">

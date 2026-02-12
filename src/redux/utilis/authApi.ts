@@ -564,6 +564,12 @@ export interface OrderHistoryItem {
   total: number;
   status: string;
   details_url: string;
+  items: {
+    book_title: string;
+    price: number;
+    quantity: number;
+    total: number;
+  }[];
 }
 
 export interface OrderHistoryResponse {
