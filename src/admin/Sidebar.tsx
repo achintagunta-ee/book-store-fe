@@ -90,7 +90,7 @@ const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       {/* Mobile Backdrop */}
       {sidebarOpen && setSidebarOpen && (
         <div 
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden backdrop-blur-sm transition-opacity cursor-pointer"
           onClick={() => setSidebarOpen(false)}
         />
       )}

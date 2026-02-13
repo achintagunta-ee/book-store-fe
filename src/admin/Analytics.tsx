@@ -8,7 +8,9 @@ import {
   getTopBooksThunk,
   getTopCustomersThunk,
   getCategorySalesThunk,
+  exportAnalyticsReportThunk,
 } from "../redux/slice/authSlice";
+import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   DollarSign, 
@@ -28,6 +30,7 @@ const Analytics: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoveredCategoryIndex, setHoveredCategoryIndex] = useState<number | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const {
     analyticsOverview,
@@ -119,6 +122,34 @@ const Analytics: React.FC = () => {
     setHoveredIndex(index);
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const resultAction = await dispatch(exportAnalyticsReportThunk());
+      if (exportAnalyticsReportThunk.fulfilled.match(resultAction)) {
+        const blob = resultAction.payload;
+        // Create a URL for the blob
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        // Set default filename, can be adjusted based on needs or headers
+        const date = new Date().toISOString().split('T')[0];
+        link.setAttribute('download', `analytics_report_${date}.xlsx`); 
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        toast.success("Report downloaded successfully");
+      } else {
+        toast.error(resultAction.payload as string || "Failed to download report");
+      }
+    } catch (error) {
+      toast.error("An error occurred during export");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="flex h-screen w-full bg-gray-50 font-sans text-gray-900">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
@@ -142,9 +173,19 @@ const Analytics: React.FC = () => {
                 </button>
               </div>
               
-              <button className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors shadow-sm">
-                <Download className="w-4 h-4" />
-                <span>Download Report</span>
+              <button 
+                onClick={handleExport}
+                disabled={isExporting}
+                className={`flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm ${
+                  isExporting ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-50"
+                }`}
+              >
+                {isExporting ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-500 border-t-transparent" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                <span>{isExporting ? "Downloading..." : "Download Report"}</span>
               </button>
             </div>
           </div>

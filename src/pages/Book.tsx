@@ -54,7 +54,8 @@ const Sidebar: React.FC<{
   categories: Category[];
   authors: string[];
   maxPrice: number;
-}> = ({ onApplyFilters, initialFilters, categories, authors, maxPrice }) => {
+  isLoading?: boolean;
+}> = ({ onApplyFilters, initialFilters, categories, authors, maxPrice, isLoading = false }) => {
   const [localFilters, setLocalFilters] = useState<Filters>(initialFilters);
 
   useEffect(() => {
@@ -170,9 +171,19 @@ const Sidebar: React.FC<{
       {/* Apply Button */}
       <button
         onClick={() => onApplyFilters(localFilters)}
-        className="w-full bg-primary text-white font-bold py-3 px-4 rounded-lg hover:bg-primary/90 transition-colors"
+        disabled={isLoading}
+        className={`w-full bg-primary text-white font-bold py-3 px-4 rounded-lg hover:bg-primary/90 transition-colors flex justify-center items-center gap-2 ${
+          isLoading ? "opacity-70 cursor-not-allowed" : ""
+        }`}
       >
-        Apply Filters
+        {isLoading ? (
+          <>
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <span>Applying...</span>
+          </>
+        ) : (
+          "Apply Filters"
+        )}
       </button>
     </div>
   );
@@ -422,6 +433,7 @@ const BookPage: React.FC = () => {
                 categories={publicCategories}
                 authors={sidebarAuthors}
                 maxPrice={2000}
+                isLoading={publicBooksStatus === "loading"}
               />
             </aside>
 
@@ -453,6 +465,7 @@ const BookPage: React.FC = () => {
                   categories={publicCategories}
                   authors={sidebarAuthors}
                   maxPrice={2000}
+                  isLoading={publicBooksStatus === "loading"}
                 />
               </div>
             </div>

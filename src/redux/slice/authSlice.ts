@@ -152,6 +152,7 @@ import {
   type TopBookItem,
   type TopCustomerItem,
   type CategorySaleItem,
+  exportAnalyticsReportApi,
 } from "../utilis/authApi";
 
 
@@ -2027,6 +2028,20 @@ export const getCategorySalesThunk = createAsyncThunk(
         return rejectWithValue(error.message || "Failed to fetch category sales");
       }
       return rejectWithValue("Failed to fetch category sales");
+    }
+  }
+);
+
+export const exportAnalyticsReportThunk = createAsyncThunk(
+  "admin/exportAnalyticsReport",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await exportAnalyticsReportApi();
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to export report");
+      }
+      return rejectWithValue("Failed to export report");
     }
   }
 );

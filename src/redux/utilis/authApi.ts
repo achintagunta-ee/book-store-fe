@@ -1990,3 +1990,30 @@ export interface CategorySaleItem {
 export async function getCategorySalesApi() {
   return request<CategorySaleItem[]>("/admin/analytics/category-sales");
 }
+
+export async function exportAnalyticsReportApi() {
+  const token = localStorage.getItem("auth_access");
+  const headers: Record<string, string> = {
+    "Accept": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, text/csv, application/json, */*"
+  };
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`; // Authorization header
+  }
+
+  const res = await fetch(`${BASE_URL}/admin/analytics/export`, {
+    headers,
+  });
+
+  if (res.status === 401 && window.location.pathname !== "/login") {
+      localStorage.removeItem("auth_access");
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+  }
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || "Failed to export report");
+  }
+
+  return await res.blob();
+}

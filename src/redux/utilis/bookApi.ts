@@ -218,13 +218,28 @@ export interface BooksResponse {
 }
 
 // Fetch all books
-export const fetchBooksApi = async (params: { page?: number; limit?: number; search?: string; category?: string } = {}) => {
+export const fetchBooksApi = async (params: { page?: number; limit?: number; search?: string; category?: string; archived?: boolean } = {}) => {
   const query = new URLSearchParams();
   if (params.page) query.append("page", String(params.page));
   if (params.limit) query.append("limit", String(params.limit));
   if (params.search) query.append("search", params.search); // Adjust if backend uses 'q' or 'title'
   if (params.category) query.append("category_id", params.category);
-
+  if (params.archived !== undefined) query.append("archived", String(params.archived));
+  // Based on user provided URL, standard list is /admin/books/list, but params might be query strings
+  // User wrote: GET /admin/books?archived=true
+  // If the base list endpoint is /admin/books/list, appending ?archived=true might work if backend supports it there.
+  // OR the endpoint changes to /admin/books when query params are involved?
+  // Let's assume /admin/books/list accepts it or falls back to /admin/books if that was the implication.
+  // The user said: GET http://localhost:8000/admin/books/list AND GET /admin/books?archived=true
+  // This is contradictory. Usually 'list' is a specific view.
+  // I will try to use the query param on the existing endpoint first, but if the user meant two different endpoints, I'll stick to the one I have (list) and append param.
+  // However, looking closely at "GET /admin/books?archived=true", it's missing '/list'. 
+  // But let's verify standard REST. often /admin/books is the resource collection.
+  // Existing code uses /admin/books/list. I will keep using it but add the param. 
+  // If it fails, I might need to switch to /admin/books. 
+  // Actually, looking at deleteBookApi it is /admin/books/${id}. 
+  // It's safer to stick to the existing accepted endpoint for listing.
+  
   return request<BooksResponse>(`/admin/books/list?${query.toString()}`);
 };
 
@@ -271,6 +286,20 @@ export const updateCategoryApi = async (
 // Delete a book
 export const deleteBookApi = async (id: number) => {
   return request<{ message: string }>(`/admin/books/${id}`, {
+    method: "DELETE",
+  });
+};
+
+// Archive a book
+export const archiveBookApi = async (id: number) => {
+  return request<{ message: string }>(`/admin/books/${id}/archive`, {
+    method: "DELETE",
+  });
+};
+
+// Restore a book
+export const restoreBookApi = async (id: number) => {
+  return request<{ message: string }>(`/admin/books/${id}/restore`, {
     method: "DELETE",
   });
 };

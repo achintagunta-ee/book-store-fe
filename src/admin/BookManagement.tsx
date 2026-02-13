@@ -8,6 +8,8 @@ import {
   ChevronRight,
   SlidersHorizontal,
   Image as ImageIcon,
+  RotateCcw,
+  Archive,
 } from "lucide-react";
 import BookImagesModal from "./BookImagesModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,6 +21,8 @@ import {
   createBookAsync,
   updateBookAsync,
   deleteBookAsync,
+  archiveBookAsync,
+  restoreBookAsync,
 } from "../redux/slice/bookSlice";
 import type { Book } from "../redux/utilis/bookApi";
 import Sidebar from "./Sidebar";
@@ -298,15 +302,19 @@ const BooksManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [isSavingBook, setIsSavingBook] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archivingId, setArchivingId] = useState<number | null>(null);
+  const [restoringId, setRestoringId] = useState<number | null>(null);
 
   useEffect(() => {
     dispatch(fetchBooksAsync({ 
       page: currentPage, 
       limit: 10,
       search: searchQuery,
-      category: selectedCategory 
+      category: selectedCategory,
+      archived: showArchived
     }));
-  }, [dispatch, currentPage, searchQuery, selectedCategory]);
+  }, [dispatch, currentPage, searchQuery, selectedCategory, showArchived]);
 
   useEffect(() => {
       dispatch(fetchCategoriesAsync());
@@ -355,12 +363,13 @@ const BooksManagement: React.FC = () => {
       setDeletingId(bookToDelete);
       try {
         await dispatch(deleteBookAsync(bookToDelete)).unwrap();
-        toast.success("Book deleted successfully!");
+        toast.success("Book deleted permanently!");
         dispatch(fetchBooksAsync({ 
           page: currentPage, 
           limit: 10,
           search: searchQuery,
-          category: selectedCategory 
+          category: selectedCategory,
+          archived: showArchived
         }));
       } catch (err: any) {
         toast.error(`Failed to delete book: ${err.message || "Unknown error"}`);
@@ -369,6 +378,30 @@ const BooksManagement: React.FC = () => {
         setBookToDelete(null);
         setIsConfirmOpen(false);
       }
+    }
+  };
+
+  const handleArchiveClick = async (id: number) => {
+    setArchivingId(id);
+    try {
+        await dispatch(archiveBookAsync(id)).unwrap();
+        toast.success("Book archived successfully");
+    } catch (error: any) {
+         toast.error(error.message || "Failed to archive book");
+    } finally {
+        setArchivingId(null);
+    }
+  };
+
+  const handleRestoreClick = async (id: number) => {
+    setRestoringId(id);
+    try {
+        await dispatch(restoreBookAsync(id)).unwrap();
+        toast.success("Book restored successfully");
+    } catch (error: any) {
+         toast.error(error.message || "Failed to restore book");
+    } finally {
+        setRestoringId(null);
     }
   };
 
@@ -430,6 +463,29 @@ const BooksManagement: React.FC = () => {
               <Plus size={18} />
               <span>Add New Book</span>
             </button>
+          </div>
+
+          <div className="flex gap-4 mb-6 border-b border-[#5c2e2e]/10">
+              <button
+                onClick={() => { setShowArchived(false); setCurrentPage(1); }}
+                className={`pb-2 px-4 font-medium transition-colors border-b-2 ${
+                  !showArchived 
+                    ? "border-[#013a67] text-[#013a67]" 
+                    : "border-transparent text-gray-500 hover:text-[#013a67]"
+                }`}
+              >
+                Active Books
+              </button>
+              <button
+                 onClick={() => { setShowArchived(true); setCurrentPage(1); }}
+                 className={`pb-2 px-4 font-medium transition-colors border-b-2 ${
+                   showArchived
+                     ? "border-[#013a67] text-[#013a67]" 
+                     : "border-transparent text-gray-500 hover:text-[#013a67]"
+                 }`}
+              >
+                Archived Books
+              </button>
           </div>
 
           {/* Filters */}
@@ -531,48 +587,91 @@ const BooksManagement: React.FC = () => {
                           book.stock < 10 ? "text-red-600" : "text-[#261d1a]/80"
                         }`}
                       >
-                        {book.stock}
+                          {book.stock}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center gap-4">
-                          <button
-                            onClick={() => handleOpenModal(book)}
-                            className="text-[#5c2e2e] hover:text-[#013a67] transition-colors"
-                          >
-                            <Edit size={20} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(book.id)}
-                            disabled={deletingId === book.id}
-                            className="text-[#5c2e2e] hover:text-red-600 transition-colors disabled:opacity-50"
-                          >
-                            {deletingId === book.id ? (
-                                <span className="text-xs font-bold">...</span>
-                            ) : (
-                                <Trash2 size={20} />
-                            )}
-                          </button>
+                          {!showArchived && (
+                             <button
+                               onClick={() => handleOpenModal(book)}
+                               className="text-[#5c2e2e] hover:text-[#013a67] transition-colors"
+                               title="Edit"
+                             >
+                               <Edit size={20} />
+                             </button>
+                          )}
+                          
+                          {!showArchived ? (
+                            <button
+                                onClick={() => handleArchiveClick(book.id)}
+                                disabled={archivingId === book.id}
+                                className="text-orange-600 hover:text-orange-800 transition-colors disabled:opacity-50"
+                                title="Archive"
+                            >
+                                {archivingId === book.id ? (
+                                    <span className="text-xs font-bold">...</span>
+                                ) : (
+                                    <Trash2 size={20} />
+                                )}
+                            </button>
+                          ) : (
+                             <button
+                                onClick={() => handleRestoreClick(book.id)}
+                                disabled={restoringId === book.id}
+                                className="text-green-600 hover:text-green-800 transition-colors disabled:opacity-50"
+                                title="Restore"
+                            >
+                                {restoringId === book.id ? (
+                                    <span className="text-xs font-bold">...</span>
+                                ) : (
+                                    <RotateCcw size={20} />
+                                )}
+                            </button>
+                          )}
+
+                          {/* Allow permanent delete only if archived? Or keep standard delete for both? 
+                              User request implies Archive replaces Delete for active books. 
+                              Usually Admin can delete permanently from Archive. 
+                              I'll add permanent delete button for Archived books. 
+                          */}
+                          {showArchived && (
+                              <button
+                                onClick={() => handleDeleteClick(book.id)}
+                                disabled={deletingId === book.id}
+                                className="text-red-600 hover:text-red-800 transition-colors disabled:opacity-50"
+                                title="Delete Permanently"
+                              >
+                                {deletingId === book.id ? (
+                                    <span className="text-xs font-bold">...</span>
+                                ) : (
+                                    <Trash2 size={20} />
+                                )}
+                              </button>
+                          )}
+
                         </div>
-                        <div className="flex items-center gap-4 mt-2">
-                           <button
-                            onClick={() => {
-                              setEbookBook(book);
-                              setIsEbookModalOpen(true);
-                            }}
-                            className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
-                          >
-                           <Plus size={14} /> Upload E-book
-                          </button>
-                          <button
-                            onClick={() => {
-                              setImagesBook(book);
-                              setIsImagesModalOpen(true);
-                            }}
-                            className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
-                          >
-                           <ImageIcon size={14} /> Manage Images
-                          </button>
-                        </div>
+                        {!showArchived && (
+                            <div className="flex items-center gap-4 mt-2">
+                               <button
+                                onClick={() => {
+                                  setEbookBook(book);
+                                  setIsEbookModalOpen(true);
+                                }}
+                                className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
+                              >
+                               <Plus size={14} /> Upload E-book
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setImagesBook(book);
+                                  setIsImagesModalOpen(true);
+                                }}
+                                className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
+                              >
+                               <ImageIcon size={14} /> Manage Images
+                              </button>
+                            </div>
+                        )}
                       </td>
                     </tr>
                   ))}

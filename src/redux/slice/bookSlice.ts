@@ -41,6 +41,8 @@ import {
   listBookImagesApi,
   reorderBookImagesApi,
   type BookImage,
+  archiveBookApi,
+  restoreBookApi,
 } from "../utilis/bookApi";
 
 export interface BookState {
@@ -108,7 +110,7 @@ const initialState: BookState = {
 // Admin Thunks
 export const fetchBooksAsync = createAsyncThunk(
   "books/fetchBooks",
-  async (params: { page?: number; limit?: number; search?: string; category?: string } = {}) => {
+  async (params: { page?: number; limit?: number; search?: string; category?: string; archived?: boolean } = {}) => {
     const response = await fetchBooksApi(params);
     return response;
   }
@@ -134,6 +136,22 @@ export const deleteBookAsync = createAsyncThunk(
   "books/deleteBook",
   async (id: number) => {
     await deleteBookApi(id);
+    return id;
+  }
+);
+
+export const archiveBookAsync = createAsyncThunk(
+  "books/archiveBook",
+  async (id: number) => {
+    await archiveBookApi(id);
+    return id;
+  }
+);
+
+export const restoreBookAsync = createAsyncThunk(
+  "books/restoreBook",
+  async (id: number) => {
+    await restoreBookApi(id);
     return id;
   }
 );
@@ -512,6 +530,12 @@ export const bookSlice = createSlice({
         }
       })
       .addCase(deleteBookAsync.fulfilled, (state, action) => {
+        state.books = state.books.filter((book) => book.id !== action.payload);
+      })
+      .addCase(archiveBookAsync.fulfilled, (state, action) => {
+        state.books = state.books.filter((book) => book.id !== action.payload);
+      })
+      .addCase(restoreBookAsync.fulfilled, (state, action) => {
         state.books = state.books.filter((book) => book.id !== action.payload);
       })
       .addCase(fetchCategoriesAsync.pending, (state) => {
