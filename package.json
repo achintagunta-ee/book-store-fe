@@ -12,7 +12,13 @@
 	"dependencies": {
 		"@reduxjs/toolkit": "^2.11.0",
 		"@tailwindcss/vite": "^4.1.14",
+		"@types/file-saver": "^2.0.7",
+		"buffer": "^6.0.3",
+		"events": "^3.3.0",
+		"exceljs": "^4.4.0",
+		"file-saver": "^2.0.5",
 		"framer-motion": "^12.34.0",
+		"html2canvas": "^1.4.1",
 		"lucide-react": "^0.552.0",
 		"react": "^19.1.1",
 		"react-dom": "^19.1.1",
@@ -24,10 +30,12 @@
 		"react-slick": "^0.31.0",
 		"recharts": "^3.7.0",
 		"slick-carousel": "^1.8.1",
-		"tailwindcss": "^4.1.14"
+		"tailwindcss": "^4.1.14",
+		"xlsx": "^0.18.5"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.36.0",
+		"@types/html2canvas": "^0.5.35",
 		"@types/node": "^24.6.0",
 		"@types/react": "^19.1.16",
 		"@types/react-dom": "^19.1.9",

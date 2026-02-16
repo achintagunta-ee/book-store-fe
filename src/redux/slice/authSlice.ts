@@ -18,6 +18,9 @@ import {
   getOrderConfirmationApi,
   completePaymentApi,
   trackOrderApi,
+  getOrderTimelineApi,
+  type OrderTimelineItem,
+  type OrderTimelineResponse,
   getAddressesApi,
   addAddressApi,
   updateAddressApi,
@@ -228,6 +231,9 @@ interface AuthState {
   currentOrder: OrderDetailResponse | null;
   currentOrderStatus: "idle" | "loading" | "succeeded" | "failed";
   currentOrderError: string | null;
+  orderTimeline: OrderTimelineItem[] | null;
+  orderTimelineStatus: "idle" | "loading" | "succeeded" | "failed";
+  orderTimelineError: string | null;
   checkoutOrder: OrderDetailResponse | null;
   checkoutOrderStatus: "idle" | "loading" | "succeeded" | "failed";
   checkoutOrderError: string | null;
@@ -392,6 +398,9 @@ const initialState: AuthState = {
   currentOrder: null,
   currentOrderStatus: "idle",
   currentOrderError: null,
+  orderTimeline: null,
+  orderTimelineStatus: "idle",
+  orderTimelineError: null,
   checkoutOrder: null,
   checkoutOrderStatus: "idle",
   checkoutOrderError: null,
@@ -768,6 +777,21 @@ export const trackOrderThunk = createAsyncThunk(
         return rejectWithValue(error.message || "Failed to track order");
       }
       return rejectWithValue("Failed to track order");
+    }
+  }
+);
+
+export const getOrderTimelineThunk = createAsyncThunk(
+  "checkout/getOrderTimeline",
+  async (orderId: number, { rejectWithValue }) => {
+    try {
+      const response = await getOrderTimelineApi(orderId);
+      return response.data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Failed to get timeline");
+      }
+      return rejectWithValue("Failed to get timeline");
     }
   }
 );
@@ -2446,8 +2470,8 @@ const authSlice = createSlice({
       })
       .addCase(getInventoryListThunk.fulfilled, (state, action) => {
         state.inventoryListStatus = "succeeded";
-        if (action.payload && Array.isArray(action.payload.data)) {
-            state.inventoryList = action.payload.data;
+        if (action.payload && (Array.isArray(action.payload.data) || Array.isArray(action.payload.results))) {
+            state.inventoryList = action.payload.data || action.payload.results || [];
             state.inventoryMeta = {
               total: action.payload.total,
               total_pages: action.payload.total_pages,
@@ -2455,7 +2479,7 @@ const authSlice = createSlice({
               limit: action.payload.limit
             };
         } else {
-            console.warn("getInventoryListThunk: payload data is not an array", action.payload);
+            console.warn("getInventoryListThunk: payload data/results is not an array", action.payload);
             state.inventoryList = [];
             state.inventoryMeta = null;
         }
@@ -2477,6 +2501,22 @@ const authSlice = createSlice({
             };
           }
         }
+      });
+
+    // Timeline
+    builder
+      .addCase(getOrderTimelineThunk.pending, (state) => {
+        state.orderTimelineStatus = "loading";
+        state.orderTimelineError = null;
+        state.orderTimeline = null;
+      })
+      .addCase(getOrderTimelineThunk.fulfilled, (state, action) => {
+        state.orderTimelineStatus = "succeeded";
+        state.orderTimeline = action.payload;
+      })
+      .addCase(getOrderTimelineThunk.rejected, (state, action) => {
+        state.orderTimelineStatus = "failed";
+        state.orderTimelineError = action.payload as string;
       });
 
     // Admin Settings

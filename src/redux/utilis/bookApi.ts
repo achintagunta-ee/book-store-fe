@@ -106,31 +106,40 @@ export interface UpdateCategoryData {
 }
 
 // Book API
+// Book API
 export interface Book {
   id: number;
   book_id?: number;
   title: string;
-  slug: string;
+  slug?: string;
   author: string;
   price: number;
+  discount_price?: number | null;
+  offer_price?: number | null;
   description: string;
   cover_image_url: string;
   stock: number;
-  category_id: number;
+  category_id?: number;
+  category?: { id: number; name: string };
   rating?: number;
-  created_at: string;
-  updated_at: string;
-  isbn: string | null;
-  publisher: string | null;
-  published_date: string | null;
+  created_at?: string;
+  updated_at?: string;
+  isbn?: string | null;
+  publisher?: string | null;
+  published_date?: string | null;
   is_ebook?: boolean;
   ebook_price?: number;
+  is_archived?: boolean;
+  is_featured?: boolean;
+  is_featured_author?: boolean;
 }
 
 export interface PaginatedBookResponse {
   total_items: number;
+  total_books?: number; // Added to match API response
   total_pages: number;
   current_page: number;
+  page?: number;        // Added to match API response
   results: Book[];
 }
 
@@ -222,25 +231,28 @@ export const fetchBooksApi = async (params: { page?: number; limit?: number; sea
   const query = new URLSearchParams();
   if (params.page) query.append("page", String(params.page));
   if (params.limit) query.append("limit", String(params.limit));
-  if (params.search) query.append("search", params.search); // Adjust if backend uses 'q' or 'title'
+  if (params.search) query.append("search", params.search);
   if (params.category) query.append("category_id", params.category);
-  if (params.archived !== undefined) query.append("archived", String(params.archived));
-  // Based on user provided URL, standard list is /admin/books/list, but params might be query strings
-  // User wrote: GET /admin/books?archived=true
-  // If the base list endpoint is /admin/books/list, appending ?archived=true might work if backend supports it there.
-  // OR the endpoint changes to /admin/books when query params are involved?
-  // Let's assume /admin/books/list accepts it or falls back to /admin/books if that was the implication.
-  // The user said: GET http://localhost:8000/admin/books/list AND GET /admin/books?archived=true
-  // This is contradictory. Usually 'list' is a specific view.
-  // I will try to use the query param on the existing endpoint first, but if the user meant two different endpoints, I'll stick to the one I have (list) and append param.
-  // However, looking closely at "GET /admin/books?archived=true", it's missing '/list'. 
-  // But let's verify standard REST. often /admin/books is the resource collection.
-  // Existing code uses /admin/books/list. I will keep using it but add the param. 
-  // If it fails, I might need to switch to /admin/books. 
-  // Actually, looking at deleteBookApi it is /admin/books/${id}. 
-  // It's safer to stick to the existing accepted endpoint for listing.
   
-  return request<BooksResponse>(`/admin/books/list?${query.toString()}`);
+  // Use 'is_archived' parameter as requested
+  if (params.archived !== undefined) {
+    query.append("is_archived", String(params.archived));
+  } else {
+    // Default to false if not specified, or maybe the backend handles default?
+    // User showed GET /admin/books/filter?is_archived=false, so explicit is better.
+    // However, existing calls might not send it. Let's send 'false' by default if undefined?
+    // Or just append it if present. The UI logic sends it based on tab.
+    // Let's stick to appending if present, but typically admin view shows active books by default.
+    // In one of the previous steps, we added `archived` to the call in BookManagement.tsx.
+    // So `params.archived` will likely be false or true.
+    // If it is undefined (e.g. initial load without explicit state?), we should probably default to false since we only want active books.
+    // But let's check BookManagement.tsx usage.
+    // Dispatch call: dispatch(fetchBooksAsync({ ..., archived: showArchived }))
+    // showArchived is boolean, so it's always set.
+    query.append("is_archived", String(params.archived ?? false));
+  }
+
+  return request<BooksResponse>(`/admin/books/filter?${query.toString()}`);
 };
 
 // Create a new book (using FormData for file upload)
@@ -293,14 +305,14 @@ export const deleteBookApi = async (id: number) => {
 // Archive a book
 export const archiveBookApi = async (id: number) => {
   return request<{ message: string }>(`/admin/books/${id}/archive`, {
-    method: "DELETE",
+    method: "PATCH",
   });
 };
 
 // Restore a book
 export const restoreBookApi = async (id: number) => {
   return request<{ message: string }>(`/admin/books/${id}/restore`, {
-    method: "DELETE",
+    method: "PATCH",
   });
 };
 

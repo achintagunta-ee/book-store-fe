@@ -120,7 +120,7 @@ export const createBookAsync = createAsyncThunk(
   "books/createBook",
   async (bookData: FormData) => {
     const response = await createBookApi(bookData);
-    return response;
+    return { ...response, id: response.id || response.book_id || 0 };
   }
 );
 
@@ -128,7 +128,7 @@ export const updateBookAsync = createAsyncThunk(
   "books/updateBook",
   async ({ id, data }: { id: number; data: FormData }) => {
     const response = await updateBookApi(id, data);
-    return response;
+    return { ...response, id: response.id || response.book_id || 0 };
   }
 );
 
@@ -324,10 +324,11 @@ export const fetchDynamicSearchBooksAsync = createAsyncThunk(
     try {
       const response = await fetchDynamicSearchBooksApi(query);
       // Map response to Book interface as the API returns book_id instead of id
-      if (!response.results) return { books: [], total: 0 }; // Safety check
+      if (!response.results) return { books: [], total: 0 }; 
       
       const mappedBooks: Book[] = response.results.map((b: any) => ({
         id: b.book_id || b.id,
+        book_id: b.book_id,
         title: b.title,
         slug: b.slug || (b.title ? b.title.toLowerCase().replace(/\s+/g, "-") : ""),
         author: b.author,
@@ -336,14 +337,20 @@ export const fetchDynamicSearchBooksAsync = createAsyncThunk(
         cover_image_url: b.cover_image_url,
         stock: b.stock || 0,
         category_id: b.category_id || 0,
+        category: b.category,
         rating: b.rating,
         created_at: b.created_at || new Date().toISOString(),
         updated_at: b.updated_at || new Date().toISOString(),
         isbn: b.isbn || null,
         publisher: b.publisher || null,
         published_date: b.published_date || null,
+        is_ebook: b.is_ebook,
+        ebook_price: b.ebook_price,
+        is_archived: b.is_archived,
+        is_featured: b.is_featured,
+        is_featured_author: b.is_featured_author,
       }));
-      return { books: mappedBooks, total: response.total_results };
+      return { books: mappedBooks, total: response.total_results || mappedBooks.length };
     } catch (error: any) {
       return rejectWithValue(error.message);
     }
@@ -360,6 +367,7 @@ export const fetchSearchSuggestionsAsync = createAsyncThunk(
 
       const mappedBooks: Book[] = response.results.map((b: any) => ({
         id: b.book_id || b.id,
+        book_id: b.book_id,
         title: b.title,
         slug: b.slug || (b.title ? b.title.toLowerCase().replace(/\s+/g, "-") : ""),
         author: b.author,
@@ -368,12 +376,18 @@ export const fetchSearchSuggestionsAsync = createAsyncThunk(
         cover_image_url: b.cover_image_url,
         stock: b.stock || 0,
         category_id: b.category_id || 0,
+        category: b.category,
         rating: b.rating,
         created_at: b.created_at || new Date().toISOString(),
         updated_at: b.updated_at || new Date().toISOString(),
         isbn: b.isbn || null,
         publisher: b.publisher || null,
         published_date: b.published_date || null,
+        is_ebook: b.is_ebook,
+        ebook_price: b.ebook_price,
+        is_archived: b.is_archived,
+        is_featured: b.is_featured,
+        is_featured_author: b.is_featured_author,
       }));
       return mappedBooks;
     } catch (error: any) {
@@ -503,8 +517,13 @@ export const bookSlice = createSlice({
         state.status = "succeeded";
         // Check if payload is the new paginated object structure
         if (action.payload && 'results' in action.payload && Array.isArray((action.payload as any).results)) {
-            state.books = (action.payload as any).results;
-            state.totalBooks = (action.payload as any).total_items;
+            const results = (action.payload as any).results;
+            state.books = results.map((book: any) => ({
+              ...book,
+              id: book.id || book.book_id,
+            }));
+            // API returns 'total_books' or 'total_items'
+            state.totalBooks = (action.payload as any).total_books || (action.payload as any).total_items; 
         } 
         // Fallback for direct array response (if API changes back or for other endpoints)
         else if (Array.isArray(action.payload)) {

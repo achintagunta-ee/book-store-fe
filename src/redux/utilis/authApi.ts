@@ -314,6 +314,23 @@ export async function trackOrderApi(orderId: number) {
   return request<TrackOrderResponse>(`/checkout/orders/${orderId}/track`);
 }
 
+// 26b. Order Timeline
+export interface OrderTimelineItem {
+  status: string;
+  label: string;
+  time: string;
+  meta: any;
+}
+
+export interface OrderTimelineResponse {
+  success: boolean;
+  data: OrderTimelineItem[];
+}
+
+export async function getOrderTimelineApi(orderId: number) {
+  return request<OrderTimelineResponse>(`/checkout/orders/${orderId}/timeline`);
+}
+
 // 27. Download Invoice
 export function getInvoiceDownloadUrl(orderId: number): string {
   return `${BASE_URL}/checkout/orders/${orderId}/invoice/download`;
@@ -751,12 +768,14 @@ export async function getUserPaymentsApi(page: number = 1) {
 // 39) Admin Orders Management
 export interface AdminOrder {
   order_id: number;
-  customer: string | { id: number; name: string };
-  email: string;
+  customer?: string | { id: number; name: string };
+  customer_name?: string;
+  email?: string;
   date: string;
-  total: number;
+  total?: number;
+  total_amount?: number;
   status: string;
-  actions: {
+  actions?: {
     view: string;
     notify: string;
     track: string;
@@ -779,6 +798,7 @@ export interface AdminOrdersParams {
   status?: string;
   start_date?: string;
   end_date?: string;
+  type?: string;
 }
 
 export async function getAdminOrdersApi(params: AdminOrdersParams = {}) {
@@ -789,6 +809,7 @@ export async function getAdminOrdersApi(params: AdminOrdersParams = {}) {
   if (params.status && params.status !== "All") query.append("status", params.status);
   if (params.start_date) query.append("start_date", params.start_date);
   if (params.end_date) query.append("end_date", params.end_date);
+  if (params.type && params.type !== "all") query.append("type", params.type);
 
   return request<AdminOrdersResponse>(`/admin/orders?${query.toString()}`);
 }
@@ -1199,6 +1220,7 @@ export interface InventoryItem {
 
 export interface InventoryListResponse {
   data: InventoryItem[];
+  results?: InventoryItem[];
   total: number;
   total_pages: number;
   page: number;
@@ -1383,6 +1405,7 @@ export interface OfflineOrderRequest {
 }
 
 export interface OfflineOrderResponse {
+  message?: string;
   order_id: number;
   status: string;
   payment_mode: string;

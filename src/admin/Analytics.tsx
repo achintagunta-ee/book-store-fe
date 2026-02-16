@@ -21,6 +21,7 @@ import {
   ChevronDown,
   PieChart as PieChartIcon
 } from "lucide-react";
+import { addChartToExcel } from "../utils/excelChartHelper";
 
 // Color palette from design
 const COLORS = ["#3b82f6", "#8b5cf6", "#ec4899", "#10b981", "#f59e0b", "#6366f1"];
@@ -127,9 +128,28 @@ const Analytics: React.FC = () => {
     try {
       const resultAction = await dispatch(exportAnalyticsReportThunk());
       if (exportAnalyticsReportThunk.fulfilled.match(resultAction)) {
-        const blob = resultAction.payload;
+        let finalBlob = resultAction.payload;
+        
+        // Add graph to the excel sheet
+        try {
+          const excelData = {
+            revenueChart: chartData,
+            topBooks: topBooks,
+            topCustomers: topCustomers,
+            categorySales: categorySales,
+            overview: analyticsOverview
+          };
+          
+          if (chartData.length > 0 || topBooks.length > 0 || topCustomers.length > 0 || categorySales.length > 0) {
+            finalBlob = await addChartToExcel(finalBlob, excelData);
+          }
+        } catch (err) {
+          console.error("Failed to add chart to excel", err);
+          // Continue with original blob if chart addition fails
+        }
+
         // Create a URL for the blob
-        const url = window.URL.createObjectURL(blob);
+        const url = window.URL.createObjectURL(finalBlob);
         const link = document.createElement('a');
         link.href = url;
         // Set default filename, can be adjusted based on needs or headers

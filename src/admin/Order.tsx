@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { ChevronLeft, ChevronRight, Send, X, Eye, Calendar, Download, Truck, Bell, Plus, Trash2, ChevronDown } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, X, Eye, Calendar, Download, Truck, Bell, Plus, Trash2, ChevronDown, Clock } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../redux/store/store";
@@ -12,9 +12,10 @@ import {
 	addOrderTrackingThunk,
 	getAdminOrderNotificationsThunk,
     createOfflineOrderThunk,
-    getInventoryListThunk
+    getInventoryListThunk,
+    getOrderTimelineThunk
 } from "../redux/slice/authSlice";
-import { downloadOrderInvoiceApi, type AdminOrder, type AdminOrderNotificationItem } from "../redux/utilis/authApi";
+import { downloadOrderInvoiceApi, type AdminOrder, type AdminOrderNotificationItem, type OrderTimelineItem } from "../redux/utilis/authApi";
 
 // Searchable Dropdown Component
 const BookSearchSelect = ({ 
@@ -86,7 +87,11 @@ const BookSearchSelect = ({
                                     }}
                                 >
                                     <div className="font-medium text-text-main">{book.title}</div>
-                                    <div className="text-gray-400 text-xs">ID: {book.id} • Stock: {book.stock}</div>
+                                    <div className="text-gray-400 text-xs">
+                                        ID: {book.id} 
+                                        {book.price !== undefined ? ` • Price: ₹${book.price}` : ''} 
+                                        • Stock: {book.stock}
+                                    </div>
                                 </div>
                             ))
                         ) : (
@@ -101,10 +106,11 @@ const BookSearchSelect = ({
 
 const OrdersPage: React.FC = () => {
 	const dispatch = useDispatch<AppDispatch>();
-	const { adminOrders, adminOrderDetail, adminOrderInvoice, adminOrderNotifications, inventoryList } = useSelector((state: RootState) => state.auth);
+	const { adminOrders, adminOrderDetail, adminOrderInvoice, adminOrderNotifications, inventoryList, orderTimeline } = useSelector((state: RootState) => state.auth);
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState("All");
+    const [orderType, setOrderType] = useState("all"); // Added orderType state
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
 	
@@ -123,6 +129,7 @@ const OrdersPage: React.FC = () => {
 	const [trackingId, setTrackingId] = useState("");
 	const [trackingUrl, setTrackingUrl] = useState("");
     const [isSavingTracking, setIsSavingTracking] = useState(false);
+
 
     // Offline Order State
     const [showOfflineOrderModal, setShowOfflineOrderModal] = useState(false);
@@ -147,11 +154,12 @@ const OrdersPage: React.FC = () => {
 			fetchOrders();
 		}, 500);
         return () => clearTimeout(timer);
-	}, [searchQuery, statusFilter, startDate, endDate, currentPage]);
+	}, [searchQuery, statusFilter, startDate, endDate, currentPage, orderType]);
 
     // Fetch inventory list for dropdown
     useEffect(() => {
-        dispatch(getInventoryListThunk({ limit: 1000 }));
+        // Fetching with a safer limit to ensure data is returned
+        dispatch(getInventoryListThunk({ page: 1, limit: 100 }));
     }, [dispatch]);
 
 	const fetchOrders = () => {
@@ -160,6 +168,7 @@ const OrdersPage: React.FC = () => {
 			limit: 10,
 			search: searchQuery,
 			status: statusFilter === "All" ? "" : statusFilter,
+            type: orderType, // Pass orderType
 			start_date: startDate,
 			end_date: endDate
 		}));
@@ -312,8 +321,8 @@ const OrdersPage: React.FC = () => {
                 notes: offlineOrderForm.notes
             };
             
-            await dispatch(createOfflineOrderThunk(payload)).unwrap();
-            toast.success("Offline order created successfully!");
+            const response = await dispatch(createOfflineOrderThunk(payload)).unwrap();
+            toast.success(response.message || "Offline order created successfully!");
             setShowOfflineOrderModal(false);
             setOfflineOrderForm({
                 user_id: "",
@@ -329,6 +338,8 @@ const OrdersPage: React.FC = () => {
             setIsCreatingOfflineOrder(false);
         }
     };
+
+
 
 	const totalPages = adminOrders?.total_pages || 1;
 
@@ -390,6 +401,17 @@ const OrdersPage: React.FC = () => {
 						</div>
 
 						<div className="flex gap-3 flex-wrap">
+							<select
+                                value={orderType}
+                                onChange={(e) => setOrderType(e.target.value)}
+                                className="h-12 bg-white border border-[#E2D8D4] text-text-main text-sm rounded-lg focus:ring-[#B35E3F] focus:border-[#B35E3F] block p-2.5"
+                            >
+                                <option value="all">All Types</option>
+                                <option value="user">Users</option>
+                                <option value="guest">Guests</option>
+                                <option value="admin">Offline</option>
+                            </select>
+
 							<select
 								value={statusFilter}
 								onChange={(e) => setStatusFilter(e.target.value)}
@@ -476,13 +498,13 @@ const OrdersPage: React.FC = () => {
 														#{order.order_id}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														{typeof order.customer === 'string' ? order.customer : order.customer?.name}
+														{order.customer_name || (typeof order.customer === 'string' ? order.customer : order.customer?.name)}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
 														{new Date(order.date).toLocaleString()}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														₹{order.total}
+														₹{order.total_amount || order.total}
 													</td>
 													<td className="h-[72px] px-4 py-2">
 														<label className="relative inline-flex items-center cursor-pointer">
@@ -537,6 +559,7 @@ const OrdersPage: React.FC = () => {
 																<Truck size={14} />
 																<span>Track</span>
 															</button>
+
 														</div>
 													</td>
 
@@ -580,6 +603,8 @@ const OrdersPage: React.FC = () => {
 				</div>
 			</main>
 
+
+            
 			{/* Tracking Modal */}
 			{showTrackingModal && (
 				<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">

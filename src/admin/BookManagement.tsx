@@ -9,7 +9,6 @@ import {
   SlidersHorizontal,
   Image as ImageIcon,
   RotateCcw,
-  Archive,
 } from "lucide-react";
 import BookImagesModal from "./BookImagesModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -556,7 +555,7 @@ const BooksManagement: React.FC = () => {
                 <tbody className="divide-y divide-[#5c2e2e]/10">
                   {filteredBooks.map((book) => (
                     <tr
-                      key={book.id}
+                      key={book.id || book.book_id}
                       className="hover:bg-[#013a67]/5 transition-colors"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -576,8 +575,7 @@ const BooksManagement: React.FC = () => {
                         {book.author}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
-                        {categories.find((c) => c.id === book.category_id)
-                          ?.name || "N/A"}
+                        {book.category?.name || categories.find((c) => c.id === book.category_id)?.name || "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
                         ₹{(Number(book.price) || 0).toFixed(2)}
@@ -634,20 +632,7 @@ const BooksManagement: React.FC = () => {
                               Usually Admin can delete permanently from Archive. 
                               I'll add permanent delete button for Archived books. 
                           */}
-                          {showArchived && (
-                              <button
-                                onClick={() => handleDeleteClick(book.id)}
-                                disabled={deletingId === book.id}
-                                className="text-red-600 hover:text-red-800 transition-colors disabled:opacity-50"
-                                title="Delete Permanently"
-                              >
-                                {deletingId === book.id ? (
-                                    <span className="text-xs font-bold">...</span>
-                                ) : (
-                                    <Trash2 size={20} />
-                                )}
-                              </button>
-                          )}
+
 
                         </div>
                         {!showArchived && (

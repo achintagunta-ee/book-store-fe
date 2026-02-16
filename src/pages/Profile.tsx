@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { Toaster, toast } from "react-hot-toast";
-import { User } from "lucide-react";
+import { User, X, Clock } from "lucide-react";
 import { type RootState, type AppDispatch } from "../redux/store/store";
 import {
   updateUserProfileThunk,
@@ -14,6 +14,7 @@ import {
   requestCancellationThunk,
   getCancellationStatusThunk,
   completePaymentAfterExpiryThunk,
+  getOrderTimelineThunk,
 } from "../redux/slice/authSlice";
 import {
   getAddressesThunk,
@@ -28,6 +29,7 @@ import {
   type OrderDetailResponse,
   type UserProfile,
   type UserPayment,
+  type OrderTimelineItem,
 } from "../redux/utilis/authApi";
 
 // --- Order History Table Sub-Component ---
@@ -35,7 +37,8 @@ import {
 const OrderHistoryTable: React.FC<{
   orders: OrderHistoryItem[];
   onViewDetails: (id: number) => void;
-}> = ({ orders, onViewDetails }) => {
+  onViewTimeline: (id: number) => void;
+}> = ({ orders, onViewDetails, onViewTimeline }) => {
   const statusStyles: Record<string, string> = {
     Shipped: "bg-shipped",
     Delivered: "bg-delivered",
@@ -121,6 +124,13 @@ const OrderHistoryTable: React.FC<{
                     >
                       View Details
                     </button>
+                    <button 
+                      className="ml-2 px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-bold rounded hover:bg-gray-100 transition-colors flex inline-flex items-center gap-1"
+                      onClick={() => onViewTimeline(order.raw_id)}
+                      title="View Timeline"
+                    >
+                      <Clock size={12} /> Timeline
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -183,6 +193,12 @@ const OrderHistoryTable: React.FC<{
                 className="w-full mt-2 py-2.5 bg-white border border-[#e6d8d1] rounded-lg text-primary text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors"
               >
                 View Details
+              </button>
+              <button 
+                onClick={() => onViewTimeline(order.raw_id)}
+                className="w-full mt-2 py-2.5 bg-white border border-[#e6d8d1] rounded-lg text-gray-600 text-sm font-bold shadow-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+              >
+                <Clock size={14} /> View Timeline
               </button>
             </div>
           ))}
@@ -280,6 +296,67 @@ const UserPaymentsTable: React.FC<{
         </div>
       </div>
     </section>
+  );
+};
+
+// --- Timeline Modal ---
+const TimelineModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  timeline: OrderTimelineItem[] | null;
+  loading: boolean;
+}> = ({ isOpen, onClose, timeline, loading }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:p-6">
+      <div className="w-full max-w-md rounded-lg bg-white p-5 md:p-8 shadow-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-bold text-[#333333]">Order Timeline</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X size={24} /> 
+          </button>
+        </div>
+
+        {loading ? (
+             <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+             </div>
+        ) : (
+             <div className="space-y-6 relative pl-2">
+                {timeline && timeline.length > 0 ? (
+                    timeline.map((event, index) => (
+                        <div key={index} className="flex gap-4 relative">
+                             {/* Line connector */}
+                             {index !== timeline.length - 1 && (
+                                 <div className="absolute left-[5px] top-3 bottom-[-24px] w-0.5 bg-gray-200"></div>
+                             )}
+                             
+                             <div className={`shrink-0 w-3 h-3 rounded-full mt-1.5 ${index === 0 ? 'bg-primary ring-4 ring-primary/20' : 'bg-gray-300'}`}></div>
+                             
+                             <div className="pb-1">
+                                 <p className="font-bold text-[#333333] text-sm">{event.label}</p>
+                                 <p className="text-xs text-gray-500 mt-0.5">{new Date(event.time).toLocaleString()}</p>
+                                 <p className="text-xs text-gray-400 capitalize mt-0.5">{event.status.replace('_', ' ')}</p>
+                             </div>
+                        </div>
+                    ))
+                ) : (
+                    <p className="text-center text-gray-500 py-4">No timeline data available.</p>
+                )}
+             </div>
+        )}
+        
+        <div className="mt-8 flex justify-end">
+            <button
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transaction-colors text-sm"
+            >
+                Close
+            </button>
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -1051,12 +1128,13 @@ const ProfileInfo: React.FC<{ user: UserProfile }> = ({ user }) => {
 
 const UserProfilePage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
-  const { userProfile, orderHistory, currentOrder, userPayments } = useSelector(
+  const { userProfile, orderHistory, currentOrder, userPayments, orderTimeline, orderTimelineStatus } = useSelector(
     (state: RootState) => state.auth
   );
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "profile" | "orders" | "addresses" | "payments"
   >("profile");
@@ -1101,6 +1179,11 @@ const UserProfilePage: React.FC = () => {
   const handleViewDetails = async (id: number) => {
     await dispatch(getOrderDetailsThunk(id));
     setIsOrderModalOpen(true);
+  };
+
+  const handleViewTimeline = async (id: number) => {
+    setIsTimelineModalOpen(true);
+    await dispatch(getOrderTimelineThunk(id));
   };
 
   // Render a loading state or null while redirecting
@@ -1214,6 +1297,7 @@ const UserProfilePage: React.FC = () => {
           <OrderHistoryTable
             orders={orderHistory?.results || []}
             onViewDetails={handleViewDetails}
+            onViewTimeline={handleViewTimeline}
           />
         )}
         {activeTab === "addresses" && <AddressList />}
@@ -1237,6 +1321,12 @@ const UserProfilePage: React.FC = () => {
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         order={currentOrder}
+      />
+      <TimelineModal
+        isOpen={isTimelineModalOpen}
+        onClose={() => setIsTimelineModalOpen(false)}
+        timeline={orderTimeline}
+        loading={orderTimelineStatus === 'loading'}
       />
       <Toaster position="top-right" />
     </>
