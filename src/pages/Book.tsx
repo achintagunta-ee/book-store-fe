@@ -359,11 +359,11 @@ const BookPage: React.FC = () => {
  
      return publicBooks.map((book: ApiBook) => ({
        id: book.book_id || book.id,
-       slug: book.slug,
+       slug: book.slug || "",
        title: book.title,
        author: book.author,
        price: book.price,
-       category: categoryMap.get(book.category_id) || "Uncategorized",
+       category: categoryMap.get(book.category_id || 0) || "Uncategorized",
        rating: book.rating || 0,
        imageUrl: book.cover_image_url || "https://via.placeholder.com/400x600.png?text=No+Image",
      }));

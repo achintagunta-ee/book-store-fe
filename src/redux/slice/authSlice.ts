@@ -20,7 +20,7 @@ import {
   trackOrderApi,
   getOrderTimelineApi,
   type OrderTimelineItem,
-  type OrderTimelineResponse,
+
   getAddressesApi,
   addAddressApi,
   updateAddressApi,

@@ -739,7 +739,7 @@ const BookDetailPage: React.FC = () => {
                                 title={book.title}
                                 author={book.author}
                                 imageUrl={book.cover_image_url || "https://via.placeholder.com/400x600.png?text=No+Image"}
-                                slug={book.slug}
+                                slug={book.slug || ""}
                                 price={book.price}
                                 originalBook={book}
                                 className="min-w-[240px] w-[240px]"

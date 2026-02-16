@@ -352,10 +352,7 @@ const BooksManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteClick = (id: number) => {
-    setBookToDelete(id);
-    setIsConfirmOpen(true);
-  };
+
 
   const confirmDelete = async () => {
     if (bookToDelete) {
