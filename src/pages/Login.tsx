@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,9 @@ const LoginPage: React.FC = () => {
     otp: "",
     new_password: "",
   });
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
@@ -308,16 +312,25 @@ const LoginPage: React.FC = () => {
               >
                 Password <span className="text-red-500">*</span>
               </label>
-              <input
-                className="h-12 min-w-0 flex-1 resize-none overflow-hidden rounded-lg border border-black/10 bg-white/50 p-4 text-base font-normal leading-normal text-text-main placeholder:text-secondary-link/80 focus:outline-none focus:ring-2 focus:ring-primary/50 "
-                id="password"
-                name="password"
-                placeholder="Enter your password"
-                type="password"
-                value={formData.password}
-                onChange={handleFormChange}
-                required
-              />
+              <div className="relative">
+                <input
+                  className="h-12 w-full min-w-0 resize-none overflow-hidden rounded-lg border border-black/10 bg-white/50 p-4 pr-10 text-base font-normal leading-normal text-text-main placeholder:text-secondary-link/80 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  id="password"
+                  name="password"
+                  placeholder="Enter your password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={handleFormChange}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
                {validationErrors.password && (
                 <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.password}</p>
               )}
@@ -330,16 +343,25 @@ const LoginPage: React.FC = () => {
                 >
                   Confirm Password <span className="text-red-500">*</span>
                 </label>
-                <input
-                  className="h-12 rounded-lg border border-black/10 p-4"
-                  id="confirm_password"
-                  name="confirm_password"
-                  placeholder="Confirm your password"
-                  type="password"
-                  value={formData.confirm_password}
-                  onChange={handleFormChange}
-                  required
-                />
+                <div className="relative">
+                  <input
+                    className="h-12 w-full rounded-lg border border-black/10 p-4 pr-10"
+                    id="confirm_password"
+                    name="confirm_password"
+                    placeholder="Confirm your password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirm_password}
+                    onChange={handleFormChange}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
                  {validationErrors.confirm_password && (
                     <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.confirm_password}</p>
                   )}
