@@ -10,23 +10,33 @@ import {
   notifyCustomerThunk,
   resendNotificationThunk,
 } from "../redux/slice/authSlice";
+import AdminPagination from "../components/admin/AdminPagination";
 
 const AdminNotificationsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { adminNotifications, currentAdminNotification } = useSelector(
+  const { adminNotifications, currentAdminNotification, adminNotificationsMeta } = useSelector(
     (state: RootState) => state.auth
   );
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
   const [isNotifying, setIsNotifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     const source = activeTab === "all" ? undefined : activeTab;
-    dispatch(getAdminNotificationsThunk(source));
-  }, [dispatch, activeTab]);
+    dispatch(getAdminNotificationsThunk({ 
+      triggerSource: source,
+      page: currentPage,
+      limit: 10
+    }));
+  }, [dispatch, activeTab, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleViewDetails = async (id: number) => {
     await dispatch(viewAdminNotificationThunk(id));
@@ -52,7 +62,7 @@ const AdminNotificationsPage: React.FC = () => {
           {/* Type Filter Tabs */}
           <div className="px-4 mb-4 flex gap-2">
             <button
-              onClick={() => setActiveTab("all")}
+              onClick={() => { setActiveTab("all"); setCurrentPage(1); }}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
                 activeTab === "all"
                   ? "bg-[#B35E3F] text-white"
@@ -63,7 +73,7 @@ const AdminNotificationsPage: React.FC = () => {
             </button>
             {/* Removed Inventory tab */ }
             <button
-              onClick={() => setActiveTab("order")}
+              onClick={() => { setActiveTab("order"); setCurrentPage(1); }}
               className={`px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
                 activeTab === "order"
                   ? "bg-[#B35E3F] text-white"
@@ -157,6 +167,16 @@ const AdminNotificationsPage: React.FC = () => {
                 </table>
               </div>
             </div>
+            
+            {adminNotificationsMeta && (
+              <AdminPagination
+                currentPage={adminNotificationsMeta.current_page}
+                totalPages={adminNotificationsMeta.total_pages}
+                onPageChange={handlePageChange}
+                totalResults={adminNotificationsMeta.total_items}
+                itemsPerPage={adminNotificationsMeta.limit}
+              />
+            )}
           </div>
         </div>
       </main>

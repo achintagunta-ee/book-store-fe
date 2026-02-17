@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { ChevronLeft, ChevronRight, Send, X, Eye, Calendar, Download, Truck, Bell, Plus, Trash2, ChevronDown } from "lucide-react";
+import { Send, X, Eye, Calendar, Download, Truck, Bell, Plus, Trash2, ChevronDown } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../redux/store/store";
@@ -15,6 +15,7 @@ import {
     getInventoryListThunk
 } from "../redux/slice/authSlice";
 import { downloadOrderInvoiceApi, type AdminOrder, type AdminOrderNotificationItem } from "../redux/utilis/authApi";
+import AdminPagination from "../components/admin/AdminPagination";
 
 // Searchable Dropdown Component
 const BookSearchSelect = ({ 
@@ -576,27 +577,15 @@ const OrdersPage: React.FC = () => {
 							</div>
 
 							{/* Pagination */}
-							<div className="flex justify-center items-center mt-6 pb-6">
-								<nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
-									<button 
-										onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-										disabled={currentPage === 1}
-										className="relative inline-flex items-center rounded-l-md px-2 py-2 text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
-									>
-										<ChevronLeft size={20} />
-									</button>
-									<span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-text-main ring-1 ring-inset ring-gray-300">
-										Page {currentPage} of {totalPages}
-									</span>
-									<button 
-										onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-										disabled={currentPage === totalPages}
-										className="relative inline-flex items-center rounded-r-md px-2 py-2 text-text-main ring-1 ring-inset ring-gray-300 hover:bg-gray-50 transition-colors disabled:opacity-50"
-									>
-										<ChevronRight size={20} />
-									</button>
-								</nav>
-							</div>
+                            {totalPages > 1 && (
+                                <AdminPagination
+                                    currentPage={currentPage}
+                                    totalPages={totalPages}
+                                    onPageChange={(page) => setCurrentPage(page)}
+                                    totalResults={adminOrders?.total_items || 0}
+                                    itemsPerPage={adminOrders?.limit || 10}
+                                />
+                            )}
 						</div>
 					</div>
 				</div>

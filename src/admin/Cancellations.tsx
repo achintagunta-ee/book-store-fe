@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, X, Ban, RefreshCcw } from "lucide-react";
+import { X, Ban, RefreshCcw } from "lucide-react";
 import Sidebar from "./Sidebar";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,6 +12,7 @@ import {
   approveCancellationThunk,
 } from "../redux/slice/authSlice";
 import type { CancellationRequestItem } from "../redux/utilis/authApi";
+import AdminPagination from "../components/admin/AdminPagination";
 import { Check } from "lucide-react";
 import ConfirmationModal from "./ConfirmationModal";
 
@@ -22,7 +23,7 @@ const CancellationsPage: React.FC = () => {
   );
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("pending"); // Default to pending as per user request example
+  const [statusFilter, setStatusFilter] = useState("pending");
   const [currentPage, setCurrentPage] = useState(1);
 
   // Modals
@@ -53,9 +54,9 @@ const CancellationsPage: React.FC = () => {
   useEffect(() => {
     dispatch(
       getAdminCancellationRequestsThunk({
-        page: currentPage,
+        page: currentPage === 1 ? undefined : currentPage,
         limit: 10,
-        status: statusFilter === "All" ? "" : statusFilter,
+        status: (statusFilter === "pending" || statusFilter === "All") ? undefined : statusFilter,
       })
     );
   }, [dispatch, currentPage, statusFilter]);
@@ -302,27 +303,13 @@ const CancellationsPage: React.FC = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex justify-center items-center p-4 border-t border-[#E2D8D4]">
-                    <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm">
-                        <button
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            disabled={currentPage === 1}
-                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                        >
-                            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                        <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
-                            Page {currentPage} of {totalPages}
-                        </span>
-                        <button
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            disabled={currentPage === totalPages}
-                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                        >
-                            <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                        </button>
-                    </nav>
-                </div>
+              <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+                totalResults={cancellationRequests?.total_items || 0}
+                itemsPerPage={cancellationRequests?.limit || 10}
+              />
             )}
           </div>
         </div>

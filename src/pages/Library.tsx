@@ -1,21 +1,22 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { type AppDispatch, type RootState } from "../redux/store/store";
 import { getUserLibraryThunk, readEbookThunk } from "../redux/slice/authSlice";
 import { Toaster, toast } from "react-hot-toast";
-import { BookOpen, ShoppingBag, ArrowRight } from "lucide-react";
+import { BookOpen, ShoppingBag, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const LibraryPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { userLibrary, userLibraryStatus, userLibraryError } = useSelector(
+  const { userLibrary, userLibraryMeta, userLibraryStatus, userLibraryError } = useSelector(
     (state: RootState) => state.auth
   );
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    dispatch(getUserLibraryThunk());
-  }, [dispatch]);
+    dispatch(getUserLibraryThunk(page));
+  }, [dispatch, page]);
 
   const handleReadBook = async (bookId: number) => {
     try {
@@ -125,6 +126,28 @@ const LibraryPage: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {userLibraryMeta && userLibraryMeta.total_pages && userLibraryMeta.total_pages > 1 && (
+        <div className="flex justify-center items-center mt-8 gap-4">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <span className="font-medium text-gray-700">
+            Page {page} of {userLibraryMeta.total_pages}
+          </span>
+          <button
+            onClick={() => setPage((p) => Math.min(userLibraryMeta.total_pages || 1, p + 1))}
+            disabled={page === userLibraryMeta.total_pages}
+            className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight size={24} />
+          </button>
         </div>
       )}
     </div>

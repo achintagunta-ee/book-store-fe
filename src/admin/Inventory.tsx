@@ -10,6 +10,7 @@ import {
   updateBookStockThunk,
 } from "../redux/slice/authSlice";
 import { type InventoryItem } from "../redux/utilis/authApi";
+import AdminPagination from "../components/admin/AdminPagination";
 
 const InventoryDashboard: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -228,54 +229,15 @@ const InventoryDashboard: React.FC = () => {
 					</div>
 
                     {/* Pagination */}
+                    {/* Pagination */}
                     {inventoryMeta && inventoryMeta.total_pages > 1 && (
-                        <div className="flex justify-between items-center bg-white px-4 py-3 border border-[#e2d8d4] rounded-lg shadow-sm">
-                            <div className="text-sm text-[#5c2e2e]">
-                                Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, inventoryMeta.total)}</span> of <span className="font-medium">{inventoryMeta.total}</span> results
-                            </div>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                    className="px-3 py-1 text-sm font-medium rounded-md bg-white border border-[#e2d8d4] text-[#5c2e2e] hover:bg-[#f8f4f1] disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Previous
-                                </button>
-                                {Array.from({ length: Math.min(5, inventoryMeta.total_pages) }, (_, i) => {
-                                    // Logic to show a window of pages around current page
-                                    let pageNum = i + 1;
-                                    if (inventoryMeta.total_pages > 5) {
-                                        if (currentPage > 3) {
-                                            pageNum = currentPage - 2 + i;
-                                        }
-                                        if (pageNum > inventoryMeta.total_pages) {
-                                            pageNum = inventoryMeta.total_pages - 4 + i;
-                                        }
-                                    }
-                                    
-                                    return (
-                                        <button
-                                            key={pageNum}
-                                            onClick={() => handlePageChange(pageNum)}
-                                            className={`px-3 py-1 text-sm font-medium rounded-md border ${
-                                                currentPage === pageNum
-                                                    ? "bg-[#B35E3F] text-white border-[#B35E3F]"
-                                                    : "bg-white border-[#e2d8d4] text-[#5c2e2e] hover:bg-[#f8f4f1]"
-                                            }`}
-                                        >
-                                            {pageNum}
-                                        </button>
-                                    );
-                                })}
-                                <button
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage === inventoryMeta.total_pages}
-                                    className="px-3 py-1 text-sm font-medium rounded-md bg-white border border-[#e2d8d4] text-[#5c2e2e] hover:bg-[#f8f4f1] disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    Next
-                                </button>
-                            </div>
-                        </div>
+                        <AdminPagination
+                            currentPage={currentPage}
+                            totalPages={inventoryMeta.total_pages}
+                            onPageChange={(page) => handlePageChange(page)}
+                            totalResults={inventoryMeta.total}
+                            itemsPerPage={itemsPerPage}
+                        />
                     )}
 				</div>
 			</main>

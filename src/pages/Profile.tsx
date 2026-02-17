@@ -36,9 +36,12 @@ import {
 
 const OrderHistoryTable: React.FC<{
   orders: OrderHistoryItem[];
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   onViewDetails: (id: number) => void;
   onViewTimeline: (id: number) => void;
-}> = ({ orders, onViewDetails, onViewTimeline }) => {
+}> = ({ orders, page, totalPages, onPageChange, onViewDetails, onViewTimeline }) => {
   const statusStyles: Record<string, string> = {
     Shipped: "bg-shipped",
     Delivered: "bg-delivered",
@@ -204,16 +207,42 @@ const OrderHistoryTable: React.FC<{
           ))}
           {safeOrders.length === 0 && <p className="text-gray-500 text-center py-4">No orders found.</p>}
         </div>
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-6">
+            <button 
+              onClick={() => onPageChange(page - 1)} 
+              disabled={page === 1}
+              className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-600 font-medium">
+              Page {page} of {totalPages}
+            </span>
+            <button 
+              onClick={() => onPageChange(page + 1)} 
+              disabled={page === totalPages}
+              className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
+
 };
 
 
 const UserPaymentsTable: React.FC<{
   payments: UserPayment[];
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
   onDownloadInvoice: (orderId: number) => void;
-}> = ({ payments, onDownloadInvoice }) => {
+}> = ({ payments, page, totalPages, onPageChange, onDownloadInvoice }) => {
   return (
     <section className="mt-8">
       <h2 className="text-[#333333] text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-display">
@@ -294,6 +323,29 @@ const UserPaymentsTable: React.FC<{
           ))}
           {payments.length === 0 && <p className="text-gray-500 text-center py-4">No payments found.</p>}
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-4 mt-6">
+            <button 
+              onClick={() => onPageChange(page - 1)} 
+              disabled={page === 1}
+              className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-600 font-medium">
+              Page {page} of {totalPages}
+            </span>
+            <button 
+              onClick={() => onPageChange(page + 1)} 
+              disabled={page === totalPages}
+              className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
@@ -573,7 +625,7 @@ const DeleteAddressModal: React.FC<{
 
 const AddressList: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
-  const { addresses, addressStatus } = useSelector(
+  const { addresses, addressMeta } = useSelector(
     (state: RootState) => state.auth
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -583,12 +635,13 @@ const AddressList: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [addressToDelete, setAddressToDelete] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Use state for pagination
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
-    if (addressStatus === "idle") {
-      dispatch(getAddressesThunk());
-    }
-  }, [addressStatus, dispatch]);
+    dispatch(getAddressesThunk(page));
+  }, [dispatch, page]);
 
   const handleDelete = (id: number) => {
     if (!id) {
@@ -668,6 +721,29 @@ const AddressList: React.FC = () => {
           <p className="text-gray-500">No addresses found.</p>
         )}
       </div>
+      
+      {/* Pagination Controls */}
+      {addressMeta && addressMeta.total_pages && addressMeta.total_pages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <button 
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
+            disabled={page === 1}
+            className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-gray-600 font-medium">
+            Page {page} of {addressMeta.total_pages}
+          </span>
+          <button 
+            onClick={() => setPage(p => Math.min(addressMeta.total_pages || 1, p + 1))} 
+            disabled={page === addressMeta.total_pages}
+            className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
       <AddressModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -1135,6 +1211,8 @@ const UserProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
   const [isTimelineModalOpen, setIsTimelineModalOpen] = useState(false);
+  const [orderPage, setOrderPage] = useState(1);
+  const [paymentsPage, setPaymentsPage] = useState(1);
   const [activeTab, setActiveTab] = useState<
     "profile" | "orders" | "addresses" | "payments"
   >("profile");
@@ -1153,11 +1231,12 @@ const UserProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (activeTab === "orders") {
-      dispatch(getOrderHistoryThunk());
+      dispatch(getOrderHistoryThunk(orderPage));
     } else if (activeTab === "payments") {
-      dispatch(getUserPaymentsThunk(1));
+      dispatch(getUserPaymentsThunk(paymentsPage));
     }
-  }, [activeTab, dispatch]);
+  }, [activeTab, orderPage, paymentsPage, dispatch]);
+
 
   const handleDownloadInvoice = async (orderId: number) => {
     try {
@@ -1296,14 +1375,21 @@ const UserProfilePage: React.FC = () => {
         {activeTab === "orders" && (
           <OrderHistoryTable
             orders={orderHistory?.results || []}
+            page={orderPage}
+            totalPages={orderHistory?.total_pages || 1}
+            onPageChange={setOrderPage}
             onViewDetails={handleViewDetails}
             onViewTimeline={handleViewTimeline}
           />
+
         )}
         {activeTab === "addresses" && <AddressList />}
         {activeTab === "payments" && (
           <UserPaymentsTable 
             payments={userPayments?.results || []}
+            page={paymentsPage}
+            totalPages={userPayments?.total_pages || 1}
+            onPageChange={setPaymentsPage}
             onDownloadInvoice={handleDownloadInvoice} 
           />
         )}

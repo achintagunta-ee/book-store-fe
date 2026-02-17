@@ -7,10 +7,11 @@ import type { RootState, AppDispatch } from "../redux/store/store";
 import {
   getAdminPaymentsThunk,
   getAdminPaymentByIdThunk,
-  getInvoiceThunk,
-  getPaymentReceiptThunk,
   createOfflinePaymentThunk,
+  getInvoiceThunk,
+  getPaymentReceiptThunk
 } from "../redux/slice/authSlice";
+import AdminPagination from "../components/admin/AdminPagination";
 
 // Payments Page Component
 const PaymentsPage: React.FC = () => {
@@ -444,27 +445,15 @@ const PaymentsPage: React.FC = () => {
 					</div>
 
 					{/* Pagination */}
-					<div className="flex justify-between items-center p-4 mt-4">
-						<p className="text-sm text-text-main/70">
-							Page {currentPage} of {totalPages}
-						</p>
-						<div className="flex gap-2">
-							<button
-								onClick={() => handlePageChange(currentPage - 1)}
-								disabled={currentPage === 1}
-								className="flex items-center justify-center px-4 py-2 border border-card-border/30 rounded-lg text-sm text-text-main hover:bg-primary/10 transition-colors disabled:opacity-50"
-							>
-								Previous
-							</button>
-							<button
-								onClick={() => handlePageChange(currentPage + 1)}
-								disabled={currentPage === totalPages}
-								className="flex items-center justify-center px-4 py-2 border border-card-border/30 rounded-lg text-sm text-text-main hover:bg-primary/10 transition-colors disabled:opacity-50"
-							>
-								Next
-							</button>
-						</div>
-					</div>
+                    {totalPages > 1 && (
+                        <AdminPagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={(page) => handlePageChange(page)}
+                            totalResults={adminPayments?.total_items || 0}
+                            itemsPerPage={adminPayments?.limit || 10}
+                        />
+                    )}
 				</div>
 			</main>
 			{/* Invoice Modal */}

@@ -74,6 +74,8 @@ export interface BookState {
   bookImages: BookImage[];
   bookImagesStatus: "idle" | "loading" | "succeeded" | "failed";
   bookImagesError: string | null | undefined;
+  totalPages: number;
+  currentPage: number;
 }
 
 const initialState: BookState = {
@@ -105,6 +107,8 @@ const initialState: BookState = {
   bookImages: [],
   bookImagesStatus: "idle",
   bookImagesError: null,
+  totalPages: 1,
+  currentPage: 1,
 };
 
 // Admin Thunks
@@ -524,6 +528,8 @@ export const bookSlice = createSlice({
             }));
             // API returns 'total_books' or 'total_items'
             state.totalBooks = (action.payload as any).total_books || (action.payload as any).total_items; 
+            state.totalPages = (action.payload as any).total_pages || 1;
+            state.currentPage = (action.payload as any).current_page || 1;
         } 
         // Fallback for direct array response (if API changes back or for other endpoints)
         else if (Array.isArray(action.payload)) {

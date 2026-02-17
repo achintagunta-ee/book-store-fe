@@ -219,6 +219,12 @@ interface AuthState {
   profileStatus: "idle" | "loading" | "succeeded" | "failed";
   profileError: string | null;
   addresses: AddressItem[];
+  addressMeta: {
+    total?: number;
+    total_pages?: number;
+    page?: number;
+    limit?: number;
+  } | null;
   addressStatus: "idle" | "loading" | "succeeded" | "failed";
   addressError: string | null;
   wishlist: WishlistItem[];
@@ -274,6 +280,12 @@ interface AuthState {
   currentAdminNotification: AdminNotificationDetail | null;
   currentAdminNotificationStatus: "idle" | "loading" | "succeeded" | "failed";
   currentAdminNotificationError: string | null;
+  adminNotificationsMeta: {
+    total_items: number;
+    total_pages: number;
+    current_page: number;
+    limit: number;
+  } | null;
   inventorySummary: InventorySummary | null;
   inventorySummaryStatus: "idle" | "loading" | "succeeded" | "failed";
   inventorySummaryError: string | null;
@@ -340,6 +352,12 @@ interface AuthState {
   verifyEbookRazorpayPaymentError: string | null;
   verifyEbookRazorpayPaymentResponse: VerifyEbookRazorpayPaymentResponse | null;
   userLibrary: LibraryBook[];
+  userLibraryMeta: {
+    total?: number;
+    total_pages?: number;
+    page?: number;
+    limit?: number;
+  } | null;
   userLibraryStatus: "idle" | "loading" | "succeeded" | "failed";
   userLibraryError: string | null;
   currentEbook: ReadEbookResponse | null;
@@ -386,6 +404,7 @@ const initialState: AuthState = {
   profileStatus: "idle",
   profileError: null,
   addresses: [],
+  addressMeta: null,
   addressStatus: "idle",
   addressError: null,
   wishlist: [],
@@ -435,6 +454,7 @@ const initialState: AuthState = {
   currentNotification: null,
   currentNotificationStatus: "idle",
   currentNotificationError: null,
+  adminNotificationsMeta: null,
   adminNotifications: [],
   adminNotificationsStatus: "idle",
   adminNotificationsError: null,
@@ -502,6 +522,7 @@ const initialState: AuthState = {
   verifyEbookRazorpayPaymentError: null,
   verifyEbookRazorpayPaymentResponse: null,
   userLibrary: [],
+  userLibraryMeta: null,
   userLibraryStatus: "idle",
   userLibraryError: null,
   currentEbook: null,
@@ -826,9 +847,9 @@ export const viewOrderInvoiceThunk = createAsyncThunk(
 
 export const getAddressesThunk = createAsyncThunk(
   "auth/getAddresses",
-  async (_, { rejectWithValue }) => {
+  async (page: number | undefined, { rejectWithValue }) => {
     try {
-      return await getAddressesApi();
+      return await getAddressesApi(page);
     } catch (error: unknown) {
       if (error instanceof Error) {
         return rejectWithValue(error.message || "Failed to fetch addresses");
@@ -1085,9 +1106,9 @@ export const verifyEbookRazorpayPaymentThunk = createAsyncThunk(
 
 export const getUserLibraryThunk = createAsyncThunk(
   "users/getLibrary",
-  async (_, { rejectWithValue }) => {
+  async (page: number | undefined, { rejectWithValue }) => {
     try {
-      const data = await getUserLibraryApi();
+      const data = await getUserLibraryApi(page);
       return data;
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -1333,9 +1354,13 @@ export const viewNotificationThunk = createAsyncThunk(
 
 export const getAdminNotificationsThunk = createAsyncThunk(
   "auth/getAdminNotifications",
-  async (triggerSource: string | undefined, { rejectWithValue }) => {
+  async (
+    params: { triggerSource?: string; page?: number; limit?: number } = {},
+    { rejectWithValue }
+  ) => {
     try {
-      return await getAdminNotificationsApi(triggerSource);
+      const { triggerSource, page, limit } = params;
+      return await getAdminNotificationsApi(triggerSource, page, limit);
     } catch (error: unknown) {
       if (error instanceof Error) {
         return rejectWithValue(error.message || "Failed to fetch admin notifications");
@@ -2194,11 +2219,24 @@ const authSlice = createSlice({
       })
       .addCase(getAddressesThunk.fulfilled, (state, action) => {
         state.addressStatus = "succeeded";
-        // The API actually returns a paginated response { results: [...] }
-        // We cast it to any here to access .results because the thunk return type inferencing might be tricky 
-        // without updating the entire chain, but essentially we want the array.
-        const payload = action.payload as unknown as { results: AddressItem[] }; 
-        state.addresses = payload.results || [];
+        const payload = action.payload as any;
+        
+        if (payload && Array.isArray(payload.results)) {
+          state.addresses = payload.results;
+          state.addressMeta = {
+              total: payload.total_items,
+              total_pages: payload.total_pages,
+              page: payload.current_page,
+              limit: payload.limit
+          };
+        } else if (Array.isArray(payload)) {
+             // Fallback for unpaginated array response
+            state.addresses = payload;
+            state.addressMeta = null;
+        } else {
+             state.addresses = [];
+             state.addressMeta = null;
+        }
       })
       .addCase(getAddressesThunk.rejected, (state, action) => {
         state.addressStatus = "failed";
@@ -2437,6 +2475,12 @@ const authSlice = createSlice({
       .addCase(getAdminNotificationsThunk.fulfilled, (state, action) => {
         state.adminNotificationsStatus = "succeeded";
         state.adminNotifications = action.payload.results;
+        state.adminNotificationsMeta = {
+            total_items: action.payload.total_items,
+            total_pages: action.payload.total_pages,
+            current_page: action.payload.current_page,
+            limit: action.payload.limit
+        };
       })
       .addCase(getAdminNotificationsThunk.rejected, (state, action) => {
         state.adminNotificationsStatus = "failed";
@@ -2785,7 +2829,31 @@ const authSlice = createSlice({
       })
       .addCase(getUserLibraryThunk.fulfilled, (state, action) => {
         state.userLibraryStatus = "succeeded";
-        state.userLibrary = action.payload;
+        const payload = action.payload as any;
+        if (Array.isArray(payload)) {
+          state.userLibrary = payload;
+          state.userLibraryMeta = null;
+        } else if (payload && Array.isArray(payload.results)) {
+          state.userLibrary = payload.results;
+          state.userLibraryMeta = {
+              total: payload.total_items || payload.total,
+              total_pages: payload.total_pages,
+              page: payload.current_page || payload.page,
+              limit: payload.limit
+          };
+        } else if (payload && Array.isArray(payload.data)) {
+          state.userLibrary = payload.data;
+          state.userLibraryMeta = {
+              total: payload.total,
+              total_pages: payload.total_pages,
+              page: payload.page,
+              limit: payload.limit
+          };
+        } else {
+          state.userLibrary = [];
+          state.userLibraryMeta = null;
+          console.warn("getUserLibraryThunk: payload is not an array", payload);
+        }
       })
       .addCase(getUserLibraryThunk.rejected, (state, action) => {
         state.userLibraryStatus = "failed";

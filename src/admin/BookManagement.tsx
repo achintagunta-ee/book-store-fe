@@ -4,8 +4,6 @@ import {
   Plus,
   Edit,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
   SlidersHorizontal,
   Image as ImageIcon,
   RotateCcw,
@@ -23,6 +21,7 @@ import {
   archiveBookAsync,
   restoreBookAsync,
 } from "../redux/slice/bookSlice";
+import AdminPagination from "../components/admin/AdminPagination";
 import type { Book } from "../redux/utilis/bookApi";
 import Sidebar from "./Sidebar";
 import { uploadEbookThunk } from "../redux/slice/authSlice";
@@ -278,7 +277,7 @@ const BookModal: React.FC<{
 
 const BooksManagement: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { books, categories, status, error } = useSelector(
+  const { books, status, error, categories, totalBooks, totalPages } = useSelector(
     (state: RootState) => state.books
   );
 
@@ -663,26 +662,15 @@ const BooksManagement: React.FC = () => {
           </div>
 
           {/* Pagination */}
-            {/* Simple Pagination Logic - Enhance based on total pages from API */}
-          <div className="flex items-center justify-center p-4 mt-4 gap-1">
-             <button 
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              className="flex w-10 h-10 items-center justify-center text-[#261d1a]/70 hover:text-[#013a67] disabled:opacity-50"
-             >
-              <ChevronLeft size={20} />
-            </button>
-            <span className="flex items-center justify-center px-4 font-bold text-[#261d1a]">
-              Page {currentPage}
-            </span>
-             <button 
-               // Assuming logic for disabling next if no more books, or simpler just let it fetch empty
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              className="flex w-10 h-10 items-center justify-center text-[#261d1a]/70 hover:text-[#013a67]"
-             >
-              <ChevronRight size={20} />
-            </button>
-          </div>
+          {totalPages > 1 && (
+            <AdminPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={(page) => setCurrentPage(page)}
+                totalResults={totalBooks}
+                itemsPerPage={10}
+            />
+          )}
         </main>
       </div>
     </div>

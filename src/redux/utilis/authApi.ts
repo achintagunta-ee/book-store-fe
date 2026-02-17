@@ -44,7 +44,17 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     console.error(`API Error: ${res.status} - ${text}`);
-    throw new Error(text || `Request failed: ${res.status}`);
+    
+    let message = text;
+    try {
+      const json = JSON.parse(text);
+      if (json.detail) message = json.detail;
+      else if (json.message) message = json.message;
+    } catch {
+        // ignore
+    }
+
+    throw new Error(message || `Request failed: ${res.status}`);
   }
 
   const data = (await res.json()) as T;
@@ -506,8 +516,8 @@ export interface AddressListResponse {
   results: AddressItem[];
 }
 
-export async function getAddressesApi() {
-  return request<AddressListResponse>("/users/profile/addresses");
+export async function getAddressesApi(page: number = 1) {
+  return request<AddressListResponse>(`/users/profile/addresses?page=${page}`);
 }
 
 export async function addAddressApi(data: AddressData) {
@@ -954,8 +964,8 @@ export interface LibraryBook {
   cover_image_url?: string;
 }
 
-export async function getUserLibraryApi() {
-  return request<LibraryBook[]>("/users/library");
+export async function getUserLibraryApi(page: number = 1) {
+  return request<LibraryBook[]>(`/users/library?page=${page}`);
 }
 
 // e) Read Ebook
@@ -1150,9 +1160,13 @@ export interface AdminNotificationsResponse {
   results: AdminNotificationItem[];
 }
 
-export async function getAdminNotificationsApi(triggerSource?: string) {
-  const query = triggerSource ? `?trigger_source=${triggerSource}` : "";
-  return request<AdminNotificationsResponse>(`/admin/notifications${query}`);
+export async function getAdminNotificationsApi(triggerSource?: string, page: number = 1, limit: number = 10) {
+  const params = new URLSearchParams();
+  if (triggerSource) params.append("trigger_source", triggerSource);
+  params.append("page", page.toString());
+  params.append("limit", limit.toString());
+  
+  return request<AdminNotificationsResponse>(`/admin/notifications?${params.toString()}`);
 }
 
 export interface AdminNotificationDetail {

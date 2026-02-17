@@ -216,7 +216,7 @@ const Header: React.FC = () => {
                   strokeWidth={1.5}
                 />
               </button>
-              {notifications && notifications.length > 0 && (
+              {userProfile && notifications && notifications.length > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                   {notifications.length}
                 </span>
@@ -230,7 +230,7 @@ const Header: React.FC = () => {
                   strokeWidth={1.5}
                 />
               </button>
-              {wishlistCount > 0 && (
+              {userProfile && wishlistCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                   {wishlistCount}
                 </span>
@@ -423,7 +423,7 @@ const Header: React.FC = () => {
                   <Heart className="h-6 w-6" strokeWidth={1.5} />
                   <span>Wishlist</span>
                 </button>
-                {wishlistCount > 0 && (
+                {userProfile && wishlistCount > 0 && (
                   <span className="absolute top-1 right-3 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
                     {wishlistCount}
                   </span>
