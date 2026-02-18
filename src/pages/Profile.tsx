@@ -31,6 +31,7 @@ import {
   type UserPayment,
   type OrderTimelineItem,
 } from "../redux/utilis/authApi";
+import AdminPagination from "../components/admin/AdminPagination";
 
 // --- Order History Table Sub-Component ---
 
@@ -38,10 +39,11 @@ const OrderHistoryTable: React.FC<{
   orders: OrderHistoryItem[];
   page: number;
   totalPages: number;
+  totalItems: number;
   onPageChange: (page: number) => void;
   onViewDetails: (id: number) => void;
   onViewTimeline: (id: number) => void;
-}> = ({ orders, page, totalPages, onPageChange, onViewDetails, onViewTimeline }) => {
+}> = ({ orders, page, totalPages, totalItems, onPageChange, onViewDetails, onViewTimeline }) => {
   const statusStyles: Record<string, string> = {
     Shipped: "bg-shipped",
     Delivered: "bg-delivered",
@@ -77,7 +79,14 @@ const OrderHistoryTable: React.FC<{
             <tbody className="divide-y divide-[#e6d8d1]">
               {safeOrders.map((order) => (
                 <tr key={order.order_id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">{order.order_id}</td>
+                  <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">
+                    <button
+                      onClick={() => onViewDetails(order.raw_id)}
+                      className="text-primary hover:underline font-semibold"
+                    >
+                      {order.order_id.replace("#", "")}
+                    </button>
+                  </td>
                   <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">{order.date}</td>
                   
                   {/* Book Titles */}
@@ -153,7 +162,14 @@ const OrderHistoryTable: React.FC<{
               <div className="flex justify-between items-start">
                  <div>
                     <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Order ID</span>
-                    <p className="font-bold text-[#333333]">{order.order_id}</p>
+                    <p className="font-bold text-[#333333]">
+                      <button
+                        onClick={() => onViewDetails(order.raw_id)}
+                        className="text-primary hover:underline"
+                      >
+                        {order.order_id.replace("#", "")}
+                      </button>
+                    </p>
                  </div>
                  <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${statusStyles[order.status.toLowerCase()] || "bg-gray-100 text-gray-800"}`}>
                     {order.status}
@@ -208,27 +224,13 @@ const OrderHistoryTable: React.FC<{
           {safeOrders.length === 0 && <p className="text-gray-500 text-center py-4">No orders found.</p>}
         </div>
         {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 mt-6">
-            <button 
-              onClick={() => onPageChange(page - 1)} 
-              disabled={page === 1}
-              className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-gray-600 font-medium">
-              Page {page} of {totalPages}
-            </span>
-            <button 
-              onClick={() => onPageChange(page + 1)} 
-              disabled={page === totalPages}
-              className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        )}
+        {/* Pagination Controls */}
+        <AdminPagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          totalResults={totalItems}
+        />
       </div>
     </section>
   );
@@ -236,13 +238,99 @@ const OrderHistoryTable: React.FC<{
 };
 
 
+// --- Payment Details Modal ---
+const PaymentDetailsModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  payment: UserPayment | null;
+}> = ({ isOpen, onClose, payment }) => {
+  if (!isOpen || !payment) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 md:p-6">
+      <div className="w-full max-w-md rounded-lg bg-white p-5 md:p-8 shadow-lg relative max-h-[90vh] overflow-y-auto">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
+        >
+          <X size={24} />
+        </button>
+        <h3 className="text-2xl font-bold text-[#333333] mb-6">
+          Payment Details
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-gray-500">Payment ID</p>
+            <p className="font-semibold">{payment.payment_id}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Transaction ID</p>
+            <p className="font-semibold break-all">{payment.txn_id || "N/A"}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Date</p>
+            <p className="font-semibold">
+              {new Date(payment.created_at).toLocaleString()}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Amount</p>
+            <p className="font-semibold">₹{payment.amount.toFixed(2)}</p>
+          </div>
+          <div>
+             <p className="text-sm text-gray-500">Method</p>
+             <p className="font-semibold capitalize">{payment.method}</p>
+          </div>
+          <div>
+             <p className="text-sm text-gray-500">Type</p>
+             <p className="font-semibold capitalize">{payment.type || "N/A"}</p>
+          </div>
+          <div>
+            <p className="text-sm text-gray-500">Status</p>
+            <span
+              className={`inline-flex items-center justify-center rounded-full h-6 px-3 text-xs font-bold capitalize ${
+                payment.status === "success"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-yellow-100 text-yellow-800"
+              }`}
+            >
+              {payment.status}
+            </span>
+          </div>
+        </div>
+        <div className="mt-8 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 font-semibold hover:bg-gray-200 transaction-colors text-sm"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const UserPaymentsTable: React.FC<{
   payments: UserPayment[];
   page: number;
   totalPages: number;
+  totalItems: number;
   onPageChange: (page: number) => void;
-  onDownloadInvoice: (orderId: number) => void;
-}> = ({ payments, page, totalPages, onPageChange, onDownloadInvoice }) => {
+  onDownloadInvoice: (orderId: number) => Promise<void>;
+}> = ({ payments, page, totalPages, totalItems, onPageChange, onDownloadInvoice }) => {
+  const [selectedPayment, setSelectedPayment] = useState<UserPayment | null>(null);
+  const [downloadingId, setDownloadingId] = useState<number | null>(null);
+
+  const handleDownload = async (id: number) => {
+    setDownloadingId(id);
+    try {
+      await onDownloadInvoice(id);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   return (
     <section className="mt-8">
       <h2 className="text-[#333333] text-2xl font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5 font-display">
@@ -251,38 +339,59 @@ const UserPaymentsTable: React.FC<{
       <div className="px-4 py-3">
         {/* Desktop Table */}
         <div className="hidden md:block overflow-hidden rounded-xl border border-[#e6d8d1] bg-[#fbf9f8] shadow-sm">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead className="bg-[#f3ebe8]">
               <tr>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Payment ID</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Date</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Amount</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Method</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Status</th>
-                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body">Actions</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Payment ID</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Transaction ID</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Date</th>
+                <th className="px-6 py-4 text-right text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Amount</th>
+                <th className="px-6 py-4 text-center text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Method</th>
+                <th className="px-6 py-4 text-center text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Type</th>
+                <th className="px-6 py-4 text-center text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Status</th>
+                <th className="px-6 py-4 text-right text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e6d8d1]">
               {payments.map((payment) => (
-                <tr key={payment.payment_id} className="hover:bg-gray-50/50">
-                  <td className="px-6 py-4 text-gray-600 text-sm font-body">#{payment.payment_id}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm font-body">{new Date(payment.created_at).toLocaleDateString()}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm font-body">₹{payment.amount.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-gray-600 text-sm font-body capitalize">{payment.method}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold font-body ${
+                <tr key={payment.payment_id} className="hover:bg-gray-50/50 transition-colors">
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body align-middle whitespace-nowrap">
+                     <button
+                        onClick={() => setSelectedPayment(payment)}
+                        className="text-primary hover:underline font-bold"
+                     >
+                        {payment.payment_id}
+                     </button>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body align-middle">
+                    <span className="block max-w-[150px] truncate" title={payment.txn_id}>
+                      {payment.txn_id || "-"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body align-middle whitespace-nowrap">{new Date(payment.created_at).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body align-middle text-right whitespace-nowrap">₹{payment.amount.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body capitalize align-middle text-center">{payment.method}</td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body capitalize align-middle text-center">{payment.type || "-"}</td>
+                  <td className="px-6 py-4 text-sm align-middle text-center">
+                    <span className={`inline-flex items-center justify-center rounded-full h-7 px-4 text-xs font-bold font-body capitalize ${
                       payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
                       {payment.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <button onClick={() => onDownloadInvoice((payment.raw_id || payment.order_id) as number)} className="text-primary hover:underline font-bold text-sm">Download Invoice</button>
+                  <td className="px-6 py-4 text-right align-middle whitespace-nowrap">
+                    <button 
+                      onClick={() => handleDownload((payment.raw_id || payment.order_id) as number)}
+                      disabled={downloadingId === ((payment.raw_id || payment.order_id) as number)}
+                      className="text-primary hover:underline font-bold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {downloadingId === ((payment.raw_id || payment.order_id) as number) ? "Downloading..." : "Download Invoice"}
+                    </button>
                   </td>
                 </tr>
               ))}
               {payments.length === 0 && (
-                <tr><td colSpan={6} className="px-6 py-8 text-center text-gray-500">No payments found.</td></tr>
+                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500">No payments found.</td></tr>
               )}
             </tbody>
           </table>
@@ -293,7 +402,15 @@ const UserPaymentsTable: React.FC<{
           {payments.map((payment) => (
             <div key={payment.payment_id} className="bg-[#fbf9f8] border border-[#e6d8d1] rounded-xl p-4 shadow-sm flex flex-col gap-3">
                <div className="flex justify-between items-center">
-                 <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">#{payment.payment_id}</span>
+                 <div>
+                   <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold block">Payment ID</span>
+                   <button
+                      onClick={() => setSelectedPayment(payment)}
+                      className="font-bold text-[#333333] hover:text-primary hover:underline"
+                   >
+                      {payment.payment_id}
+                   </button>
+                 </div>
                  <span className={`px-2 py-1 rounded text-xs font-bold capitalize ${
                       payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
@@ -301,23 +418,35 @@ const UserPaymentsTable: React.FC<{
                  </span>
                </div>
                
-               <div className="grid grid-cols-2 gap-y-2 text-sm">
-                 <div className="text-gray-500">Date</div>
-                 <div className="text-right text-gray-900">{new Date(payment.created_at).toLocaleDateString()}</div>
-                 
-                 <div className="text-gray-500">Amount</div>
-                 <div className="text-right text-gray-900 font-bold">₹{payment.amount.toFixed(2)}</div>
-                 
-                 <div className="text-gray-500">Method</div>
-                 <div className="text-right text-gray-900 capitalize">{payment.method}</div>
+               <div className="text-sm">
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Txn ID</span>
+                    <span className="text-gray-900 break-all pl-4 text-right">{payment.txn_id || "-"}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Date</span>
+                    <span className="text-gray-900 text-right">{new Date(payment.created_at).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Amount</span>
+                    <span className="text-gray-900 font-bold text-right">₹{payment.amount.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Method</span>
+                    <span className="text-gray-900 capitalize text-right">{payment.method}</span>
+                  </div>
+                  <div className="flex justify-between py-1">
+                    <span className="text-gray-500">Type</span>
+                    <span className="text-gray-900 capitalize text-right">{payment.type || "-"}</span>
+                  </div>
                </div>
 
-
                <button 
-                  onClick={() => onDownloadInvoice((payment.raw_id || payment.order_id) as number)}
-                  className="w-full mt-2 py-2 bg-white border border-[#e6d8d1] text-primary rounded-lg font-bold text-sm hover:bg-gray-50"
+                  onClick={() => handleDownload((payment.raw_id || payment.order_id) as number)}
+                  disabled={downloadingId === ((payment.raw_id || payment.order_id) as number)}
+                  className="w-full mt-2 py-2 bg-white border border-[#e6d8d1] text-primary rounded-lg font-bold text-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                >
-                 Download Invoice
+                 {downloadingId === ((payment.raw_id || payment.order_id) as number) ? "Downloading..." : "Download Invoice"}
                </button>
             </div>
           ))}
@@ -325,27 +454,15 @@ const UserPaymentsTable: React.FC<{
         </div>
         
         {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 mt-6">
-            <button 
-              onClick={() => onPageChange(page - 1)} 
-              disabled={page === 1}
-              className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Previous
-            </button>
-            <span className="text-sm text-gray-600 font-medium">
-              Page {page} of {totalPages}
-            </span>
-            <button 
-              onClick={() => onPageChange(page + 1)} 
-              disabled={page === totalPages}
-              className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              Next
-            </button>
-          </div>
-        )}
+        <AdminPagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+          totalResults={totalItems}
+        />
+        
+        {/* Modal */}
+        <PaymentDetailsModal isOpen={!!selectedPayment} onClose={() => setSelectedPayment(null)} payment={selectedPayment} />
       </div>
     </section>
   );
@@ -724,25 +841,12 @@ const AddressList: React.FC = () => {
       
       {/* Pagination Controls */}
       {addressMeta && addressMeta.total_pages && addressMeta.total_pages > 1 && (
-        <div className="flex justify-center items-center gap-4 mt-6">
-          <button 
-            onClick={() => setPage(p => Math.max(1, p - 1))} 
-            disabled={page === 1}
-            className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Previous
-          </button>
-          <span className="text-sm text-gray-600 font-medium">
-            Page {page} of {addressMeta.total_pages}
-          </span>
-          <button 
-            onClick={() => setPage(p => Math.min(addressMeta.total_pages || 1, p + 1))} 
-            disabled={page === addressMeta.total_pages}
-            className="px-4 py-2 border border-[#e6d8d1] rounded-lg text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            Next
-          </button>
-        </div>
+        <AdminPagination
+          currentPage={page}
+          totalPages={addressMeta.total_pages || 1}
+          onPageChange={setPage}
+          totalResults={addressMeta.total || 0}
+        />
       )}
       <AddressModal
         isOpen={isModalOpen}
@@ -1377,6 +1481,7 @@ const UserProfilePage: React.FC = () => {
             orders={orderHistory?.results || []}
             page={orderPage}
             totalPages={orderHistory?.total_pages || 1}
+            totalItems={orderHistory?.total_items || 0}
             onPageChange={setOrderPage}
             onViewDetails={handleViewDetails}
             onViewTimeline={handleViewTimeline}
@@ -1389,6 +1494,7 @@ const UserProfilePage: React.FC = () => {
             payments={userPayments?.results || []}
             page={paymentsPage}
             totalPages={userPayments?.total_pages || 1}
+            totalItems={userPayments?.total_items || 0}
             onPageChange={setPaymentsPage}
             onDownloadInvoice={handleDownloadInvoice} 
           />

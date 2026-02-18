@@ -230,17 +230,17 @@ const AddressStep: React.FC<StepProps> = ({
         </div>
         <div className="mt-6 px-4 flex gap-4">
           <button
+            onClick={() => setShowAddForm(true)}
+            className="flex-1 h-12 border border-primary text-primary rounded-lg font-bold"
+          >
+            Add New Address
+          </button>
+          <button
             onClick={handleContinue}
             disabled={!selectedAddressId}
             className="flex-1 h-12 bg-primary text-white rounded-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Continue
-          </button>
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="flex-1 h-12 border border-primary text-primary rounded-lg font-bold"
-          >
-            Add New Address
           </button>
         </div>
       </div>

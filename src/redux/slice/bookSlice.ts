@@ -43,6 +43,10 @@ import {
   type BookImage,
   archiveBookApi,
   restoreBookApi,
+
+  type Color,
+  fetchColorsApi,
+  updateBookImageColorApi,
 } from "../utilis/bookApi";
 
 export interface BookState {
@@ -76,6 +80,8 @@ export interface BookState {
   bookImagesError: string | null | undefined;
   totalPages: number;
   currentPage: number;
+  colors: Color[];
+  colorsStatus: "idle" | "loading" | "succeeded" | "failed";
 }
 
 const initialState: BookState = {
@@ -109,6 +115,8 @@ const initialState: BookState = {
   bookImagesError: null,
   totalPages: 1,
   currentPage: 1,
+  colors: [],
+  colorsStatus: "idle",
 };
 
 // Admin Thunks
@@ -507,6 +515,21 @@ export const reorderBookImagesAsync = createAsyncThunk(
   }
 );
 
+export const fetchColorsAsync = createAsyncThunk(
+  "books/fetchColors",
+  async () => {
+    return await fetchColorsApi();
+  }
+);
+
+export const updateBookImageColorAsync = createAsyncThunk(
+  "books/updateBookImageColor",
+  async ({ imageId, colorId }: { imageId: number; colorId: number | null }) => {
+    const response = await updateBookImageColorApi(imageId, colorId);
+    return response.image;
+  }
+);
+
 export const bookSlice = createSlice({
   name: "books",
   initialState,
@@ -781,6 +804,16 @@ export const bookSlice = createSlice({
             if (indexB === -1) return -1;
             return indexA - indexB;
          });
+      })
+      .addCase(fetchColorsAsync.fulfilled, (state, action) => {
+        state.colors = action.payload;
+        state.colorsStatus = "succeeded";
+      })
+      .addCase(updateBookImageColorAsync.fulfilled, (state, action) => {
+        const index = state.bookImages.findIndex(img => img.image_id === action.payload.image_id);
+        if (index !== -1) {
+            state.bookImages[index] = action.payload;
+        }
       });
   },
 });

@@ -755,6 +755,7 @@ export interface UserPayment {
   amount: number;
   status: string;
   method: string;
+  type?: string;
   order_status: string;
   created_at: string;
   actions: {

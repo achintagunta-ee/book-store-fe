@@ -132,6 +132,7 @@ export interface Book {
   is_archived?: boolean;
   is_featured?: boolean;
   is_featured_author?: boolean;
+  images?: BookImage[];
 }
 
 export interface PaginatedBookResponse {
@@ -600,11 +601,22 @@ export const fetchHomeDataApi = async () => {
 
 // --- Book Image Management APIs ---
 
+export interface Color {
+  id: number;
+  name: string;
+  hex_code: string;
+}
+
+export const fetchColorsApi = async () => {
+  return request<Color[]>("/admin/colors/");
+};
+
 export interface BookImage {
   image_id: number;
   url: string;
   sort_order: number;
   created_at: string;
+  color?: number | null; // Color ID
 }
 
 export interface AddBookImagesResponse {
@@ -643,3 +655,9 @@ export const reorderBookImagesApi = async (bookId: number, order: number[]) => {
 };
 
 
+export const updateBookImageColorApi = async (imageId: number, colorId: number | null) => {
+  return request<{ message: string; image: BookImage }>(`/admin/books/images/${imageId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ color: colorId }),
+  });
+};
