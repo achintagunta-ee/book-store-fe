@@ -172,7 +172,7 @@ const PaymentsPage: React.FC = () => {
 		<div className="flex h-screen w-full bg-background-light">
 			<Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />{" "}
 			{/* Pass sidebarOpen state to Sidebar */}
-			<main className="flex-1 px-10 py-8 overflow-y-auto">
+			<main className={`flex-1 px-10 py-8 overflow-y-auto transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
 				<div className="flex flex-col max-w-full">
 					{/* Header */}
 					<div className="flex flex-wrap justify-between items-center gap-3 p-4">
@@ -383,15 +383,15 @@ const PaymentsPage: React.FC = () => {
 											</tr>
 										) : (
 											paymentsList.map((payment) => (
-												<tr
+											<tr
 													key={payment.payment_id}
 													className="border-t border-card-border/20 hover:bg-primary/5 transition-colors"
 												>
-													<td className="h-[72px] px-4 py-2 text-text-main/80 text-sm">
-														#{payment.payment_id}
+													<td className="h-[72px] px-4 py-2 text-text-main/80 text-sm cursor-pointer hover:text-blue-600 hover:underline" onClick={() => handleViewInvoice(payment.order_id)}>
+														{payment.payment_id}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main/80 text-sm">
-														#{payment.order_id}
+														{payment.order_id}
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
 														{typeof payment.customer === 'string' ? payment.customer : payment.customer?.name}
@@ -481,14 +481,48 @@ const PaymentsPage: React.FC = () => {
 									</div>
 									<div>
 										<p className="text-xs uppercase text-gray-500 font-semibold mb-1">Order ID</p>
-										<p className="font-medium">#{invoice.order_id}</p>
+										<p className="font-medium">{invoice.order_id}</p>
 									</div>
-									<div>
-										<p className="text-xs uppercase text-gray-500 font-semibold mb-1">Status</p>
-										<p className="font-medium capitalize px-2 py-0.5 inline-block rounded bg-white border border-gray-200 text-sm">
-											{invoice.payment.status}
-										</p>
-									</div>
+                                    <div>
+                                        <p className="text-xs uppercase text-gray-500 font-semibold mb-1">Order Status</p>
+                                        <p className="font-medium capitalize">{invoice.order_status}</p>
+                                    </div>
+                                    <div className="col-span-2 border-t pt-4 mt-2">
+                                        <h3 className="text-sm font-bold text-gray-700 mb-2">Customer Details</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-xs uppercase text-gray-500 font-semibold mb-1">Name</p>
+                                                <p className="font-medium">{invoice.customer.name}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs uppercase text-gray-500 font-semibold mb-1">Email</p>
+                                                <p className="font-medium break-all">{invoice.customer.email}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="col-span-2 border-t pt-4">
+                                        <h3 className="text-sm font-bold text-gray-700 mb-2">Payment Details</h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-xs uppercase text-gray-500 font-semibold mb-1">Transaction ID</p>
+                                                <p className="font-medium text-sm break-all">{invoice.payment?.txn_id || 'N/A'}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs uppercase text-gray-500 font-semibold mb-1">Method</p>
+                                                <p className="font-medium capitalize">{invoice.payment.method}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs uppercase text-gray-500 font-semibold mb-1">Amount</p>
+                                                <p className="font-medium">₹{(invoice.payment.amount || 0).toFixed(2)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs uppercase text-gray-500 font-semibold mb-1">Status</p>
+                                                <p className="font-medium capitalize px-2 py-0.5 inline-block rounded bg-white border border-gray-200 text-sm">
+                                                    {invoice.payment.status}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
 								</div>
 								
 								<div className="border rounded-lg overflow-hidden">
@@ -505,7 +539,7 @@ const PaymentsPage: React.FC = () => {
 											{invoice.items.map((item, idx) => (
 												<tr key={idx}>
 													<td className="py-3 px-4 text-sm">{item.title}</td>
-													<td className="text-right py-3 px-4 text-sm text-gray-600">{item.qty}</td>
+													<td className="text-right py-3 px-4 text-sm text-gray-600">{item.quantity}</td>
 													<td className="text-right py-3 px-4 text-sm text-gray-600">₹{(item.price || 0).toFixed(2)}</td>
 													<td className="text-right py-3 px-4 text-sm font-medium">₹{(item.total || 0).toFixed(2)}</td>
 												</tr>
@@ -514,7 +548,7 @@ const PaymentsPage: React.FC = () => {
 										<tfoot className="bg-gray-50">
 											<tr className="border-t border-gray-200">
 												<td colSpan={3} className="text-right py-3 px-4 font-bold text-gray-900">Total:</td>
-												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">₹{(invoice.total || 0).toFixed(2)}</td>
+												<td className="text-right py-3 px-4 font-bold text-gray-900 text-lg">₹{(invoice.summary?.total || 0).toFixed(2)}</td>
 											</tr>
 										</tfoot>
 									</table>

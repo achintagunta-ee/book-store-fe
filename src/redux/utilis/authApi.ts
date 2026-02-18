@@ -705,6 +705,7 @@ export interface ViewInvoiceResponse {
   invoice_id: string;
   order_id: number;
   customer: {
+    id: number;
     name: string;
     email: string;
   };
@@ -713,14 +714,18 @@ export interface ViewInvoiceResponse {
     method: string;
     status: string;
     amount: number;
-    payment_id: number;
   };
+  order_status: string;
   date: string;
-  total: number;
+  summary: {
+    subtotal: number;
+    shipping: number;
+    total: number;
+  };
   items: {
     title: string;
     price: number;
-    qty: number;
+    quantity: number;
     total: number;
   }[];
 }

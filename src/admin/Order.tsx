@@ -347,7 +347,7 @@ const OrdersPage: React.FC = () => {
 		<div className="flex h-screen w-full bg-background-light overflow-hidden">
 			<Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-			<main className="flex-1 overflow-y-auto">
+			<main className={`flex-1 overflow-y-auto transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
 				<div className="px-4 md:px-10 py-5">
 					{/* Header */}
 
@@ -355,13 +355,7 @@ const OrdersPage: React.FC = () => {
 						<h1 className="text-card-border text-2xl md:text-4xl font-black leading-tight tracking-tight">
 							Orders 
 						</h1>
-						<button
-							onClick={handleViewNotifications}
-							className="flex items-center gap-2 px-4 py-2 bg-white border border-[#E2D8D4] text-card-border rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-semibold"
-						>
-							<Bell size={20} />
-							Notifications
-						</button>
+
                         <button
 							onClick={() => setShowOfflineOrderModal(true)}
 							className="flex items-center gap-2 px-4 py-2 bg-card-border text-white rounded-lg hover:bg-card-border/90 transition-colors shadow-sm font-semibold"
@@ -476,9 +470,6 @@ const OrdersPage: React.FC = () => {
 												Total
 											</th>
 											<th className="px-4 py-3 text-left text-card-border text-sm font-bold">
-												Mark as Paid
-											</th>
-											<th className="px-4 py-3 text-left text-card-border text-sm font-bold">
 												Status
 											</th>
 											<th className="px-4 py-3 text-left text-card-border text-sm font-bold">
@@ -495,7 +486,12 @@ const OrdersPage: React.FC = () => {
 													className="hover:bg-primary/5 transition-colors"
 												>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
-														#{order.order_id}
+														<button 
+															onClick={() => handleViewDetails(order.order_id)}
+															className="text-blue-600 hover:underline font-medium"
+														>
+															{order.order_id}
+														</button>
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
 														{order.customer_name || (typeof order.customer === 'string' ? order.customer : order.customer?.name)}
@@ -505,20 +501,6 @@ const OrdersPage: React.FC = () => {
 													</td>
 													<td className="h-[72px] px-4 py-2 text-text-main text-sm">
 														₹{order.total_amount || order.total}
-													</td>
-													<td className="h-[72px] px-4 py-2">
-														<label className="relative inline-flex items-center cursor-pointer">
-															<input 
-																type="checkbox" 
-																className="sr-only peer"
-																checked={order.status.toLowerCase() === 'paid'}
-																onChange={(e) => {
-																	const newStatus = e.target.checked ? 'Paid' : 'Pending';
-																	handleStatusChange(order.order_id, newStatus);
-																}}
-															/>
-															<div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#B35E3F] rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
-														</label>
 													</td>
 													<td className="h-[72px] px-4 py-2">
 														<select
@@ -539,6 +521,18 @@ const OrdersPage: React.FC = () => {
 													</td>
 													<td className="h-[72px] px-4 py-2">
 														<div className="flex flex-wrap items-center gap-2">
+															<label className="relative inline-flex items-center cursor-pointer mr-2" title="Mark as Paid">
+																<input 
+																	type="checkbox" 
+																	className="sr-only peer"
+																	checked={order.status.toLowerCase() === 'paid'}
+																	onChange={(e) => {
+																		const newStatus = e.target.checked ? 'Paid' : 'Pending';
+																		handleStatusChange(order.order_id, newStatus);
+																	}}
+																/>
+																<div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-[#B35E3F] rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+															</label>
 															<button 
 																onClick={() => handleViewDetails(order.order_id)}
 																className="text-[#B35E3F] hover:text-card-border text-xs font-bold transition-colors flex items-center gap-1"

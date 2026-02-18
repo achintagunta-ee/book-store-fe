@@ -170,7 +170,7 @@ const CancellationsPage: React.FC = () => {
     <div className="flex h-screen w-full bg-background-light overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <main className="flex-1 overflow-y-auto">
+      <main className={`flex-1 overflow-y-auto transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
         <div className="px-10 py-5">
           {/* Header */}
 
@@ -237,8 +237,8 @@ const CancellationsPage: React.FC = () => {
                   {requests.length > 0 ? (
                     requests.map((req) => (
                       <tr key={req.request_id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-[#261d1a]">#{req.request_id}</td>
-                        <td className="px-6 py-4 text-sm text-[#261d1a]">#{req.order_id}</td>
+                        <td className="px-6 py-4 text-sm text-[#261d1a]">{req.request_id}</td>
+                        <td className="px-6 py-4 text-sm text-[#261d1a]">{req.order_id}</td>
                         <td className="px-6 py-4 text-sm text-[#261d1a]">
                             <div>{typeof req.customer === 'string' ? req.customer : req.customer?.name}</div>
                         </td>

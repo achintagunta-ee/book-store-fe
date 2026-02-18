@@ -174,7 +174,7 @@ const Analytics: React.FC = () => {
     <div className="flex h-screen w-full bg-gray-50 font-sans text-gray-900">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
       
-      <main className="flex-1 overflow-y-auto">
+      <main className={`flex-1 overflow-y-auto transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
         <div className="p-4 md:p-8 space-y-8">
           
           {/* Header */}

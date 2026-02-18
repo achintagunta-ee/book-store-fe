@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import Sidebar from "./Sidebar";
-import { useNavigate } from "react-router-dom";
 import {
 
   ShoppingCart,
@@ -12,7 +11,6 @@ import {
   CreditCard,
   Settings,
   LayoutDashboard,
-  ArrowLeft,
   ChevronRight,
   ChevronLeft,
   Package,
@@ -27,81 +25,100 @@ import "slick-carousel/slick/slick-theme.css";
 // This sidebar is specific to the Help section and sits adjacent to the content
 // --- Help Inner Sidebar Component ---
 // This sidebar is specific to the Help section and sits adjacent to the content
+// --- Help Inner Sidebar Component ---
+// This sidebar is specific to the Help section and sits adjacent to the content
 interface HelpInnerSidebarProps {
     activeTab: string;
     onTabChange: (tabId: string) => void;
+    isOpen: boolean;
+    onToggle: () => void;
 }
 
-const HelpInnerSidebar: React.FC<HelpInnerSidebarProps> = ({ activeTab, onTabChange }) => {
-  const navigate = useNavigate();
+const HelpInnerSidebar: React.FC<HelpInnerSidebarProps> = ({ activeTab, onTabChange, isOpen, onToggle }) => {
 
-  const handleBackToAdmin = () => {
-    navigate("/admin/dashboard");
-  };
 
 const menuGroups = [
     {
       title: "MANAGEMENT",
       items: [
-        { icon: <LayoutDashboard size={18} />, label: "Dashboard", id: "dashboard" },
-        { icon: <BookOpen size={18} />, label: "Books", id: "books" },
-        { icon: <Tags size={18} />, label: "Categories", id: "categories" },
-        { icon: <Package size={18} />, label: "Inventory", id: "inventory" },
+        { icon: <LayoutDashboard size={20} />, label: "Dashboard", id: "dashboard" },
+        { icon: <BookOpen size={20} />, label: "Books", id: "books" },
+        { icon: <Tags size={20} />, label: "Categories", id: "categories" },
+        { icon: <Package size={20} />, label: "Inventory", id: "inventory" },
       ],
     },
     {
       title: "SALES & FINANCE",
       items: [
-        { icon: <CreditCard size={18} />, label: "Payments", id: "payments" },
-        { icon: <ShoppingCart size={18} />, label: "Orders", id: "orders" },
-        { icon: <XCircle size={18} />, label: "Cancellations", id: "cancellations" },
+        { icon: <CreditCard size={20} />, label: "Payments", id: "payments" },
+        { icon: <ShoppingCart size={20} />, label: "Orders", id: "orders" },
+        { icon: <XCircle size={20} />, label: "Cancellations", id: "cancellations" },
       ],
     },
     {
       title: "SYSTEM",
       items: [
-        { icon: <Bell size={18} />, label: "Notifications", id: "notifications" },
-        { icon: <Settings size={18} />, label: "Settings", id: "settings" },
+        { icon: <Bell size={20} />, label: "Notifications", id: "notifications" },
+        { icon: <Settings size={20} />, label: "Settings", id: "settings" },
       ],
     },
   ];
 
   return (
-    <div className="w-64 bg-white border-r border-[#e5e7eb] flex-col hidden lg:flex h-full overflow-y-auto shrink-0 z-10">
-      <div className="flex flex-col p-4">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6 px-2 mt-2">
-           <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-             <Info size={18} />
-           </div>
-          <div className="flex flex-col">
-            <h1 className="text-[#261d1a] text-base font-bold">Help Center</h1>
-            <p className="text-gray-400 text-xs">Documentation</p>
-          </div>
-        </div>
+    <div 
+      className={`${isOpen ? 'w-64' : 'w-20'} bg-white border-r border-[#e5e7eb] flex flex-col hidden lg:flex h-full transition-all duration-300 ease-in-out shrink-0 z-10 relative`}
+    >
+      {/* Header Area with Toggle */}
+      <div className={`h-16 flex items-center px-4 border-b border-gray-100 shrink-0 relative ${!isOpen && 'justify-center'}`}>
+         <div className="flex items-center gap-3 overflow-hidden">
+             <div className="min-w-[32px] w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+               <Info size={18} />
+             </div>
+            {isOpen && (
+              <div className="flex flex-col whitespace-nowrap overflow-hidden transition-opacity duration-300">
+                <h1 className="text-[#261d1a] text-base font-bold">Help Center</h1>
+                <p className="text-gray-400 text-xs">Documentation</p>
+              </div>
+            )}
+         </div>
 
+          {/* Toggle Button in Header */}
+          <button
+            onClick={onToggle}
+            className={`absolute top-1/2 -translate-y-1/2 bg-white border border-gray-200 rounded-full p-1 shadow-sm hover:bg-gray-50 text-gray-500 z-20 ${isOpen ? 'right-4' : '-right-3'}`}
+          >
+            {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+          </button>
+      </div>
+
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden pt-4">
         {/* Navigation Groups */}
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 px-4">
           {menuGroups.map((group) => (
             <div key={group.title}>
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-3">
-                {group.title}
-              </h3>
-              <div className="flex flex-col gap-0.5">
+              {isOpen && (
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 px-3 whitespace-nowrap overflow-hidden">
+                  {group.title}
+                </h3>
+              )}
+              <div className="flex flex-col gap-1">
                 {group.items.map((item) => (
                   <button
                     key={item.id}
                     onClick={() => onTabChange(item.id)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors w-full text-left ${
+                    className={`flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors w-full text-left group relative ${
                       activeTab === item.id
                         ? "bg-blue-50 text-blue-700 font-medium"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                    }`}
+                    } ${!isOpen && 'justify-center'}`}
+                    title={!isOpen ? item.label : ''}
                   >
-                    {item.icon}
-                    <p className="text-sm">
-                      {item.label}
-                    </p>
+                    <div className="shrink-0">{item.icon}</div>
+                    {isOpen && (
+                      <p className="text-sm whitespace-nowrap overflow-hidden">
+                        {item.label}
+                      </p>
+                    )}
                   </button>
                 ))}
               </div>
@@ -109,16 +126,6 @@ const menuGroups = [
           ))}
         </div>
 
-        {/* Back to Admin Button */}
-        <div className="mt-6 pt-6 border-t border-gray-100">
-          <button
-            onClick={handleBackToAdmin}
-            className="flex items-center gap-3 px-3 py-2 rounded-md cursor-pointer transition-colors hover:bg-gray-50 w-full text-left text-gray-600"
-          >
-            <ArrowLeft size={18} />
-            <p className="text-sm font-medium">Back to Admin</p>
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -321,6 +328,7 @@ const helpContent: Record<string, HelpSection> = {
 
 const Help: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024);
+  const [isInnerSidebarOpen, setIsInnerSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const sliderSettings = {
@@ -354,7 +362,7 @@ const Help: React.FC = () => {
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* Main Page Layout */}
-      <div className="flex-1 flex flex-col overflow-hidden relative">
+      <div className={`flex-1 flex flex-col overflow-hidden relative transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
         {/* Mobile Header for Global Sidebar Toggle */}
         <div className="lg:hidden bg-white shadow-sm border-b border-gray-200 p-4 flex items-center justify-between shrink-0 z-20">
           <div className="flex items-center gap-3">
@@ -369,7 +377,12 @@ const Help: React.FC = () => {
         {/* Content Area with Inner Sidebar for Desktop */}
         <div className="flex flex-1 overflow-hidden">
             {/* Inner Help Sidebar (visible on desktop) */}
-            <HelpInnerSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+            <HelpInnerSidebar 
+                activeTab={activeTab} 
+                onTabChange={setActiveTab} 
+                isOpen={isInnerSidebarOpen}
+                onToggle={() => setIsInnerSidebarOpen(!isInnerSidebarOpen)}
+            />
 
             {/* Scrollable Article Content */}
             <div className="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth" onClick={() => window.innerWidth < 1024 && setSidebarOpen(false)}>

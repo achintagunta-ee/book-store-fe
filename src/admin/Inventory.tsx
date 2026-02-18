@@ -64,12 +64,12 @@ const InventoryDashboard: React.FC = () => {
             setIsUpdating(true);
             dispatch(updateBookStockThunk({ bookId: editingBook.id, stock: newStock }))
                 .unwrap()
-                .then(() => {
+                .then((res: any) => {
                     setEditingBook(null);
                     // Refresh list and summary
                     dispatch(getInventorySummaryThunk());
                     dispatch(getInventoryListThunk({ page: currentPage, limit: itemsPerPage }));
-                    toast.success("Stock updated successfully");
+                    toast.success(res.message || "Stock updated successfully");
                 })
                 .catch((err: any) => {
                     toast.error(err);
@@ -89,7 +89,7 @@ const InventoryDashboard: React.FC = () => {
 	return (
 		<div className="flex h-screen w-full bg-background-light overflow-hidden">
 			<Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-			<main className="flex-1 p-8 bg-[#f8f4f1] overflow-y-auto">
+			<main className={`flex-1 p-8 bg-[#f8f4f1] overflow-y-auto transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
 				<div className="max-w-full">
 					{/* Header */}
 					<div className="flex justify-between items-start mb-6">
@@ -205,12 +205,12 @@ const InventoryDashboard: React.FC = () => {
                                                 {book.updated_at ? new Date(book.updated_at).toLocaleDateString() : '-'}
                                             </td>
 											<td className="px-6 py-4 whitespace-nowrap text-right">
-												<button
-													onClick={() => handleEditClick(book)}
-													className="text-[#B35E3F] hover:text-[#5c2e2e] text-sm font-medium flex items-center justify-end gap-1 w-full"
-												>
-													<Edit size={16} /> Edit
-												</button>
+                                                <button
+                                                    onClick={() => handleEditClick(book)}
+                                                    className="text-[#B35E3F] hover:text-[#5c2e2e] text-sm font-medium flex items-center justify-end gap-1 w-full"
+                                                >
+                                                    <Edit size={16} /> Edit
+                                                </button>
 											</td>
 										</tr>
 									))

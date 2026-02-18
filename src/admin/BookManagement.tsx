@@ -439,7 +439,7 @@ const BooksManagement: React.FC = () => {
       />
 
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
 
           <div className="flex flex-wrap justify-between gap-4 items-center mb-6">

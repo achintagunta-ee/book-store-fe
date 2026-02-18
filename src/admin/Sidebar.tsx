@@ -12,8 +12,9 @@ import {
   HelpCircle,
   Menu,
   BarChart,
+  LayoutDashboard,
 } from "lucide-react";
-import { Link, useMatch, useNavigate } from "react-router-dom";
+import { useMatch, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "../redux/store/store";
 import { logoutThunk } from "../redux/slice/authSlice";
@@ -26,11 +27,12 @@ interface NavItemProps {
 
 const NavItem: React.FC<NavItemProps> = ({ icon, label, to }) => {
   const match = useMatch(to);
+  const navigate = useNavigate();
   const active = !!match;
 
   return (
-    <Link
-      to={to}
+    <div
+      onClick={() => navigate(to)}
       className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
         active
           ? "bg-[#e1aa12]/20 border border-[#e1aa12]/40"
@@ -39,7 +41,7 @@ const NavItem: React.FC<NavItemProps> = ({ icon, label, to }) => {
     >
       {icon}
       <p className="text-white text-base font-bold">{label}</p>
-    </Link>
+    </div>
   );
 };
 
@@ -49,7 +51,7 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { icon: <BookOpen size={20} />, label: "Dashboard", to: "/admin/dashboard" },
+  { icon: <LayoutDashboard size={20} />, label: "Dashboard", to: "/admin/dashboard" },
   {
     icon: <BookOpen size={20} />,
     label: "Books",
@@ -64,7 +66,6 @@ const navItems = [
   { icon: <Settings size={20} />, label: "Settings", to: "/admin/settings" },
   { icon: <HelpCircle size={20} />, label: "Help Docs", to: "/admin/help" },
   { icon: <BarChart size={20} />, label: "Analytics", to: "/admin/analytics" }
-
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ sidebarOpen, setSidebarOpen }) => {

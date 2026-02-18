@@ -6,6 +6,7 @@ import {
   ShoppingCart,
   Package,
   BookOpen,
+  LayoutDashboard,
 } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useDispatch, useSelector } from "react-redux";
@@ -22,12 +23,14 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon }) => (
-  <div className="flex flex-col gap-4 rounded-lg p-6 bg-white shadow-md border border-transparent hover:border-[#5c2e2e]/30 transition-all">
-    <div className="flex items-center justify-between">
-      <p className="text-[#261d1a] text-lg font-bold">{title}</p>
-      <div className="text-[#e1aa12]">{icon}</div>
+  <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
+    <div>
+      <p className="text-gray-500 text-sm font-medium">{title}</p>
+      <h3 className="text-2xl font-bold text-gray-900 mt-1">{value}</h3>
     </div>
-    <p className="text-[#000] text-4xl font-bold tracking-tight">{value}</p>
+    <div className="p-3 bg-gray-50 rounded-full text-[#013a67]">
+      {icon}
+    </div>
   </div>
 );
 
@@ -44,8 +47,6 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     dispatch(getDashboardStatsThunk());
   }, [dispatch]);
-
-
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -84,106 +85,121 @@ const Dashboard: React.FC = () => {
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex flex-col p-4 md:p-8 overflow-y-auto w-full">
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
+        <div className="flex flex-col p-6 md:p-8 overflow-y-auto w-full h-full">
+          
           {/* Header */}
-          <header className="flex justify-between items-center mb-8 gap-4">
-            <div className="flex items-center gap-4">
-
-              <h1 className="text-2xl md:text-3xl font-bold text-[#261d1a]">Dashboard</h1>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-2xl font-bold text-[#261d1a]">Dashboard</h1>
             </div>
-            <div className="flex-1 max-w-md">
-              <div className="flex items-stretch rounded-lg h-12 shadow-sm">
-                <div className="flex items-center justify-center pl-4 rounded-l-lg border-y border-l border-[#5c2e2e]/20 bg-white text-gray-500">
-                  <Search size={20} />
+            
+            <div className="relative w-full md:w-96">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search size={18} className="text-gray-400" />
                 </div>
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={handleKeyPress}
-                  className="flex-1 px-4 rounded-r-lg border-y border-r border-[#5c2e2e]/20 bg-white text-[#261d1a] focus:outline-none focus:ring-2 focus:ring-[#013a67]/50"
-                  placeholder="Search for books, orders, etc."
+                  className="block w-full pl-10 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#013a67] focus:border-transparent"
+                  placeholder="Search..."
                 />
-              </div>
             </div>
-          </header>
+          </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {stats.map((stat) => (
               <StatCard
                 key={stat.title}
                 title={stat.title}
                 value={
-                  dashboardStatsStatus === "loading" ? "Loading..." : stat.value
+                  dashboardStatsStatus === "loading" ? "..." : stat.value
                 }
                 icon={stat.icon}
               />
             ))}
           </div>
 
-          {/* Additional Content Area */}
-          <div className="mt-8 p-6 bg-white rounded-lg shadow-md border border-[#5c2e2e]/10">
-            <h2 className="text-2xl font-bold text-[#261d1a] mb-4">
-              Dashboard Overview
+          {/* Dashboard Overview / Search Results */}
+          <div className="flex-1 bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">
+              {searchResults ? "Search Results" : "Dashboard Overview"}
             </h2>
 
             {searchResults ? (
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Search Results</h3>
-                {searchResults.books.length > 0 && (
+              <div className="space-y-6">
+                 {searchResults.books.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-[#5c2e2e]">Books</h4>
-                    <ul className="list-disc pl-5">
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Books</h3>
+                    <ul className="divide-y divide-gray-100">
                       {searchResults.books.map((book: any) => (
-                        <li key={book.id}>
-                          {book.title} - {book.author}
+                        <li key={book.id} className="py-2 flex justify-between items-center hover:bg-gray-50 px-2 rounded cursor-pointer" onClick={() => navigate('/admin/inventory')}>
+                           <span className="text-gray-800 font-medium">{book.title}</span>
+                           <span className="text-gray-500 text-sm">{book.author}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                 )}
+                
                 {searchResults.orders.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-[#5c2e2e]">Orders</h4>
-                    <ul className="list-disc pl-5">
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Orders</h3>
+                     <ul className="divide-y divide-gray-100">
                       {searchResults.orders.map((order: any) => (
-                        <li key={order.id}>Order #{order.id}</li>
+                        <li key={order.id} className="py-2 text-blue-600 hover:underline cursor-pointer px-2" onClick={() => navigate('/admin/orders')}>
+                          Order #{order.id}
+                        </li>
                       ))}
                     </ul>
                   </div>
                 )}
+
                 {searchResults.users.length > 0 && (
                   <div>
-                    <h4 className="font-medium text-[#5c2e2e]">Users</h4>
-                    <ul className="list-disc pl-5">
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">Users</h3>
+                    <div className="flex flex-wrap gap-2">
                       {searchResults.users.map((user: any) => (
-                        <li key={user.id}>{user.username}</li>
+                        <span key={user.id} className="inline-block px-2 py-1 bg-gray-100 rounded text-sm text-gray-700">
+                          {user.username}
+                        </span>
                       ))}
-                    </ul>
+                    </div>
                   </div>
                 )}
+
                 {searchResults.books.length === 0 &&
                   searchResults.orders.length === 0 &&
                   searchResults.users.length === 0 && (
-                    <p>No results found.</p>
+                    <p className="text-gray-500 text-center py-4">No results found.</p>
                   )}
+                  
+                  <button 
+                    onClick={() => { setSearchQuery(""); dispatch(adminSearchThunk("")); }}
+                    className="mt-4 text-sm text-[#013a67] font-medium hover:underline"
+                >
+                    Clear Search
+                </button>
               </div>
             ) : (
-              <p className="text-[#261d1a]/70">
-                Welcome to the Admin Dashboard. Here you can manage your inventory,
-                orders, settings, and more.
-              </p>
-            )}
-
-            {!searchResults && (
-              <button 
-                onClick={() => navigate("/admin/inventory")}
-                className="mt-4 ml-3 px-6 py-2 bg-[#e1aa12] hover:bg-[#e1aa12]/90 text-white rounded-lg transition-colors font-semibold"
-              >
-                View All
-              </button>
+              <div className="text-center py-12">
+                <div className="inline-flex justify-center items-center w-16 h-16 bg-blue-50 rounded-full mb-4">
+                     <LayoutDashboard size={32} className="text-[#013a67]" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Welcome to your Dashboard</h3>
+                <p className="text-gray-500 mt-2 max-w-md mx-auto">
+                  Manage your inventory, track orders, and view reports from this central hub.
+                </p>
+                <button 
+                    onClick={() => navigate("/admin/inventory")}
+                    className="mt-6 px-6 py-2 bg-[#013a67] text-white rounded-lg hover:bg-[#013a67]/90 transition-colors font-medium"
+                >
+                    Go to Inventory
+                </button>
+              </div>
             )}
           </div>
         </div>

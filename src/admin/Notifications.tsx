@@ -49,7 +49,7 @@ const AdminNotificationsPage: React.FC = () => {
     <div className="flex h-screen w-full bg-background-light overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
-      <main className="flex-1 overflow-y-auto">
+      <main className={`flex-1 overflow-y-auto transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
         <div className="px-10 py-5">
           {/* Header */}
 
@@ -122,7 +122,12 @@ const AdminNotificationsPage: React.FC = () => {
                           className="hover:bg-primary/5 transition-colors"
                         >
                           <td className="h-[72px] px-4 py-2 text-text-main text-sm">
-                            #{notification.notification_id}
+                            <button
+                                onClick={() => handleViewDetails(notification.notification_id)}
+                                className="text-blue-600 hover:underline font-medium"
+                            >
+                                {notification.notification_id}
+                            </button>
                           </td>
                           <td className="h-[72px] px-4 py-2 text-text-main text-sm font-medium">
                             {notification.title}

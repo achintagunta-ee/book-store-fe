@@ -173,7 +173,7 @@ const AdminSettings: React.FC = () => {
   return (
     <div className="flex h-screen w-full bg-[#f8f4f1] overflow-hidden">
       <Sidebar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <main className="flex-1 overflow-y-auto">
+      <main className={`flex-1 overflow-y-auto transition-all duration-300 ${!sidebarOpen ? "pl-20" : ""}`}>
         <div className="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-40 py-5">
           <div className="max-w-[960px] mx-auto">
             {/* Header */}
