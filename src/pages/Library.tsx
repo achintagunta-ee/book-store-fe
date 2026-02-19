@@ -3,8 +3,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { type AppDispatch, type RootState } from "../redux/store/store";
 import { getUserLibraryThunk, readEbookThunk } from "../redux/slice/authSlice";
 import { Toaster, toast } from "react-hot-toast";
-import { BookOpen, ShoppingBag, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { BookOpen, ShoppingBag, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import AdminPagination from "../components/admin/AdminPagination";
 
 const LibraryPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -129,26 +130,14 @@ const LibraryPage: React.FC = () => {
         </div>
       )}
       
-      {userLibraryMeta && userLibraryMeta.total_pages && userLibraryMeta.total_pages > 1 && (
-        <div className="flex justify-center items-center mt-8 gap-4">
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <span className="font-medium text-gray-700">
-            Page {page} of {userLibraryMeta.total_pages}
-          </span>
-          <button
-            onClick={() => setPage((p) => Math.min(userLibraryMeta.total_pages || 1, p + 1))}
-            disabled={page === userLibraryMeta.total_pages}
-            className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight size={24} />
-          </button>
-        </div>
+      {userLibraryMeta && (
+        <AdminPagination
+          currentPage={page}
+          totalPages={userLibraryMeta.total_pages || 1}
+          onPageChange={setPage}
+          totalResults={userLibraryMeta.total || 0}
+          itemsPerPage={userLibraryMeta.limit || 10}
+        />
       )}
     </div>
   );
