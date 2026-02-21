@@ -16,6 +16,7 @@ import {
   Clock,
   ArrowRight,
 } from "lucide-react";
+import AdminPagination from "../components/admin/AdminPagination";
 
 const NotificationsPage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -25,15 +26,21 @@ const NotificationsPage: React.FC = () => {
     notificationsError,
     currentNotification,
     currentNotificationStatus,
+    notificationsMeta,
   } = useSelector((state: RootState) => state.auth);
 
   const [selectedNotificationId, setSelectedNotificationId] = useState<
     number | null
   >(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    dispatch(fetchNotificationsThunk());
-  }, [dispatch]);
+    dispatch(fetchNotificationsThunk({ page: currentPage }));
+  }, [dispatch, currentPage]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleViewNotification = (id: number) => {
     setSelectedNotificationId(id);
@@ -150,6 +157,19 @@ const NotificationsPage: React.FC = () => {
             </div>
           ))}
         </div>
+
+        {/* Pagination Controls */}
+        {notificationsMeta && notificationsMeta.total_pages > 1 && (
+          <div className="mt-8">
+            <AdminPagination
+              currentPage={notificationsMeta.current_page}
+              totalPages={notificationsMeta.total_pages}
+              onPageChange={handlePageChange}
+              totalResults={notificationsMeta.total_items}
+              itemsPerPage={notificationsMeta.limit}
+            />
+          </div>
+        )}
       </div>
 
       {/* Detail Modal */}

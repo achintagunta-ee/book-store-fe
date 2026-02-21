@@ -95,6 +95,9 @@ const AdminNotificationsPage: React.FC = () => {
                         ID
                       </th>
                       <th className="px-4 py-3 text-left text-card-border text-sm font-bold">
+                        Customer
+                      </th>
+                      <th className="px-4 py-3 text-left text-card-border text-sm font-bold">
                         Title
                       </th>
                       <th className="px-4 py-3 text-left text-card-border text-sm font-bold">
@@ -129,6 +132,12 @@ const AdminNotificationsPage: React.FC = () => {
                                 {notification.notification_id}
                             </button>
                           </td>
+                          <td className="h-[72px] px-4 py-2 text-text-main text-sm">
+                            <div className="flex flex-col">
+                              <span className="font-semibold capitalize">{notification.customer || "System"}</span>
+                              <span className="text-xs text-gray-500">{notification.email || ""}</span>
+                            </div>
+                          </td>
                           <td className="h-[72px] px-4 py-2 text-text-main text-sm font-medium">
                             {notification.title}
                           </td>
@@ -161,7 +170,7 @@ const AdminNotificationsPage: React.FC = () => {
                     ) : (
                       <tr>
                         <td
-                          colSpan={7}
+                          colSpan={8}
                           className="text-center py-4 text-gray-500"
                         >
                           No notifications found.
@@ -210,6 +219,17 @@ const AdminNotificationsPage: React.FC = () => {
                   {currentAdminNotification.title}
                 </p>
               </div>
+
+              {(currentAdminNotification as any).customer && (
+                <div>
+                  <h3 className="text-sm font-bold text-[#261d1a] uppercase tracking-wider">
+                    Customer
+                  </h3>
+                  <p className="text-text-main font-medium capitalize">
+                    {(currentAdminNotification as any).customer} <span className="text-gray-500 text-sm normal-case">({(currentAdminNotification as any).email})</span>
+                  </p>
+                </div>
+              )}
 
               <div>
                 <h3 className="text-sm font-bold text-[#261d1a] uppercase tracking-wider">

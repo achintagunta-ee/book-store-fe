@@ -67,6 +67,7 @@ const OrderHistoryTable: React.FC<{
             <thead className="bg-[#f3ebe8]">
               <tr>
                 <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Order ID</th>
+                <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Customer Name</th>
                 <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Date</th>
                 <th className="px-4 py-4 text-left text-[#333333] w-auto text-sm font-semibold leading-normal font-body">Book Title</th>
                 <th className="px-4 py-4 text-left text-[#333333] whitespace-nowrap text-sm font-semibold leading-normal font-body">Price</th>
@@ -86,6 +87,9 @@ const OrderHistoryTable: React.FC<{
                     >
                       {order.order_id.replace("#", "")}
                     </button>
+                  </td>
+                  <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top capitalize">
+                    {order.customer_name || "-"}
                   </td>
                   <td className="px-4 py-4 text-gray-600 text-sm font-normal font-body align-top">{order.date}</td>
                   
@@ -148,7 +152,7 @@ const OrderHistoryTable: React.FC<{
               ))}
               {safeOrders.length === 0 && (
                 <tr>
-                   <td colSpan={8} className="px-4 py-8 text-center text-gray-500">No orders found.</td>
+                   <td colSpan={9} className="px-4 py-8 text-center text-gray-500">No orders found.</td>
                 </tr>
               )}
             </tbody>
@@ -170,6 +174,12 @@ const OrderHistoryTable: React.FC<{
                         {order.order_id.replace("#", "")}
                       </button>
                     </p>
+                    {order.customer_name && (
+                      <>
+                        <span className="text-xs text-gray-500 font-semibold uppercase tracking-wider block mt-2">Customer Name</span>
+                        <p className="text-sm font-bold text-[#333333] capitalize">{order.customer_name}</p>
+                      </>
+                    )}
                  </div>
                  <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${statusStyles[order.status.toLowerCase()] || "bg-gray-100 text-gray-800"}`}>
                     {order.status}
@@ -313,12 +323,13 @@ const PaymentDetailsModal: React.FC<{
 
 const UserPaymentsTable: React.FC<{
   payments: UserPayment[];
+  customerName?: string;
   page: number;
   totalPages: number;
   totalItems: number;
   onPageChange: (page: number) => void;
   onDownloadInvoice: (orderId: number) => Promise<void>;
-}> = ({ payments, page, totalPages, totalItems, onPageChange, onDownloadInvoice }) => {
+}> = ({ payments, customerName, page, totalPages, totalItems, onPageChange, onDownloadInvoice }) => {
   const [selectedPayment, setSelectedPayment] = useState<UserPayment | null>(null);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
@@ -344,6 +355,7 @@ const UserPaymentsTable: React.FC<{
               <tr>
                 <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Payment ID</th>
                 <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Transaction ID</th>
+                <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Customer Name</th>
                 <th className="px-6 py-4 text-left text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Date</th>
                 <th className="px-6 py-4 text-right text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Amount</th>
                 <th className="px-6 py-4 text-center text-[#333333] text-sm font-semibold font-body whitespace-nowrap">Method</th>
@@ -368,6 +380,9 @@ const UserPaymentsTable: React.FC<{
                       {payment.txn_id || "-"}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-gray-600 text-sm font-body align-middle capitalize whitespace-nowrap">
+                    {payment.customer_name || customerName || "-"}
+                  </td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-body align-middle whitespace-nowrap">{new Date(payment.created_at).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-body align-middle text-right whitespace-nowrap">₹{payment.amount.toFixed(2)}</td>
                   <td className="px-6 py-4 text-gray-600 text-sm font-body capitalize align-middle text-center">{payment.method}</td>
@@ -391,7 +406,7 @@ const UserPaymentsTable: React.FC<{
                 </tr>
               ))}
               {payments.length === 0 && (
-                <tr><td colSpan={8} className="px-6 py-8 text-center text-gray-500">No payments found.</td></tr>
+                <tr><td colSpan={9} className="px-6 py-8 text-center text-gray-500">No payments found.</td></tr>
               )}
             </tbody>
           </table>
@@ -423,6 +438,12 @@ const UserPaymentsTable: React.FC<{
                     <span className="text-gray-500">Txn ID</span>
                     <span className="text-gray-900 break-all pl-4 text-right">{payment.txn_id || "-"}</span>
                   </div>
+                  {(payment.customer_name || customerName) && (
+                    <div className="flex justify-between py-1">
+                      <span className="text-gray-500">Customer Name</span>
+                      <span className="text-gray-900 capitalize text-right">{payment.customer_name || customerName}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between py-1">
                     <span className="text-gray-500">Date</span>
                     <span className="text-gray-900 text-right">{new Date(payment.created_at).toLocaleDateString()}</span>
@@ -1492,6 +1513,7 @@ const UserProfilePage: React.FC = () => {
         {activeTab === "payments" && (
           <UserPaymentsTable 
             payments={userPayments?.results || []}
+            customerName={userPayments?.filters?.customer_name}
             page={paymentsPage}
             totalPages={userPayments?.total_pages || 1}
             totalItems={userPayments?.total_items || 0}

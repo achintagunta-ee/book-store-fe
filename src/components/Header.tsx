@@ -38,6 +38,7 @@ const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
@@ -83,9 +84,12 @@ const Header: React.FC = () => {
       dispatch(fetchDynamicSearchBooksAsync(searchQuery.trim()));
       // Navigate to the book list page to show results
       navigate("/books");
-      // Close mobile menu if it's open after searching
+      // Close mobile menus if they are open after searching
       if (isMenuOpen) {
         setIsMenuOpen(false);
+      }
+      if (isMobileSearchOpen) {
+        setIsMobileSearchOpen(false);
       }
     }
   };
@@ -118,7 +122,7 @@ const Header: React.FC = () => {
           <div className="size-16">
              <img src={logo} alt="Hithabodha Logo" className="w-full h-full object-contain rounded-full" />
           </div>
-          <h2 className="font-display text-2xl font-bold tracking-tight text-text-light ">
+          <h2 className="hidden md:block font-display text-2xl font-bold tracking-tight text-text-light ">
             Hithabodha Book Store
           </h2>
         </Link>
@@ -326,17 +330,115 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Hamburger Button */}
-        <div className="md:hidden">
+        {/* Mobile Hamburger Button & Search Toggle */}
+        <div className="md:hidden flex items-center gap-1">
+           <Link to="/notifications" className="relative">
+             <button className="rounded-lg p-2 text-text-light/90" aria-label="Notifications">
+               <Bell className="h-6 w-6" />
+             </button>
+             {userProfile && notifications && notifications.length > 0 && (
+               <span className="absolute xl:top-2 xl:right-2 top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                 {notifications.length}
+               </span>
+             )}
+           </Link>
+           <Link to="/wishlist" className="relative">
+             <button className="rounded-lg p-2 text-text-light/90" aria-label="Wishlist">
+               <Heart className="h-6 w-6" />
+             </button>
+             {userProfile && wishlistCount > 0 && (
+               <span className="absolute xl:top-2 xl:right-2 top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                 {wishlistCount}
+               </span>
+             )}
+           </Link>
+           <Link to="/cart" className="relative">
+             <button className="rounded-lg p-2 text-text-light/90" aria-label="Cart">
+               <ShoppingCart className="h-6 w-6" />
+             </button>
+             {cartItemCount > 0 && (
+               <span className="absolute xl:top-2 xl:right-2 top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                 {cartItemCount}
+               </span>
+             )}
+           </Link>
+           <button
+            onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+            className="rounded-lg p-2 text-text-light/90"
+            aria-label="Toggle search"
+          >
+            {isMobileSearchOpen ? <X className="h-6 w-6" /> : <Search className="h-6 w-6" />}
+          </button>
           <button
             onClick={() => setIsMenuOpen(true)}
-            className="rounded-lg p-2 text-text-light/90 /90"
+            className="rounded-lg p-2 text-text-light/90"
             aria-label="Open menu"
           >
             <Menu className="h-6 w-6" />
           </button>
         </div>
       </header>
+
+      {/* Mobile Search Bar Collapsible */}
+      <div 
+        className={`md:hidden overflow-hidden transition-all duration-300 border-solid border-primary/20 bg-gray-50/50 dark:bg-gray-800/50 relative z-40 ${
+            isMobileSearchOpen ? "max-h-auto border-b py-3 px-4" : "max-h-0 border-b-0 py-0 px-4"
+        }`}
+      >
+        <form onSubmit={handleSearch} className={`relative flex flex-col ${isMobileSearchOpen ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}>
+          <div className="relative flex h-10 w-full flex-1 items-stretch rounded-full border border-gray-200 bg-white dark:bg-gray-700 dark:border-gray-600 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center justify-center pl-4 text-gray-500">
+              <Search className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <input
+              type="search"
+              name="search-mobile-top"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="form-input h-full min-w-0 flex-1 resize-none overflow-hidden rounded-full border-none bg-transparent py-2 pl-12 pr-4 font-body text-base font-normal text-text-light placeholder:text-gray-400 focus:outline-none dark:placeholder:text-gray-400 dark:text-white"
+              placeholder="Search books..."
+              autoComplete="off"
+              disabled={!isMobileSearchOpen}
+            />
+          </div>
+          
+           {/* Mobile Search Suggestions Dropdown */}
+           {searchQuery.trim().length > 0 && searchSuggestions.length > 0 && isMobileSearchOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 overflow-hidden max-h-60 overflow-y-auto border border-gray-100 dark:border-gray-700">
+                <ul>
+                  {searchSuggestions.map((book) => (
+                    <li key={book.id}>
+                      <Link 
+                        to={`/book/detail/${book.slug}`} 
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer border-b border-gray-50 dark:border-gray-700/50 last:border-none"
+                        onClick={() => {
+                            setSearchQuery("");
+                            setIsMobileSearchOpen(false);
+                        }}
+                      >
+                         <div className="w-10 h-10 flex-shrink-0 bg-gray-100 dark:bg-gray-600 rounded overflow-hidden">
+                           <img 
+                             src={book.cover_image_url || "/placeholder.jpg"} 
+                             alt={book.title} 
+                             className="w-full h-full object-cover"
+                           />
+                         </div>
+                         <div className="flex flex-col min-w-0">
+                           <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                             {book.title}
+                           </span>
+                           <span className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                             {book.author}
+                           </span>
+                         </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+        </form>
+      </div>
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (

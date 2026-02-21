@@ -274,6 +274,12 @@ interface AuthState {
   currentNotification: NotificationDetail | null;
   currentNotificationStatus: "idle" | "loading" | "succeeded" | "failed";
   currentNotificationError: string | null;
+  notificationsMeta: {
+    total_items: number;
+    total_pages: number;
+    current_page: number;
+    limit: number;
+  } | null;
   adminNotifications: AdminNotificationItem[];
   adminNotificationsStatus: "idle" | "loading" | "succeeded" | "failed";
   adminNotificationsError: string | null;
@@ -454,6 +460,7 @@ const initialState: AuthState = {
   currentNotification: null,
   currentNotificationStatus: "idle",
   currentNotificationError: null,
+  notificationsMeta: null,
   adminNotificationsMeta: null,
   adminNotifications: [],
   adminNotificationsStatus: "idle",
@@ -1326,9 +1333,11 @@ export const updateOrderStatusThunk = createAsyncThunk(
 
 export const fetchNotificationsThunk = createAsyncThunk(
   "auth/fetchNotifications",
-  async (_, { rejectWithValue }) => {
+  async (arg: { page?: number; limit?: number } | void, { rejectWithValue }) => {
     try {
-      return await fetchNotificationsApi();
+      const page = arg?.page || 1;
+      const limit = arg?.limit;
+      return await fetchNotificationsApi(page, limit);
     } catch (error: unknown) {
       if (error instanceof Error) {
         return rejectWithValue(error.message || "Failed to fetch notifications");
@@ -2442,8 +2451,15 @@ const authSlice = createSlice({
         const payload = action.payload as any;
         if (Array.isArray(payload)) {
           state.notifications = payload;
+          state.notificationsMeta = null;
         } else if (payload && Array.isArray(payload.results)) {
           state.notifications = payload.results; // Common pagination pattern
+          state.notificationsMeta = {
+              total_items: payload.total_items,
+              total_pages: payload.total_pages,
+              current_page: payload.current_page,
+              limit: payload.limit
+          };
         } else if (payload && Array.isArray(payload.items)) {
           state.notifications = payload.items;
         } else if (payload && Array.isArray(payload.notifications)) {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { Send, X, Eye, Calendar, Download, Truck, Bell, Plus, Trash2, ChevronDown } from "lucide-react";
+import { Send, X, Eye, Calendar, Download, Truck, Plus, Trash2, ChevronDown } from "lucide-react";
 import Sidebar from "./Sidebar";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../redux/store/store";
@@ -10,7 +10,6 @@ import {
 	notifyCustomerThunk, 
 	updateOrderStatusThunk,
 	addOrderTrackingThunk,
-	getAdminOrderNotificationsThunk,
     createOfflineOrderThunk,
     getInventoryListThunk
 } from "../redux/slice/authSlice";
@@ -270,10 +269,7 @@ const OrdersPage: React.FC = () => {
 		}
 	};
 
-	const handleViewNotifications = () => {
-		dispatch(getAdminOrderNotificationsThunk());
-		setShowNotificationsModal(true);
-	};
+	
 
     const handleAddOfflineItem = () => {
         setOfflineOrderForm(prev => ({

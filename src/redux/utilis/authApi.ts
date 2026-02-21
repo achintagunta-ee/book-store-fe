@@ -586,6 +586,7 @@ export async function getWishlistCountApi() {
 
 export interface OrderHistoryItem {
   order_id: string;
+  customer_name?: string;
   raw_id: number;
   date: string;
   total: number;
@@ -763,6 +764,7 @@ export interface UserPayment {
   type?: string;
   order_status: string;
   created_at: string;
+  customer_name?: string;
   actions: {
     view_payment: string;
     view_order: string;
@@ -775,6 +777,10 @@ export interface UserPaymentsResponse {
   total_pages: number;
   current_page: number;
   results: UserPayment[];
+  filters?: {
+    customer_name?: string;
+    [key: string]: any;
+  };
 }
 
 export async function getUserPaymentsApi(page: number = 1) {
@@ -1116,13 +1122,26 @@ export async function updateOrderStatusApi(orderId: number, newStatus: string) {
 export interface NotificationItem {
   notification_id: number;
   title: string;
+  username?: string;
+  email?: string;
   content: string;
   status: string;
   created_at: string;
 }
 
-export async function fetchNotificationsApi() {
-  return request<NotificationItem[]>("/users/notifications");
+export interface FetchNotificationsResponse {
+  total_items: number;
+  total_pages: number;
+  current_page: number;
+  limit: number;
+  results: NotificationItem[];
+}
+
+export async function fetchNotificationsApi(page: number = 1, limit?: number) {
+  const query = new URLSearchParams();
+  query.append("page", page.toString());
+  if (limit) query.append("limit", limit.toString());
+  return request<FetchNotificationsResponse>(`/users/notifications?${query.toString()}`);
 }
 
 export interface NotificationDetail {
@@ -1146,6 +1165,8 @@ export async function viewNotificationApi(notificationId: number) {
 // 43) Admin Notifications
 export interface AdminNotificationItem {
   notification_id: number;
+  customer?: string;
+  email?: string;
   title: string;
   content: string;
   trigger_source: string;
@@ -1177,16 +1198,18 @@ export async function getAdminNotificationsApi(triggerSource?: string, page: num
 
 export interface AdminNotificationDetail {
   notification_id: number;
+  customer?: string;
+  email?: string;
   recipient_role: string;
   user_id: number;
   related_id?: number;
   order_id?: number;
   purchase_id?: number;
-  trigger_source: string;
   title: string;
-  channel: string;
   content: string;
-  status?: string;
+  trigger_source: string;
+  channel: string;
+  status: string; // The backend might send 'status' or 'notification_status'
   notification_status?: string;
   created_at: string;
 }
