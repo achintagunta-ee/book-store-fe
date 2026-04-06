@@ -42,6 +42,8 @@ const Header: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const profileMenuRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLFormElement>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const { accessToken, userProfile, profileStatus, wishlistCount, notifications } =
     useSelector((state: RootState) => state.auth);
@@ -110,6 +112,12 @@ const Header: React.FC = () => {
       ) {
         setIsProfileMenuOpen(false);
       }
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -152,6 +160,7 @@ const Header: React.FC = () => {
         {/* Desktop Search Bar and Icons */}
         <div className="hidden md:flex items-center justify-end gap-4">
           <form
+            ref={searchRef}
             onSubmit={handleSearch}
             className="hidden !h-10 min-w-40 max-w-64 flex-col sm:flex relative"
           >
@@ -166,11 +175,9 @@ const Header: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => {
                    setSearchQuery(e.target.value);
-                   // Open suggestion box if not empty
-                   if (e.target.value.trim().length > 0) {
-                     // logic handled in effect
-                   }
+                   setShowSuggestions(true);
                 }}
+                onFocus={() => setShowSuggestions(true)}
                 className="form-input h-full min-w-0 flex-1 resize-none overflow-hidden rounded-full border-none bg-transparent py-2 pl-12 pr-4 font-body text-base font-normal leading-normal text-text-light placeholder:text-gray-400 focus:outline-none dark:placeholder:text-gray-500 dark:text-white"
                 placeholder="Search"
                 autoComplete="off"
@@ -178,7 +185,7 @@ const Header: React.FC = () => {
             </div>
             
             {/* Search Suggestions Dropdown */}
-            {searchQuery.trim().length > 0 && searchSuggestions.length > 0 && (
+            {showSuggestions && searchQuery.trim().length > 0 && searchSuggestions.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50 overflow-hidden max-h-96 overflow-y-auto border border-gray-100 dark:border-gray-700">
                 <ul>
                   {searchSuggestions.map((book) => (

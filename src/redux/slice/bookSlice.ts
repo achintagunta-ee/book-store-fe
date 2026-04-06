@@ -566,8 +566,8 @@ export const bookSlice = createSlice({
         state.status = "failed";
         state.error = action.error.message;
       })
-      .addCase(createBookAsync.fulfilled, (state, action) => {
-        state.books.push(action.payload);
+      .addCase(createBookAsync.fulfilled, (state) => {
+        // State not updated locally as per requirement; re-fetch list from API instead
       })
       .addCase(updateBookAsync.fulfilled, (state, action) => {
         const index = state.books.findIndex(

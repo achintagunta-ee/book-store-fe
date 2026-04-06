@@ -133,7 +133,7 @@ const BookModal: React.FC<{
     price: book?.price || "",
     description: book?.description || "",
     stock: book?.stock || "",
-    category_id: book?.category_id || "",
+    category_id: book?.category?.id || book?.category_id || "",
   });
   const [coverImage, setCoverImage] = useState<File | null>(null);
 
@@ -145,7 +145,7 @@ const BookModal: React.FC<{
       price: book?.price || "",
       description: book?.description || "",
       stock: book?.stock || "",
-      category_id: book?.category_id || "",
+      category_id: book?.category?.id || book?.category_id || "",
     });
   }, [book]);
 
@@ -342,6 +342,13 @@ const BooksManagement: React.FC = () => {
       } else {
         await dispatch(createBookAsync(formData)).unwrap();
         toast.success("Book created successfully!");
+        dispatch(fetchBooksAsync({ 
+          page: currentPage, 
+          limit: 10,
+          search: searchQuery,
+          category: selectedCategory,
+          archived: showArchived
+        }));
       }
       handleCloseModal();
     } catch (err: any) {

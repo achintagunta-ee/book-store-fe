@@ -43,18 +43,13 @@ const BookCard: React.FC<BookCardProps> = ({
   };
 
   return (
-    <div className={`group relative flex h-full w-full flex-col overflow-hidden rounded-xl bg-white dark:bg-gray-800 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-gray-100 dark:border-gray-700 ${className}`}>
-      <Link to={`/book/detail/${slug}`} className="relative h-[250px] w-full overflow-hidden bg-gray-100 dark:bg-gray-700">
+    <div className={`group relative flex h-full w-full flex-col overflow-hidden transition-all duration-300 ${className}`}>
+      <Link to={`/book/detail/${slug}`} className="relative h-[320px] w-full overflow-hidden rounded-xl bg-gray-200 shadow-md">
          <img 
             src={imageUrl || "https://via.placeholder.com/400x600.png?text=No+Image"} 
             alt={title}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
          />
-         {/* Price Tag Overlay */}
-         <div className="absolute top-2 right-2 rounded-full bg-white/90 px-2 py-1 text-xs font-bold text-gray-900 shadow-sm backdrop-blur-sm dark:bg-black/80 dark:text-white">
-            ₹{price}
-         </div>
-
       </Link>
       
       {/* Remove Button (if onRemove provided) */}
@@ -65,27 +60,27 @@ const BookCard: React.FC<BookCardProps> = ({
             e.stopPropagation();
             onRemove(id);
           }}
-          className="absolute top-2 left-2 z-10 rounded-full bg-white/90 p-2 text-red-500 shadow-sm backdrop-blur-sm transition-all hover:bg-red-100 dark:bg-black/80 dark:text-red-400"
+          className="absolute top-2 left-2 z-10 rounded-full bg-white/90 p-2 text-red-500 shadow-sm backdrop-blur-sm transition-all hover:bg-red-100"
           title="Remove"
         >
           <Trash2 className="h-4 w-4" />
         </button>
       )}
 
-      <div className="flex flex-1 flex-col justify-between p-4">
-        <div>
+      <div className="flex flex-1 flex-col py-4">
+        <div className="mb-4">
           <Link to={`/book/detail/${slug}`}>
-            <h3 className="line-clamp-2 text-base font-bold text-gray-900 hover:text-primary dark:text-white transition-colors" title={title}>
+            <h3 className="line-clamp-1 text-lg font-bold text-[#261d1a] hover:text-primary transition-colors font-serif" title={title}>
               {title}
             </h3>
           </Link>
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {author}
+          <p className="mt-1 text-sm text-[#8E5A4F] font-medium">
+            By {author}
           </p>
         </div>
         <button
           onClick={handleAddToCart}
-          className="mt-4 flex w-full items-center justify-center rounded-lg bg-primary/10 py-2 text-xs font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-95"
+          className="mt-auto flex w-full items-center justify-center rounded-lg bg-[#f5e9e2] py-2.5 text-sm font-bold text-[#261d1a] transition-all hover:bg-[#ebdcd3] active:scale-95"
         >
           Add to Cart
         </button>

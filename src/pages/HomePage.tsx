@@ -25,21 +25,21 @@ const BookSection: React.FC<{ title: string; books: Book[] }> = ({
   title,
   books,
 }) => (
-  <section className="py-6">
-    <div className="flex items-center justify-between px-4 mb-4 md:px-0">
-        <h2 className="font-display text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+  <section className="py-12">
+    <div className="flex items-center justify-between mb-8">
+        <h2 className="font-serif text-3xl font-bold text-[#261d1a]">
             {title}
         </h2>
-        <Link to="/books" className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors">
+        <Link to="/books" className="text-sm font-semibold text-[#8E5A4F] hover:text-[#261d1a] transition-colors">
             View All &rarr;
         </Link>
     </div>
     
     <div className="relative group/slider">
-        <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pl-4 md:pl-0 -mx-4 md:mx-0 snap-x snap-mandatory">
-            <div className="flex gap-4 md:gap-6 pr-4 md:pr-0">
+        <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 md:mx-0 snap-x snap-mandatory">
+            <div className="flex gap-6 md:gap-8 pr-4 ">
                 {books.map((book) => (
-                <div key={book.id} className="snap-start">
+                <div key={book.id} className="snap-start flex-shrink-0 w-[240px]">
                     <BookCard 
                       id={book.id}
                       title={book.title}
@@ -48,13 +48,11 @@ const BookSection: React.FC<{ title: string; books: Book[] }> = ({
                       slug={book.slug}
                       price={book.price}
                       originalBook={book}
-                      className="min-w-[240px] w-[240px]"
                     />
                 </div>
                 ))}
             </div>
         </div>
-        {/* Optional: Add gradient fade indicators if desired, keeping it simple for now */}
     </div>
   </section>
 );

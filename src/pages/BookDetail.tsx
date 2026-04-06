@@ -733,7 +733,7 @@ const BookDetailPage: React.FC = () => {
                   <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pl-4 md:pl-0 -mx-4 md:mx-0 snap-x snap-mandatory">
                       <div className="flex gap-4 md:gap-6 pr-4 md:pr-0">
                           {related_books.map((book: Book) => (
-                          <div key={book.id} className="snap-start">
+                          <div key={book.id} className="snap-start flex-shrink-0 w-[240px]">
                               <BookCard 
                                 id={book.id}
                                 title={book.title}
@@ -742,7 +742,6 @@ const BookDetailPage: React.FC = () => {
                                 slug={book.slug || ""}
                                 price={book.price}
                                 originalBook={book}
-                                className="min-w-[240px] w-[240px]"
                               />
                           </div>
                           ))}

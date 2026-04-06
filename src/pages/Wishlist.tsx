@@ -42,6 +42,8 @@ const EmptyWishlist: React.FC = () => {
   );
 };
 
+import Slider from "react-slick";
+
 // --- Main Wishlist Page Component ---
 const WishlistPage: React.FC = () => {
   const dispatch = useDispatch<any>();
@@ -60,8 +62,6 @@ const WishlistPage: React.FC = () => {
     }
   };
 
-
-
   const books: Book[] = (wishlist || []).map((item: any) => ({
     id: item.book_id || item.id,
     slug: item.slug,
@@ -71,13 +71,40 @@ const WishlistPage: React.FC = () => {
     imageUrl: item.cover_image_url || "",
   }));
 
-
+  const sliderSettings = {
+    dots: true,
+    infinite: false,
+    speed: 500,
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    arrows: true,
+    responsive: [
+      {
+        breakpoint: 1280,
+        settings: {
+          slidesToShow: 3,
+        }
+      },
+      {
+        breakpoint: 1024,
+        settings: {
+          slidesToShow: 2,
+        }
+      },
+      {
+        breakpoint: 640,
+        settings: {
+          slidesToShow: 1,
+        }
+      }
+    ]
+  };
 
   return (
     <main className="flex-1 px-4 sm:px-6 md:px-10 py-10">
       <Toaster position="top-right" />
-      <div className="flex flex-wrap justify-between items-center gap-4 pb-8">
-        <h1 className="font-display text-2xl md:text-3xl font-bold tracking-tight text-text-main dark:text-text-main-dark">
+      <div className="flex flex-wrap justify-between items-center gap-4 pb-12">
+        <h1 className="font-serif text-3xl font-bold tracking-tight text-[#261d1a] dark:text-gray-100">
           My Wishlist
         </h1>
       </div>
@@ -85,20 +112,23 @@ const WishlistPage: React.FC = () => {
       {books.length === 0 ? (
         <EmptyWishlist />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {books.map((book) => (
-            <BookCard
-              key={book.id}
-              id={book.id}
-              title={book.title}
-              author={book.author}
-              imageUrl={book.imageUrl}
-              slug={book.slug}
-              price={book.price}
-              onRemove={handleRemove}
-              originalBook={book}
-            />
-          ))}
+        <div className="wishlist-slider-container pb-12">
+          <Slider {...sliderSettings}>
+            {books.map((book) => (
+              <div key={book.id} className="px-3">
+                <BookCard
+                  id={book.id}
+                  title={book.title}
+                  author={book.author}
+                  imageUrl={book.imageUrl}
+                  slug={book.slug}
+                  price={book.price}
+                  onRemove={handleRemove}
+                  originalBook={book}
+                />
+              </div>
+            ))}
+          </Slider>
         </div>
       )}
     </main>

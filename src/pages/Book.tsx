@@ -10,7 +10,7 @@ import {
   ChevronRight,
   ChevronLeft, // Added ChevronLeft for pagination
 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchPublicBooksAsync,
@@ -91,7 +91,7 @@ const Sidebar: React.FC<{
     <div className="space-y-6">
       {/* Category */}
       <div>
-        <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-3">Category</h3>
+        <h3 className="text-xl font-bold font-serif text-[#261d1a] mb-3">Category</h3>
         <div className="space-y-2">
           {categories.map((cat) => (
             <div key={cat.id} className="flex items-center">
@@ -112,7 +112,7 @@ const Sidebar: React.FC<{
 
       {/* Price */}
       <div>
-        <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-3">Price</h3>
+        <h3 className="text-xl font-bold font-serif text-[#261d1a] mb-3">Price</h3>
         <input
           type="range"
           min="0"
@@ -129,7 +129,7 @@ const Sidebar: React.FC<{
 
       {/* Author */}
       <div>
-        <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-3">Author</h3>
+        <h3 className="text-xl font-bold font-serif text-[#261d1a] mb-3">Author</h3>
         <div className="space-y-2 max-h-40 overflow-y-auto">
           {authors.map((author) => (
             <div key={author} className="flex items-center">
@@ -150,7 +150,7 @@ const Sidebar: React.FC<{
 
       {/* Rating */}
       <div>
-        <h3 className="text-xl font-bold font-display text-text-main dark:text-text-light mb-3">Rating</h3>
+        <h3 className="text-xl font-bold font-serif text-[#261d1a] mb-3">Rating</h3>
         <div className="flex items-center space-x-1">
           {[1, 2, 3, 4, 5].map((star) => (
             <Star
@@ -299,6 +299,13 @@ const BookPage: React.FC = () => {
         ...prev,
         categories: [categoryParam]
       }));
+    } else {
+      // If no category in URL, optionally reset or keep current? 
+      // User says "functional breadcrumb", so clicking 'Books' should show all.
+      setFilters(prev => ({
+        ...prev,
+        categories: []
+      }));
     }
   }, [searchParams]);
 
@@ -426,7 +433,7 @@ const BookPage: React.FC = () => {
           <div className="flex">
              {/* --- Desktop Sidebar --- */}
              <aside className="hidden lg:block w-1/4 xl:w-1/5 pr-8">
-              <h2 className="text-2xl font-semibold mb-4">Filters</h2>
+              <h2 className="text-3xl font-serif font-bold text-[#261d1a] mb-6">Filters</h2>
               <Sidebar
                 onApplyFilters={handleApplyFilters}
                 initialFilters={filters}
@@ -450,7 +457,7 @@ const BookPage: React.FC = () => {
               } lg:hidden`}
             >
               <div className="flex justify-between items-center p-4 border-b">
-                <h2 className="text-2xl font-semibold">Filters</h2>
+                <h2 className="text-2xl font-serif font-bold text-[#261d1a]">Filters</h2>
                 <button
                   onClick={() => setIsMobileFilterOpen(false)}
                   className="p-2"
@@ -478,28 +485,42 @@ const BookPage: React.FC = () => {
                 <nav className="text-sm" aria-label="Breadcrumb">
                   <ol className="flex items-center space-x-2 text-gray-500">
                     <li>
-                      <a href="#" className="hover:text-gray-700">
+                      <Link to="/" className="hover:text-primary transition-colors">
                         Home
-                      </a>
+                      </Link>
                     </li>
                     <li>
                       <ChevronRight size={16} />
                     </li>
                     <li>
-                      <a href="#" className="hover:text-gray-700">
+                      <Link to="/books" className="hover:text-primary transition-colors">
                         Books
-                      </a>
+                      </Link>
                     </li>
-                    <li>
-                      <ChevronRight size={16} />
-                    </li>
-                    <li>
-                      <span className="font-medium text-gray-700">
-                        {filters.categories.length === 1
-                          ? filters.categories[0]
-                          : "All"}
-                      </span>
-                    </li>
+                    {filters.categories.length > 0 && (
+                      <>
+                        <li>
+                          <ChevronRight size={16} />
+                        </li>
+                        <li>
+                          <span className="font-medium text-[#261d1a]">
+                            {filters.categories.join(", ")}
+                          </span>
+                        </li>
+                      </>
+                    )}
+                    {filters.categories.length === 0 && (
+                        <>
+                            <li>
+                                <ChevronRight size={16} />
+                            </li>
+                            <li>
+                                <span className="font-medium text-[#261d1a]">
+                                    All
+                                </span>
+                            </li>
+                        </>
+                    )}
                   </ol>
                 </nav>
 

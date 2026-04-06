@@ -139,8 +139,8 @@ const LoginPage: React.FC = () => {
     try {
       if (forgotPasswordStep === "email") {
         await dispatch(forgotPasswordThunk(formData.forgot_email)).unwrap();
-        // toast.success("An OTP has been sent to your email.");
-        setForgotPasswordStep("otp");
+        toast.success("A reset link has been sent to your email.");
+        setIsForgotPassword(false);
       } else {
       if (formData.otp.length !== 6) {
           // You might set a validation error here instead of toast
@@ -579,7 +579,7 @@ const LoginPage: React.FC = () => {
                       ? "Sending..."
                       : "Resetting..."
                     : forgotPasswordStep === "email"
-                    ? "Send OTP"
+                    ? "Send Link"
                     : "Reset Password"}
                 </button>
               </div>
