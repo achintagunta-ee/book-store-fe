@@ -57,6 +57,8 @@ const BookSection: React.FC<{ title: string; books: Book[] }> = ({
   </section>
 );
 
+import Slider from "react-slick";
+
 const HomePage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
@@ -84,28 +86,6 @@ const HomePage: React.FC = () => {
 
   const bookSections = useMemo(
     () => [
-      // {
-      //   title: "Featured Books",
-      //   books: (featuredBooks || []).map((book: ApiBook) => ({
-      //     id: book.book_id || book.id,
-      //     title: book.title,
-      //     author: book.author,
-      //     imageUrl: book.cover_image_url || "",
-      //     slug: book.slug,
-      //     price: book.price,
-      //   })),
-      // },
-      // {
-      //   title: "Featured Authors",
-      //   books: (featuredAuthorsBooks || []).map((book: ApiBook) => ({
-      //     id: book.book_id || book.id,
-      //     title: book.title,
-      //     author: book.author,
-      //     imageUrl: book.cover_image_url || "",
-      //     slug: book.slug,
-      //     price: book.price,
-      //   })),
-      // },
       {
         title: "New Arrivals",
         books: (newArrivals || []).map((book: ApiBook) => ({
@@ -129,8 +109,38 @@ const HomePage: React.FC = () => {
         })),
       },
     ],
-    [featuredBooks, featuredAuthorsBooks, newArrivals, popularBooks]
+    [newArrivals, popularBooks]
   );
+
+  const categorySliderSettings = {
+    dots: false,
+    infinite: true,
+    speed: 3000,
+    slidesToShow: 6,
+    slidesToScroll: 1,
+    autoplay: true,
+    autoplaySpeed: 0,
+    cssEase: "linear",
+    pauseOnHover: true,
+    responsive: [
+      {
+        breakpoint: 1280,
+        settings: { slidesToShow: 5 }
+      },
+      {
+        breakpoint: 1024,
+        settings: { slidesToShow: 4 }
+      },
+      {
+        breakpoint: 768,
+        settings: { slidesToShow: 2 }
+      },
+      {
+        breakpoint: 480,
+        settings: { slidesToShow: 1 }
+      }
+    ]
+  };
 
   return (
     <div className="group/design-root relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light font-body ">
@@ -162,12 +172,12 @@ const HomePage: React.FC = () => {
                         
                         <div className="mt-10 flex flex-wrap gap-4">
                            <button className="rounded-full bg-white px-8 py-3.5 text-base font-bold text-gray-900 transition-all hover:bg-gray-100 hover:shadow-lg active:scale-95">
-                                Shop Now
+                                 Shop Now
                            </button>
                            <Link to="/about" onClick={(e) => e.stopPropagation()}>
-                                <button className="rounded-full border border-white/30 bg-white/10 px-8 py-3.5 text-base font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95">
-                                Learn More
-                                </button>
+                                 <button className="rounded-full border border-white/30 bg-white/10 px-8 py-3.5 text-base font-bold text-white backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95">
+                                 Learn More
+                                 </button>
                            </Link>
                         </div>
                      </div>
@@ -183,29 +193,32 @@ const HomePage: React.FC = () => {
               ))}
 
                {/* Categories Section */}
-              <section className="py-8">
-                 <div className="flex items-center justify-between px-4 mb-6 md:px-0">
-                    <h2 className="font-display text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              <section className="py-12">
+                 <div className="flex items-center justify-between mb-8">
+                    <h2 className="font-serif text-3xl font-bold text-[#261d1a]">
                       Browse by Category
                     </h2>
                  </div>
                  
-                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-                    {(categories || []).map((category) => (
-                      <Link
-                        key={category.id}
-                        to={`/books?category=${category.name}`}
-                        className="group flex flex-col items-center gap-4 rounded-xl bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
-                      >
-                         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary transition-colors group-hover:bg-primary group-hover:text-white">
-                            <span className="text-2xl font-bold">{category.name.charAt(0).toUpperCase()}</span>
-                         </div>
-                        <span className="text-center font-display text-sm font-semibold text-gray-900 dark:text-white">
-                          {category.name}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
+                 <div className="category-slider-wrapper">
+                    <Slider {...categorySliderSettings}>
+                        {(categories || []).map((category) => (
+                          <div key={category.id} className="px-2">
+                             <Link
+                              to={`/books?category=${category.name}`}
+                              className="group flex flex-col items-center justify-center gap-4 rounded-2xl bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md border border-gray-100 h-[220px] w-full"
+                            >
+                               <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:scale-110 shadow-inner">
+                                  <span className="text-3xl font-bold">{category.name.charAt(0).toUpperCase()}</span>
+                               </div>
+                              <span className="text-center font-serif text-sm font-bold text-[#261d1a] leading-tight">
+                                {category.name}
+                              </span>
+                            </Link>
+                          </div>
+                        ))}
+                    </Slider>
+                 </div>
               </section>
             </main>
             {/* <footer className="mt-20 border-t border-solid border-primary/20 px-4 pb-5 pt-10 font-body text-text-light/80 dark:text-text-main-dark/80 sm:px-6 lg:px-10">

@@ -611,7 +611,7 @@ const BookDetailPage: React.FC = () => {
                 <button
                   onClick={handleAddToCart}
                   disabled={isAddingToCart}
-                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary px-6 py-3 text-base font-bold tracking-wider text-white shadow-md transition-colors hover:bg-primary/90 hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="flex-1 cursor-pointer items-center justify-center overflow-hidden rounded-lg bg-primary/10 px-6 py-3 text-base font-bold tracking-wider text-primary shadow-sm transition-all hover:bg-primary hover:text-white disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   <span className="truncate">{isAddingToCart ? "Adding..." : "Add to Cart"}</span>
                 </button>

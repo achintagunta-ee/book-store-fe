@@ -80,7 +80,7 @@ const BookCard: React.FC<BookCardProps> = ({
         </div>
         <button
           onClick={handleAddToCart}
-          className="mt-auto flex w-full items-center justify-center rounded-lg bg-[#f5e9e2] py-2.5 text-sm font-bold text-[#261d1a] transition-all hover:bg-[#ebdcd3] active:scale-95"
+          className="mt-4 flex w-full items-center justify-center rounded-lg bg-primary/10 py-3 text-sm font-bold text-primary transition-all hover:bg-primary hover:text-white active:scale-95"
         >
           Add to Cart
         </button>
