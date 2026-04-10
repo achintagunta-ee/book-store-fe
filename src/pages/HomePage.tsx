@@ -63,8 +63,6 @@ const HomePage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();
   const {
-    featuredBooks,
-    featuredAuthorsBooks,
     newArrivals,
     popularBooks,
     categories,

@@ -134,6 +134,7 @@ const BookModal: React.FC<{
     description: book?.description || "",
     stock: book?.stock || "",
     category_id: book?.category?.id || book?.category_id || "",
+    language: book?.language || "",
   });
   const [coverImage, setCoverImage] = useState<File | null>(null);
 
@@ -146,6 +147,7 @@ const BookModal: React.FC<{
       description: book?.description || "",
       stock: book?.stock || "",
       category_id: book?.category?.id || book?.category_id || "",
+      language: book?.language || "",
     });
   }, [book]);
 
@@ -228,6 +230,16 @@ const BookModal: React.FC<{
             className="w-full p-2 border rounded"
             required
           />
+          <select
+            name="language"
+            value={formData.language}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          >
+            <option value="">Select Language</option>
+            <option value="English">English</option>
+            <option value="Telugu">Telugu</option>
+          </select>
           <select
             name="category_id"
             value={formData.category_id}
@@ -542,6 +554,9 @@ const BooksManagement: React.FC = () => {
                       Author
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                      Language
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
                       Category
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
@@ -576,6 +591,13 @@ const BooksManagement: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
                         {book.author}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
+                        {book.language ? (
+                          <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                            {book.language}
+                          </span>
+                        ) : "N/A"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
                         {book.category?.name || categories.find((c) => c.id === book.category_id)?.name || "N/A"}

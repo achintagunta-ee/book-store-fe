@@ -38,7 +38,9 @@ import {
   MdEdit,
   MdDelete,
 } from "react-icons/md";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Toaster, toast } from "react-hot-toast";
+
 
 const StarRating: React.FC<{ rating: number; className?: string }> = ({
   rating,
@@ -58,6 +60,8 @@ const StarRating: React.FC<{ rating: number; className?: string }> = ({
 );
 
 import BookCard from "../components/BookCard";
+import Slider from "react-slick";
+
 
 
 
@@ -201,7 +205,34 @@ const ReviewForm: React.FC<{
   );
 };
 
+const NextArrow = (props: any) => {
+  const { onClick } = props;
+  return (
+    <button
+      onClick={onClick}
+      className="absolute right-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-md transition-all hover:bg-white hover:scale-110 focus:outline-none"
+      aria-label="Next"
+    >
+      <ChevronRight size={24} className="text-primary" />
+    </button>
+  );
+};
+
+const PrevArrow = (props: any) => {
+  const { onClick } = props;
+  return (
+    <button
+      onClick={onClick}
+      className="absolute left-4 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/80 p-2 shadow-md transition-all hover:bg-white hover:scale-110 focus:outline-none"
+      aria-label="Previous"
+    >
+      <ChevronLeft size={24} className="text-primary" />
+    </button>
+  );
+};
+
 const BookDetailPage: React.FC = () => {
+
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { Razorpay } = useRazorpay();
@@ -582,24 +613,64 @@ const BookDetailPage: React.FC = () => {
 
           {/* Main Product Section */}
           <div className="mt-8 grid grid-cols-1 gap-12 md:grid-cols-5">
-            <div className="md:col-span-2 flex justify-center items-start">
-              <img
-                src={
-                  bookData.cover_image_url ||
-                  "https://via.placeholder.com/400x600.png?text=No+Image"
-                }
-                alt={`The cover of the book ${bookData.title}`}
-                className="h-[450px] w-auto max-w-full rounded-xl shadow-lg object-contain bg-gray-50"
-              />
+            <div className="md:col-span-2">
+              <div className="book-carousel-container relative">
+                {bookData.images && bookData.images.length > 0 ? (
+                  <Slider
+                    dots={false}
+                    infinite={true}
+                    speed={500}
+                    slidesToShow={1}
+                    slidesToScroll={1}
+                    nextArrow={<NextArrow />}
+                    prevArrow={<PrevArrow />}
+                    className="book-detail-slider h-[450px]"
+                  >
+                    {[
+                      bookData.cover_image_url,
+                      ...[...bookData.images]
+                        .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+                        .filter(img => img.url !== bookData.cover_image_url)
+                        .map((img) => img.url),
+                    ].filter(Boolean).map((url, index) => (
+                      <div key={index} className="flex justify-center outline-none">
+                        <img
+                          src={url || "https://via.placeholder.com/400x600.png?text=No+Image"}
+                          alt={`View ${index + 1} of ${bookData.title}`}
+                          className="h-[450px] w-auto max-w-full rounded-2xl shadow-lg object-contain bg-gray-50 mx-auto"
+                        />
+                      </div>
+                    ))}
+                  </Slider>
+                ) : (
+                  <div className="flex justify-center items-start">
+                    <img
+                      src={
+                        bookData.cover_image_url ||
+                        "https://via.placeholder.com/400x600.png?text=No+Image"
+                      }
+                      alt={`The cover of the book ${bookData.title}`}
+                      className="h-[450px] w-auto max-w-full rounded-xl shadow-lg object-contain bg-gray-50"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex h-full flex-col md:col-span-3">
               <div>
                 <p className="font-display text-4xl font-bold leading-tight tracking-tight text-text-main dark:text-text-light md:text-5xl">
                   {bookData.title}
                 </p>
-                <p className="mt-2 text-xl font-medium text-text-main/80 dark:text-text-light/80">
-                  {bookData.author}
-                </p>
+                <div className="mt-2 flex items-center gap-4">
+                  <p className="text-xl font-medium text-text-main/80 dark:text-text-light/80">
+                    {bookData.author}
+                  </p>
+                  {bookData.language && (
+                    <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+                      {bookData.language}
+                    </span>
+                  )}
+                </div>
               </div>
               <h1 className="pb-4 pt-6 font-display text-4xl font-bold leading-tight tracking-light text-primary">
                 ₹{bookData.price?.toFixed(2) || "0.00"}

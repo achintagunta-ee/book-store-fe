@@ -84,6 +84,12 @@ const CartItem: React.FC<CartItemProps> = ({ item }) => {
               {item.book_name}
             </h3>
           )}
+          
+          {item.author && (
+            <p className="text-sm font-medium text-text-main/70 dark:text-text-main-dark/70">
+              By {item.author}
+            </p>
+          )}
 
           <div className="mt-auto pt-2">
              <p className="text-xl font-bold text-primary">

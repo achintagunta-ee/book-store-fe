@@ -79,7 +79,9 @@ export interface FilterParams {
   page?: number;
   limit?: number;
   sort?: string;
+  language?: string;
 }
+
 
 export interface FilterResponse {
   filters: {
@@ -133,7 +135,9 @@ export interface Book {
   is_featured?: boolean;
   is_featured_author?: boolean;
   images?: BookImage[];
+  language?: string;
 }
+
 
 export interface PaginatedBookResponse {
   total_items: number;
@@ -195,6 +199,7 @@ export interface CartViewItem {
   book_id: number;
   book_name: string;
   slug: string;
+  author?: string;
   cover_image_url: string;
   price: number;
   discount_price: number | null;
@@ -340,6 +345,7 @@ export interface CartDetailsItem {
   book_name?: string;
   book_title?: string;
   slug?: string;
+  author?: string;
   price: number;
   cover_image?: string;
   cover_image_url: string;
@@ -413,6 +419,7 @@ export const fetchPublicBooksApi = async (params: FilterParams = {}) => {
   if (params.price_min !== undefined) query.append("min_price", String(params.price_min));
   if (params.price_max !== undefined) query.append("max_price", String(params.price_max));
   if (params.rating_min !== undefined) query.append("rating", String(params.rating_min));
+  if (params.language) query.append("language", params.language);
 
   // Append other filter params as needed if the backend supports them on /books/
   // Based on user request, the endpoint is /books

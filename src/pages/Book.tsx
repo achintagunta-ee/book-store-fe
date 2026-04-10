@@ -36,9 +36,11 @@ type Book = {
 type Filters = {
   categories: string[];
   authors: string[];
+  languages: string[];
   maxPrice: number;
   minRating: number;
 };
+
 
 // --- Constants ---
 const BOOKS_PER_PAGE = 8;
@@ -53,10 +55,13 @@ const Sidebar: React.FC<{
   initialFilters: Filters;
   categories: Category[];
   authors: string[];
+  availableLanguages: string[];
   maxPrice: number;
+
   isLoading?: boolean;
-}> = ({ onApplyFilters, initialFilters, categories, authors, maxPrice, isLoading = false }) => {
+}> = ({ onApplyFilters, initialFilters, categories, authors, availableLanguages, maxPrice, isLoading = false }) => {
   const [localFilters, setLocalFilters] = useState<Filters>(initialFilters);
+
 
   useEffect(() => {
     setLocalFilters(initialFilters);
@@ -76,7 +81,15 @@ const Sidebar: React.FC<{
     setLocalFilters({ ...localFilters, authors: newAuthors });
   };
 
+  const handleLanguageChange = (language: string) => {
+    const newLanguages = localFilters.languages.includes(language)
+      ? localFilters.languages.filter((l) => l !== language)
+      : [...localFilters.languages, language];
+    setLocalFilters({ ...localFilters, languages: newLanguages });
+  };
+
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
     setLocalFilters({ ...localFilters, maxPrice: Number(e.target.value) });
   };
 
@@ -148,7 +161,29 @@ const Sidebar: React.FC<{
         </div>
       </div>
 
+      {/* Language */}
+      <div>
+        <h3 className="text-xl font-bold font-serif text-[#261d1a] mb-3">Language</h3>
+        <div className="space-y-2">
+          {availableLanguages.map((language) => (
+            <div key={language} className="flex items-center">
+              <input
+                id={`lang-${language}`}
+                type="checkbox"
+                checked={localFilters.languages.includes(language)}
+                onChange={() => handleLanguageChange(language)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <label htmlFor={`lang-${language}`} className="ml-3 text-text-main/80 dark:text-text-light/80 font-body">
+                {language}
+              </label>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Rating */}
+
       <div>
         <h3 className="text-xl font-bold font-serif text-[#261d1a] mb-3">Rating</h3>
         <div className="flex items-center space-x-1">
@@ -284,6 +319,7 @@ const BookPage: React.FC = () => {
   const [filters, setFilters] = useState<Filters>({
     categories: [],
     authors: [],
+    languages: [],
     maxPrice: 2000, // Default max price since we can't calculate from all books
     minRating: 0,
   });
@@ -330,6 +366,10 @@ const BookPage: React.FC = () => {
 
     if (filters.authors.length > 0) {
       params.author = filters.authors.join(",");
+    }
+
+    if (filters.languages && filters.languages.length > 0) {
+      params.language = filters.languages.join(",");
     }
 
     if (filters.maxPrice < 2000) {
@@ -439,6 +479,7 @@ const BookPage: React.FC = () => {
                 initialFilters={filters}
                 categories={publicCategories}
                 authors={sidebarAuthors}
+                availableLanguages={['English', 'Telugu']}
                 maxPrice={2000}
                 isLoading={publicBooksStatus === "loading"}
               />
@@ -471,6 +512,7 @@ const BookPage: React.FC = () => {
                   initialFilters={filters}
                   categories={publicCategories}
                   authors={sidebarAuthors}
+                  availableLanguages={['English', 'Telugu']}
                   maxPrice={2000}
                   isLoading={publicBooksStatus === "loading"}
                 />
