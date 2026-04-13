@@ -47,6 +47,9 @@ import {
   type Color,
   fetchColorsApi,
   updateBookImageColorApi,
+  type AdminReview,
+  fetchAdminReviewsApi,
+  deleteAdminReviewApi,
 } from "../utilis/bookApi";
 
 export interface BookState {
@@ -82,6 +85,8 @@ export interface BookState {
   currentPage: number;
   colors: Color[];
   colorsStatus: "idle" | "loading" | "succeeded" | "failed";
+  adminReviews: AdminReview[];
+  adminReviewsStatus: "idle" | "loading" | "succeeded" | "failed";
 }
 
 const initialState: BookState = {
@@ -117,9 +122,26 @@ const initialState: BookState = {
   currentPage: 1,
   colors: [],
   colorsStatus: "idle",
+  adminReviews: [],
+  adminReviewsStatus: "idle",
 };
 
 // Admin Thunks
+export const fetchAdminReviewsAsync = createAsyncThunk(
+  "adminReviews/fetch",
+  async () => {
+    return await fetchAdminReviewsApi();
+  }
+);
+
+export const deleteAdminReviewAsync = createAsyncThunk(
+  "adminReviews/delete",
+  async (id: number) => {
+    await deleteAdminReviewApi(id);
+    return id;
+  }
+);
+
 export const fetchBooksAsync = createAsyncThunk(
   "books/fetchBooks",
   async (params: { page?: number; limit?: number; search?: string; category?: string; archived?: boolean } = {}) => {
@@ -537,6 +559,19 @@ export const bookSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Admin reducers
+      .addCase(fetchAdminReviewsAsync.pending, (state) => {
+        state.adminReviewsStatus = "loading";
+      })
+      .addCase(fetchAdminReviewsAsync.fulfilled, (state, action) => {
+        state.adminReviewsStatus = "succeeded";
+        state.adminReviews = action.payload;
+      })
+      .addCase(fetchAdminReviewsAsync.rejected, (state) => {
+        state.adminReviewsStatus = "failed";
+      })
+      .addCase(deleteAdminReviewAsync.fulfilled, (state, action) => {
+        state.adminReviews = state.adminReviews.filter((r) => r.id !== action.payload);
+      })
       .addCase(fetchBooksAsync.pending, (state) => {
         state.status = "loading";
       })

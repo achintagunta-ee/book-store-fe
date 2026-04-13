@@ -668,3 +668,23 @@ export const updateBookImageColorApi = async (imageId: number, colorId: number |
     body: JSON.stringify({ color: colorId }),
   });
 };
+
+export interface AdminReview {
+  id: number;
+  book_id: number;
+  user_id: number;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+export const fetchAdminReviewsApi = async () => {
+  return request<AdminReview[]>("/admin/reviews");
+};
+
+export const deleteAdminReviewApi = async (reviewId: number) => {
+  return request<{ message: string }>(`/admin/reviews/${reviewId}`, {
+    method: "DELETE",
+  });
+};
+

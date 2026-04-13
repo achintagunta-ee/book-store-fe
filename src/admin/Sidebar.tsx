@@ -13,6 +13,7 @@ import {
   Menu,
   BarChart,
   LayoutDashboard,
+  MessageSquare,
 } from "lucide-react";
 import { useMatch, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
@@ -63,6 +64,7 @@ const navItems = [
   { icon: <XCircle size={20} />, label: "Cancellations", to: "/admin/cancellations" },
   { icon: <Bell size={20} />, label: "Notifications", to: "/admin/notifications" },
   { icon: <Package size={20} />, label: "Inventory", to: "/admin/inventory" },
+  { icon: <MessageSquare size={20} />, label: "Reviews", to: "/admin/reviews" },
   { icon: <Settings size={20} />, label: "Settings", to: "/admin/settings" },
   { icon: <HelpCircle size={20} />, label: "Help Docs", to: "/admin/help" },
   { icon: <BarChart size={20} />, label: "Analytics", to: "/admin/analytics" }

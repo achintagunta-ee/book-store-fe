@@ -29,6 +29,7 @@ import NotificationsPage from "./pages/Notifications";
 import AdminNotificationsPage from "./admin/Notifications";
 import CancellationsPage from "./admin/Cancellations";
 import HelpDocs from "./admin/Help";
+import ReviewManagement from "./admin/ReviewManagement";
 import LibraryPage from "./pages/Library";
 import AboutUs from "./pages/AboutUs";
 import Contact from "./pages/Contact";
@@ -120,6 +121,7 @@ function App() {
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
           <Route path="/admin/cancellations" element={<CancellationsPage />} />
+          <Route path="/admin/reviews" element={<ReviewManagement />} />
           <Route path="/admin/help" element={<HelpDocs />} />
           <Route path="/admin/analytics" element={<AnalyticsPage />} />
         </Routes>
