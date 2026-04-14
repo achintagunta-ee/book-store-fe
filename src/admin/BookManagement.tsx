@@ -3,10 +3,11 @@ import {
   Search,
   Plus,
   Edit,
-  Trash2,
+  
   SlidersHorizontal,
   Image as ImageIcon,
   RotateCcw,
+  Archive,
 } from "lucide-react";
 import BookImagesModal from "./BookImagesModal";
 import { useDispatch, useSelector } from "react-redux";
@@ -139,17 +140,19 @@ const BookModal: React.FC<{
   const [coverImage, setCoverImage] = useState<File | null>(null);
 
   useEffect(() => {
-    // When the book prop changes, update the form data
-    setFormData({
-      title: book?.title || "",
-      author: book?.author || "",
-      price: book?.price || "",
-      description: book?.description || "",
-      stock: book?.stock || "",
-      category_id: book?.category?.id || book?.category_id || "",
-      language: book?.language || "",
-    });
-  }, [book]);
+    if (isOpen) {
+      setFormData({
+        title: book?.title || "",
+        author: book?.author || "",
+        price: book?.price || "",
+        description: book?.description || "",
+        stock: book?.stock || "",
+        category_id: book?.category?.id || book?.category_id || "",
+        language: book?.language || "",
+      });
+      setCoverImage(null);
+    }
+  }, [book, isOpen]);
 
   if (!isOpen) return null;
 
@@ -634,7 +637,7 @@ const BooksManagement: React.FC = () => {
                                 {archivingId === book.id ? (
                                     <span className="text-xs font-bold">...</span>
                                 ) : (
-                                    <Trash2 size={20} />
+                                    <Archive size={20} />
                                 )}
                             </button>
                           ) : (
