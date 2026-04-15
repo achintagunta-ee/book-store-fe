@@ -9,6 +9,7 @@
 	--color-secondary-link: #e1aa12;
 	--color-text-main: #261d1a;
 	--color-text-main-dark: #000;
+	--font-serif: "Newsreader", serif;
 }
 @import "slick-carousel/slick/slick.css";
 @import "slick-carousel/slick/slick-theme.css";
@@ -25,6 +26,12 @@
 }
 
 @layer base {
+  html, body {
+    font-family: "Open Sans", sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Newsreader", serif;
+  }
   button,
   [type='button'],
   [type='reset'],

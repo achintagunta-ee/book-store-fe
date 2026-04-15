@@ -597,7 +597,7 @@ const BookDetailPage: React.FC = () => {
               <>
                 <Link
                   className="text-sm font-medium leading-normal text-primary/80 hover:text-primary dark:text-text-light/60"
-                  to="#"
+                  to={`/books?category=${encodeURIComponent(categoryName)}`}
                 >
                   {categoryName}
                 </Link>

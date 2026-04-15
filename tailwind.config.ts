@@ -17,7 +17,7 @@ export default {
 				"text-light": "rgb(var(--color-text-light) / <alpha-value>)",
 			},
 			fontFamily: {
-				display: ["Merriweather", "serif"],
+				display: ["Newsreader", "serif"],
 				body: ["Open Sans", "sans-serif"],
 			},
 			borderRadius: {
