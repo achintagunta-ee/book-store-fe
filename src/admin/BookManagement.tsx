@@ -543,32 +543,32 @@ const BooksManagement: React.FC = () => {
           {error && <p className="text-red-500">Error: {error}</p>}
           {/* Books Table */}
           <div className="w-full overflow-x-auto">
-            <div className="rounded-lg border border-[#5c2e2e]/20 bg-white">
-              <table className="min-w-full divide-y divide-[#5c2e2e]/20">
+            <div className="rounded-lg border border-[#5c2e2e]/20 bg-white min-w-[900px]">
+              <table className="w-full divide-y divide-[#5c2e2e]/20 table-fixed">
                 <thead className="bg-[#013a67]/5">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-20">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-[80px]">
                       Cover
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-[20%]">
                       Title
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-[15%]">
                       Author
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-[9%]">
                       Language
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-[18%]">
                       Category
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-[9%]">
                       Price
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-[7%]">
                       Stock
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold text-[#261d1a] uppercase tracking-wider w-[140px]">
                       Actions
                     </th>
                   </tr>
@@ -579,7 +579,7 @@ const BooksManagement: React.FC = () => {
                       key={book.id || book.book_id}
                       className="hover:bg-[#013a67]/5 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-3">
                         <div
                           className="bg-center bg-no-repeat bg-cover rounded w-10 aspect-[2/3] bg-gray-200"
                           style={{
@@ -589,102 +589,96 @@ const BooksManagement: React.FC = () => {
                           }}
                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#261d1a]">
-                        {book.title}
+                      <td className="px-4 py-3 text-sm font-medium text-[#261d1a] break-words">
+                        {book.title || "—"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
-                        {book.author}
+                      <td className="px-4 py-3 text-sm text-[#261d1a]/80 break-words">
+                        {book.author || "—"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
+                      <td className="px-4 py-3 text-sm text-[#261d1a]/80 truncate">
                         {book.language ? (
                           <span className="inline-block rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                             {book.language}
                           </span>
-                        ) : "N/A"}
+                        ) : "—"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
-                        {book.category?.name || categories.find((c) => c.id === book.category_id)?.name || "N/A"}
+                      <td className="px-4 py-3 text-sm text-[#261d1a]/80 break-words">
+                        {book.category?.name || categories.find((c) => c.id === book.category_id)?.name || "—"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-[#261d1a]/80">
+                      <td className="px-4 py-3 text-sm text-[#261d1a]/80 truncate">
                         ₹{(Number(book.price) || 0).toFixed(2)}
                       </td>
                       <td
-                        className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                        className={`px-4 py-3 text-sm font-medium truncate ${
                           book.stock < 10 ? "text-red-600" : "text-[#261d1a]/80"
                         }`}
                       >
                           {book.stock}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center gap-4">
-                          {!showArchived && (
-                             <button
-                               onClick={() => handleOpenModal(book)}
-                               className="text-[#5c2e2e] hover:text-[#013a67] transition-colors"
-                               title="Edit"
-                             >
-                               <Edit size={20} />
-                             </button>
-                          )}
-                          
-                          {!showArchived ? (
-                            <button
-                                onClick={() => handleArchiveClick(book.id)}
-                                disabled={archivingId === book.id}
-                                className="text-orange-600 hover:text-orange-800 transition-colors disabled:opacity-50"
-                                title="Archive"
-                            >
-                                {archivingId === book.id ? (
-                                    <span className="text-xs font-bold">...</span>
-                                ) : (
-                                    <Archive size={20} />
-                                )}
-                            </button>
-                          ) : (
-                             <button
-                                onClick={() => handleRestoreClick(book.id)}
-                                disabled={restoringId === book.id}
-                                className="text-green-600 hover:text-green-800 transition-colors disabled:opacity-50"
-                                title="Restore"
-                            >
-                                {restoringId === book.id ? (
-                                    <span className="text-xs font-bold">...</span>
-                                ) : (
-                                    <RotateCcw size={20} />
-                                )}
-                            </button>
-                          )}
-
-                          {/* Allow permanent delete only if archived? Or keep standard delete for both? 
-                              User request implies Archive replaces Delete for active books. 
-                              Usually Admin can delete permanently from Archive. 
-                              I'll add permanent delete button for Archived books. 
-                          */}
-
-
-                        </div>
-                        {!showArchived && (
-                            <div className="flex items-center gap-4 mt-2">
+                      <td className="px-4 py-3 text-sm font-medium">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-3">
+                            {!showArchived && (
                                <button
-                                onClick={() => {
-                                  setEbookBook(book);
-                                  setIsEbookModalOpen(true);
-                                }}
-                                className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
-                              >
-                               <Plus size={14} /> Upload E-book
-                              </button>
+                                 onClick={() => handleOpenModal(book)}
+                                 className="text-[#5c2e2e] hover:text-[#013a67] transition-colors p-1.5 bg-white border border-[#5c2e2e]/20 rounded-md shadow-sm"
+                                 title="Edit"
+                               >
+                                 <Edit size={16} />
+                               </button>
+                            )}
+                            
+                            {!showArchived ? (
                               <button
-                                onClick={() => {
-                                  setImagesBook(book);
-                                  setIsImagesModalOpen(true);
-                                }}
-                                className="text-[#013a67] text-xs hover:underline flex items-center gap-1"
+                                  onClick={() => handleArchiveClick(book.id)}
+                                  disabled={archivingId === book.id}
+                                  className="text-orange-600 hover:text-orange-800 transition-colors p-1.5 bg-white border border-orange-200 rounded-md shadow-sm disabled:opacity-50"
+                                  title="Archive"
                               >
-                               <ImageIcon size={14} /> Manage Images
+                                  {archivingId === book.id ? (
+                                      <span className="text-xs font-bold px-1">...</span>
+                                  ) : (
+                                      <Archive size={16} />
+                                  )}
                               </button>
-                            </div>
-                        )}
+                            ) : (
+                               <button
+                                  onClick={() => handleRestoreClick(book.id)}
+                                  disabled={restoringId === book.id}
+                                  className="text-green-600 hover:text-green-800 transition-colors p-1.5 bg-white border border-green-200 rounded-md shadow-sm disabled:opacity-50"
+                                  title="Restore"
+                              >
+                                  {restoringId === book.id ? (
+                                      <span className="text-xs font-bold px-1">...</span>
+                                  ) : (
+                                      <RotateCcw size={16} />
+                                  )}
+                              </button>
+                            )}
+                          </div>
+                          {!showArchived && (
+                              <div className="flex flex-col gap-1 mt-1">
+                                 <button
+                                  onClick={() => {
+                                    setEbookBook(book);
+                                    setIsEbookModalOpen(true);
+                                  }}
+                                  className="text-[#013a67] text-[11px] uppercase tracking-wider hover:underline flex items-center gap-1.5 w-fit font-bold"
+                                >
+                                 <Plus size={12} strokeWidth={3} /> E-book
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setImagesBook(book);
+                                    setIsImagesModalOpen(true);
+                                  }}
+                                  className="text-[#013a67] text-[11px] uppercase tracking-wider hover:underline flex items-center gap-1.5 w-fit font-bold"
+                                >
+                                 <ImageIcon size={12} strokeWidth={3} /> Images
+                                </button>
+                              </div>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
