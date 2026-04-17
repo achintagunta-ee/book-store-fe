@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import {
   loginApi,
+  googleLoginApi,
   registerApi,
   logoutApi,
   getCurrentUserApi,
@@ -581,6 +582,21 @@ export const loginThunk = createAsyncThunk(
         return rejectWithValue(error.message || "Login failed");
       }
       return rejectWithValue("Login failed");
+    }
+  }
+);
+
+export const googleLoginThunk = createAsyncThunk(
+  "auth/googleLogin",
+  async (token: string, { rejectWithValue }) => {
+    try {
+      const data = await googleLoginApi(token);
+      return data;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        return rejectWithValue(error.message || "Google Login failed");
+      }
+      return rejectWithValue("Google Login failed");
     }
   }
 );
@@ -2169,6 +2185,22 @@ const authSlice = createSlice({
       .addCase(loginThunk.rejected, (state, action) => {
         state.status = "failed";
         state.error = (action.payload as string) || "Login failed";
+      })
+      // Google Login
+      .addCase(googleLoginThunk.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(googleLoginThunk.fulfilled, (state, action) => {
+        state.status = "succeeded";
+        state.accessToken = action.payload.access_token;
+        state.refreshToken = null;
+        state.profileStatus = "idle";
+        saveTokens(action.payload.access_token, "");
+      })
+      .addCase(googleLoginThunk.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = (action.payload as string) || "Google Login failed";
       })
       // Register
       .addCase(registerThunk.pending, (state) => {

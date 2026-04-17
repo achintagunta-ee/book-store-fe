@@ -70,6 +70,13 @@ export async function loginApi(email: string, password: string) {
   });
 }
 
+export async function googleLoginApi(token: string) {
+  return request<{ access_token: string; token_type: string }>("/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
 // Registration API
 export interface RegisterData {
   first_name: string;
