@@ -331,6 +331,11 @@ const LoginPage: React.FC = () => {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              {isRegistering && (
+                <p className="mt-2 text-xs text-secondary-link">
+                  Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character
+                </p>
+              )}
                {validationErrors.password && (
                 <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.password}</p>
               )}
@@ -555,6 +560,9 @@ const LoginPage: React.FC = () => {
                       onChange={handleFormChange}
                       required
                     />
+                    <p className="mt-2 text-xs text-secondary-link">
+                      Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character
+                    </p>
                      {validationErrors.new_password && (
                       <p className="text-sm font-medium text-red-500 mt-1">{validationErrors.new_password}</p>
                     )}

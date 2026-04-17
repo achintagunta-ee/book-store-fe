@@ -155,6 +155,9 @@ const ResetPasswordPage: React.FC = () => {
                                 )}
                             </button>
                         </div>
+                        <p className="mt-2 text-xs text-secondary-link">
+                            Password must contain at least 8 characters, including one uppercase letter, one lowercase letter, one number, and one special character
+                        </p>
                     </div>
 
                     <div className="flex flex-col">
