@@ -40,11 +40,7 @@ const EmptyWishlist: React.FC = () => {
       </Link>
     </div>
   );
-};
-
-import Slider from "react-slick";
-
-// --- Main Wishlist Page Component ---
+};// --- Main Wishlist Page Component ---
 const WishlistPage: React.FC = () => {
   const dispatch = useDispatch<any>();
   const { wishlist } = useSelector((state: any) => state.auth);
@@ -71,35 +67,6 @@ const WishlistPage: React.FC = () => {
     imageUrl: item.cover_image_url || "",
   }));
 
-  const sliderSettings = {
-    dots: true,
-    infinite: false,
-    speed: 500,
-    slidesToShow: 4,
-    slidesToScroll: 1,
-    arrows: true,
-    responsive: [
-      {
-        breakpoint: 1280,
-        settings: {
-          slidesToShow: 3,
-        }
-      },
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 2,
-        }
-      },
-      {
-        breakpoint: 640,
-        settings: {
-          slidesToShow: 1,
-        }
-      }
-    ]
-  };
-
   return (
     <main className="flex-1 px-4 sm:px-6 md:px-10 py-10">
       <Toaster position="top-right" />
@@ -112,23 +79,21 @@ const WishlistPage: React.FC = () => {
       {books.length === 0 ? (
         <EmptyWishlist />
       ) : (
-        <div className="wishlist-slider-container pb-12">
-          <Slider {...sliderSettings}>
-            {books.map((book) => (
-              <div key={book.id} className="px-3">
-                <BookCard
-                  id={book.id}
-                  title={book.title}
-                  author={book.author}
-                  imageUrl={book.imageUrl}
-                  slug={book.slug}
-                  price={book.price}
-                  onRemove={handleRemove}
-                  originalBook={book}
-                />
-              </div>
-            ))}
-          </Slider>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6 pb-12">
+          {books.map((book) => (
+            <div key={book.id} className="w-full">
+              <BookCard
+                id={book.id}
+                title={book.title}
+                author={book.author}
+                imageUrl={book.imageUrl}
+                slug={book.slug}
+                price={book.price}
+                onRemove={handleRemove}
+                originalBook={book}
+              />
+            </div>
+          ))}
         </div>
       )}
     </main>

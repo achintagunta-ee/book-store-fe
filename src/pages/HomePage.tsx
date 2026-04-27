@@ -36,7 +36,7 @@ const BookSection: React.FC<{ title: string; books: Book[] }> = ({
     </div>
     
     <div className="relative group/slider">
-        <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-4 md:mx-0 snap-x snap-mandatory">
+        <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-6 px-6 md:mx-0 md:px-0 snap-x snap-mandatory">
             <div className="flex gap-6 md:gap-8 pr-4 ">
                 {books.map((book) => (
                 <div key={book.id} className="snap-start flex-shrink-0 w-[240px]">
@@ -57,7 +57,6 @@ const BookSection: React.FC<{ title: string; books: Book[] }> = ({
   </section>
 );
 
-import Slider from "react-slick";
 
 const HomePage: React.FC = () => {
   const dispatch: AppDispatch = useDispatch();
@@ -110,40 +109,12 @@ const HomePage: React.FC = () => {
     [newArrivals, popularBooks]
   );
 
-  const categorySliderSettings = {
-    dots: false,
-    infinite: true,
-    speed: 3000,
-    slidesToShow: 6,
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 0,
-    cssEase: "linear",
-    pauseOnHover: true,
-    responsive: [
-      {
-        breakpoint: 1280,
-        settings: { slidesToShow: 5 }
-      },
-      {
-        breakpoint: 1024,
-        settings: { slidesToShow: 4 }
-      },
-      {
-        breakpoint: 768,
-        settings: { slidesToShow: 2 }
-      },
-      {
-        breakpoint: 480,
-        settings: { slidesToShow: 1 }
-      }
-    ]
-  };
+
 
   return (
     <div className="group/design-root relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden bg-background-light font-body ">
       <div className="layout-container flex h-full grow flex-col">
-        <div className="flex flex-1 justify-center px-4 py-5 md:px-10 lg:px-20 xl:px-40">
+        <div className="flex flex-1 justify-center px-6 py-5 md:px-10 lg:px-20 xl:px-40">
           <div className="layout-content-container flex w-full max-w-screen-xl flex-1 flex-col">
             <main className="mt-5 flex flex-col gap-10">
               <div className="w-full">
@@ -198,24 +169,26 @@ const HomePage: React.FC = () => {
                     </h2>
                  </div>
                  
-                 <div className="category-slider-wrapper">
-                    <Slider {...categorySliderSettings}>
-                        {(categories || []).map((category) => (
-                          <div key={category.id} className="px-2">
-                             <Link
-                              to={`/books?category=${category.name}`}
-                              className="group flex flex-col items-center justify-center gap-4 rounded-2xl bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md border border-gray-100 h-[220px] w-full"
-                            >
-                               <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:scale-110 shadow-inner">
-                                  <span className="text-3xl font-bold">{category.name.charAt(0).toUpperCase()}</span>
-                               </div>
-                              <span className="text-center font-serif text-sm font-bold text-[#261d1a] leading-tight">
-                                {category.name}
-                              </span>
-                            </Link>
-                          </div>
-                        ))}
-                    </Slider>
+                 <div className="relative group/slider">
+                    <div className="flex overflow-x-auto pb-4 [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden -mx-6 px-6 md:mx-0 md:px-0 snap-x snap-mandatory">
+                        <div className="flex gap-4 md:gap-6 pr-4">
+                            {(categories || []).map((category) => (
+                              <div key={category.id} className="snap-start flex-shrink-0 w-[160px] md:w-[180px] lg:w-[200px]">
+                                 <Link
+                                  to={`/books?category=${category.name}`}
+                                  className="group flex flex-col items-center justify-center gap-4 rounded-2xl bg-white p-4 md:p-6 shadow-sm transition-all duration-300 hover:shadow-md border border-gray-100 h-[160px] md:h-[200px] w-full"
+                                >
+                                   <div className="flex h-16 w-16 md:h-20 md:w-20 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-white group-hover:scale-110 shadow-inner">
+                                      <span className="text-2xl md:text-3xl font-bold">{category.name.charAt(0).toUpperCase()}</span>
+                                   </div>
+                                  <span className="text-center font-serif text-sm md:text-base font-bold text-[#261d1a] leading-tight">
+                                    {category.name}
+                                  </span>
+                                </Link>
+                              </div>
+                            ))}
+                        </div>
+                    </div>
                  </div>
               </section>
             </main>
